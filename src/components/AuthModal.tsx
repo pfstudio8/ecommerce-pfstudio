@@ -50,7 +50,23 @@ export default function AuthModal() {
                 setModalOpen(false);
             }
         } catch (error: any) {
-            sileo.error({ title: error.message || "Error al autenticar" });
+            console.error("Auth error:", error);
+            let errorMsg = error.message || "Error al autenticar";
+
+            // Traducir errores comunes de Supabase
+            if (errorMsg.includes("User already registered")) {
+                errorMsg = "Este correo ya está registrado.";
+            } else if (errorMsg.includes("Signups not allowed for this instance")) {
+                errorMsg = "El registro está deshabilitado. Activa 'Allow new users to sign up' en Supabase.";
+            } else if (errorMsg.includes("Email rate limit exceeded") || errorMsg.includes("rate limit")) {
+                errorMsg = "Límite de correos alcanzado. Por favor, desactiva 'Confirm email' en las opciones de Auth en Supabase.";
+            } else if (errorMsg.includes("Invalid login credentials")) {
+                errorMsg = "Correo o contraseña incorrectos.";
+            } else if (errorMsg.includes("Password should be at least")) {
+                errorMsg = "La contraseña debe tener al menos 6 caracteres.";
+            }
+
+            sileo.error({ title: errorMsg });
         } finally {
             setIsLoading(false);
         }

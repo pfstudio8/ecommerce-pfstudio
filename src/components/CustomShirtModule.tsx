@@ -198,7 +198,7 @@ export default function CustomShirtModule() {
 
                             <div className="bg-white dark:bg-zinc-950 p-4 rounded-lg border border-gray-100 dark:border-zinc-800 mb-8 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                                 <ul className="list-disc pl-5 space-y-1">
-                                    <li>Las medidas son Oversize (Corte amplio).</li>
+
                                     <li>Algodón Premium 24/1 Peinado.</li>
                                     <li>Estampado DTF de altísima duración.</li>
                                     <li>Demora de confección: 48-72hs hábiles.</li>
