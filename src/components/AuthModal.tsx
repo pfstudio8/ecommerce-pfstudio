@@ -125,34 +125,7 @@ export default function AuthModal() {
 
                         <div className="p-8 pt-10">
 
-                            {/* Social Login (Static) */}
-                            <div className="mb-8">
-                                <h3 className="text-center font-bold text-xl mb-4 text-[var(--foreground)]">Conéctate con</h3>
-                                <div className="flex gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleOAuth('google')}
-                                        className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors shadow-sm"
-                                    >
-                                        <FcGoogle className="w-6 h-6" />
-                                        Google
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleOAuth('facebook')}
-                                        className="flex-1 py-3 border border-gray-200 dark:border-zinc-800 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-[#1877F2]/10 transition-colors shadow-sm text-[#1877F2]"
-                                    >
-                                        <FaFacebook className="w-6 h-6" />
-                                        Facebook
-                                    </button>
-                                </div>
-
-                                <div className="mt-8 flex items-center gap-4">
-                                    <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-800"></div>
-                                    <span className="text-xs text-gray-400 uppercase tracking-widest font-medium">O usa tu email</span>
-                                    <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-800"></div>
-                                </div>
-                            </div>
+                            {/* Social Login - Removed because it requires explicit Supabase dashboard configuration */}
 
                             {/* Form Wrapper */}
                             <form onSubmit={handleSubmit} className="w-full relative">
@@ -209,6 +182,9 @@ export default function AuthModal() {
                                                         <input
                                                             type="email"
                                                             required
+                                                            autoCapitalize="none"
+                                                            autoCorrect="off"
+                                                            spellCheck="false"
                                                             value={email}
                                                             onChange={(e) => setEmail(e.target.value)}
                                                             className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"

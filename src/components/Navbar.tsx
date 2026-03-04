@@ -210,13 +210,18 @@ export default function Navbar() {
 
                 <div className="flex-1 overflow-y-auto py-4">
                     <ul className="flex flex-col">
-                        {["Inicio", "Productos", "Contacto", "Quiénes Somos?"].map((item) => (
-                            <li key={item}>
-                                <a href="#" className="block px-6 py-3 text-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                                    {item}
-                                </a>
-                            </li>
-                        ))}
+                        <li>
+                            <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-3 text-lg hover:bg-white/5 transition-colors">Inicio</Link>
+                        </li>
+                        <li>
+                            <Link href="/#productos" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-3 text-lg hover:bg-white/5 transition-colors">Productos</Link>
+                        </li>
+                        <li>
+                            <Link href="/#nosotros" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-3 text-lg hover:bg-white/5 transition-colors">Quiénes Somos?</Link>
+                        </li>
+                        <li>
+                            <a href="mailto:hola@pfstudio.com" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-3 text-lg hover:bg-white/5 transition-colors">Contacto</a>
+                        </li>
                     </ul>
                 </div>
 

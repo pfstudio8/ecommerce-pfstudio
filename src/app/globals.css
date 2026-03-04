@@ -9,11 +9,16 @@
 }
 
 :root {
-  --background: var(--color-base);
-  --foreground: var(--color-dark);
+  --background: #151613;
+  --foreground: #FFFACA;
+  --color-base: #151613;
+  --color-main: #00a87a;
+  --color-main-dark: #003627;
+  --color-dark: #151613;
+  --color-light: #ffffff;
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
     --background: #151613;
     --foreground: #FFFACA;
@@ -21,6 +26,7 @@
     --color-main: #00a87a;
   }
 }
+
 
 body {
   background-color: var(--background);
