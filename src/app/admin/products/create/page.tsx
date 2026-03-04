@@ -9,8 +9,8 @@ import Link from "next/link";
 export default function CreateProduct() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -21,11 +21,18 @@ export default function CreateProduct() {
     });
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
+        if (e.target.files && e.target.files.length > 0) {
+            const filesArray = Array.from(e.target.files);
+            setImageFiles(prev => [...prev, ...filesArray]);
+
+            const newPreviews = filesArray.map(file => URL.createObjectURL(file));
+            setImagePreviews(prev => [...prev, ...newPreviews]);
         }
+    };
+
+    const removeImage = (index: number) => {
+        setImageFiles(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -33,30 +40,31 @@ export default function CreateProduct() {
         setIsLoading(true);
 
         try {
-            let imageUrl = "";
+            let imageUrls: string[] = [];
 
-            // 1. Upload image to Supabase Storage
-            if (imageFile) {
-                const fileExt = imageFile.name.split('.').pop();
-                const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            // 1. Upload images to Supabase Storage
+            if (imageFiles.length > 0) {
+                for (const file of imageFiles) {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-                const { error: uploadError } = await supabase.storage
-                    .from('product-images')
-                    .upload(fileName, imageFile, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
+                    const { error: uploadError } = await supabase.storage
+                        .from('product-images')
+                        .upload(fileName, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
 
-                if (uploadError) {
-                    throw new Error("Asegúrate de haber creado el bucket 'product-images' en Supabase y que sea público. Detalles: " + uploadError.message);
+                    if (uploadError) {
+                        throw new Error("Error subiendo imagen: " + uploadError.message);
+                    }
+
+                    const { data: publicUrlData } = supabase.storage
+                        .from('product-images')
+                        .getPublicUrl(fileName);
+
+                    imageUrls.push(publicUrlData.publicUrl);
                 }
-
-                // Get public URL
-                const { data: publicUrlData } = supabase.storage
-                    .from('product-images')
-                    .getPublicUrl(fileName);
-
-                imageUrl = publicUrlData.publicUrl;
             }
 
             // 2. Insert into products table
@@ -68,7 +76,7 @@ export default function CreateProduct() {
                         price: parseFloat(formData.price),
                         category: formData.category,
                         isNew: formData.isNew,
-                        images: imageUrl ? [imageUrl] : [],
+                        images: imageUrls,
                         stock: parseInt(formData.stock, 10),
                     }
                 ]);
@@ -176,32 +184,37 @@ export default function CreateProduct() {
 
                     {/* Image Upload */}
                     <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Fotografía Principal</label>
-                        <div className="relative border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-2xl h-64 flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 hover:bg-gray-100 dark:hover:bg-zinc-900 transition-colors group overflow-hidden">
-                            {imagePreview ? (
-                                <>
-                                    <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <p className="text-white font-semibold flex items-center gap-2">
-                                            <Upload className="w-5 h-5" />
-                                            Cambiar imagen
-                                        </p>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="text-center p-6 text-gray-500">
-                                    <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-                                    <p className="font-semibold text-sm">Haz clic para subir imagen</p>
-                                    <p className="text-xs mt-1">PNG, JPG, WEBP hasta 5MB</p>
-                                </div>
-                            )}
+                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Fotografías del Producto (Frente, Espalda, etc.)</label>
 
+                        {imagePreviews.length > 0 && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                {imagePreviews.map((preview, index) => (
+                                    <div key={index} className="relative aspect-square border border-gray-200 dark:border-zinc-800 rounded-lg overflow-hidden group">
+                                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(index)}
+                                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="relative border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-2xl h-32 flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 hover:bg-gray-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer">
+                            <div className="text-center text-gray-500 pointer-events-none">
+                                <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                                <p className="font-semibold text-sm">Haz clic para añadir fotos</p>
+                            </div>
                             <input
                                 type="file"
                                 accept="image/*"
+                                multiple
                                 onChange={handleImageChange}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                required={!imagePreview}
+                                required={imagePreviews.length === 0}
                             />
                         </div>
                     </div>

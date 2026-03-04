@@ -15,8 +15,9 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [existingImages, setExistingImages] = useState<string[]>([]);
+    const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+    const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -48,7 +49,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                     stock: (data.stock ?? 0).toString(),
                 });
                 if (data.images && data.images.length > 0) {
-                    setImagePreview(data.images[0]);
+                    setExistingImages(data.images);
                 }
             }
         } catch (error) {
@@ -61,11 +62,22 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
+        if (e.target.files && e.target.files.length > 0) {
+            const filesArray = Array.from(e.target.files);
+            setNewImageFiles(prev => [...prev, ...filesArray]);
+
+            const newPreviews = filesArray.map(file => URL.createObjectURL(file));
+            setNewImagePreviews(prev => [...prev, ...newPreviews]);
         }
+    };
+
+    const removeExistingImage = (index: number) => {
+        setExistingImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeNewImage = (index: number) => {
+        setNewImageFiles(prev => prev.filter((_, i) => i !== index));
+        setNewImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -73,27 +85,29 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         setIsSaving(true);
 
         try {
-            let imageUrl = imagePreview; // keep existing if no new file
+            let finalImageUrls = [...existingImages];
 
             // 1. Upload new image if present
-            if (imageFile) {
-                const fileExt = imageFile.name.split('.').pop();
-                const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+            if (newImageFiles.length > 0) {
+                for (const file of newImageFiles) {
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-                const { error: uploadError } = await supabase.storage
-                    .from('product-images')
-                    .upload(fileName, imageFile, {
-                        cacheControl: '3600',
-                        upsert: false
-                    });
+                    const { error: uploadError } = await supabase.storage
+                        .from('product-images')
+                        .upload(fileName, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
 
-                if (uploadError) throw uploadError;
+                    if (uploadError) throw uploadError;
 
-                const { data: publicUrlData } = supabase.storage
-                    .from('product-images')
-                    .getPublicUrl(fileName);
+                    const { data: publicUrlData } = supabase.storage
+                        .from('product-images')
+                        .getPublicUrl(fileName);
 
-                imageUrl = publicUrlData.publicUrl;
+                    finalImageUrls.push(publicUrlData.publicUrl);
+                }
             }
 
             // 2. Update record
@@ -105,7 +119,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                     category: formData.category,
                     isNew: formData.isNew,
                     stock: parseInt(formData.stock, 10),
-                    images: imageUrl && imageUrl !== imagePreview || imageFile ? [imageUrl] : undefined,
+                    images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
                 })
                 .eq('id', productId);
 
@@ -210,33 +224,55 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
 
                     {/* Image Upload */}
                     <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Fotografía Principal (Opcional)</label>
-                        <div className="relative border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-2xl h-64 flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 hover:bg-gray-100 dark:hover:bg-zinc-900 transition-colors group overflow-hidden">
-                            {imagePreview ? (
-                                <>
-                                    <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <p className="text-white font-semibold flex items-center gap-2">
-                                            <Upload className="w-5 h-5" />
-                                            Cambiar imagen
-                                        </p>
+                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Fotografías del Producto (Frente, Espalda, etc.)</label>
+
+                        {(existingImages.length > 0 || newImagePreviews.length > 0) && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                {/* Existing Images */}
+                                {existingImages.map((img, index) => (
+                                    <div key={`existing-${index}`} className="relative aspect-square border border-gray-200 dark:border-zinc-800 rounded-lg overflow-hidden group">
+                                        <img src={img} alt="Existing" className="w-full h-full object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeExistingImage(index)}
+                                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                        </button>
                                     </div>
-                                </>
-                            ) : (
-                                <div className="text-center p-6 text-gray-500">
-                                    <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-                                    <p className="font-semibold text-sm">Haz clic para subir imagen</p>
-                                </div>
-                            )}
+                                ))}
+
+                                {/* New Image Previews */}
+                                {newImagePreviews.map((preview, index) => (
+                                    <div key={`new-${index}`} className="relative aspect-square border-2 border-[var(--color-main)] border-dashed rounded-lg overflow-hidden group">
+                                        <img src={preview} alt="New Preview" className="w-full h-full object-cover" />
+                                        <div className="absolute top-2 left-2 bg-[var(--color-main)] text-white text-[10px] font-bold px-2 py-0.5 rounded">NUEVA</div>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeNewImage(index)}
+                                            className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="relative border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-2xl h-32 flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950 hover:bg-gray-100 dark:hover:bg-zinc-900 transition-colors cursor-pointer">
+                            <div className="text-center text-gray-500 pointer-events-none">
+                                <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                                <p className="font-semibold text-sm">Añadir más fotos</p>
+                            </div>
 
                             <input
                                 type="file"
                                 accept="image/*"
+                                multiple
                                 onChange={handleImageChange}
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             />
                         </div>
-                        <p className="text-xs text-gray-400 text-center mt-2">Sube una nueva imagen sólo si deseas reemplazar la actual.</p>
                     </div>
                 </div>
 

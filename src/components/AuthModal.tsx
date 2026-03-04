@@ -169,7 +169,7 @@ export default function AuthModal() {
                                                                 required={!isLogin}
                                                                 value={name}
                                                                 onChange={(e) => setName(e.target.value)}
-                                                                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
                                                                 placeholder="Juan Pérez"
                                                             />
                                                         </div>
@@ -188,7 +188,7 @@ export default function AuthModal() {
                                                             spellCheck="false"
                                                             value={email}
                                                             onChange={(e) => setEmail(e.target.value)}
-                                                            className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                            className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
                                                             placeholder="tu@email.com"
                                                         />
                                                     </div>
@@ -203,7 +203,7 @@ export default function AuthModal() {
                                                             required
                                                             value={password}
                                                             onChange={(e) => setPassword(e.target.value)}
-                                                            className="w-full pl-12 pr-12 py-3.5 bg-gray-50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                            className="w-full pl-12 pr-12 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
                                                             placeholder="••••••••"
                                                         />
                                                         <button
