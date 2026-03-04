@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+@theme {
+  --color-base: #FFFACA;
+  --color-main: #004f39;
+  --color-main-dark: #003627;
+  --color-dark: #151613;
+  --color-light: #ffffff;
+}
+
+:root {
+  --background: var(--color-base);
+  --foreground: var(--color-dark);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #151613;
+    --foreground: #FFFACA;
+    --color-base: #151613;
+    --color-main: #00a87a;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Montserrat", Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-main);
+  border-radius: 8px;
+  border: 2px solid var(--background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-main-dark);
+}
+
+/* Utilidades para la animación de carga */
+@keyframes pulseLogo {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+.animate-pulseLogo {
+  animation: pulseLogo 2s infinite ease-in-out;
+}
+
+@keyframes progressWidth {
+  0% {
+    width: 0%;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
+.animate-progressWidth {
+  animation: progressWidth 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  to {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.animate-fadeOut {
+  animation: fadeOut 0.8s ease-in-out forwards;
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(17, 17, 17, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Slide in Toast */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeOutDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+.animate-fadeOutDown {
+  animation: fadeOutDown 0.3s forwards;
+}
