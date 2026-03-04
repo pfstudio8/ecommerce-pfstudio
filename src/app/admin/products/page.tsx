@@ -83,16 +83,16 @@ export default function AdminProducts() {
                             <tr className="bg-gray-50/50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-800">
                                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
                                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Precio</th>
-                                <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoría</th>
-                                <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
-                                <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+                                <th className="hidden md:table-cell py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Categoría</th>
+                                <th className="hidden sm:table-cell py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
+                                <th className="hidden lg:table-cell py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
                                 <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/50">
                             {products.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-16 text-center text-gray-500">
+                                    <td colSpan={6} className="py-16 text-center text-gray-500">
                                         <Package className="w-12 h-12 mx-auto text-gray-300 mb-3" />
                                         <p>No hay productos creados aún.</p>
                                         <p className="text-xs text-gray-400 mt-1">Si la tabla 'products' de Supabase no existe, este listado estará vacío.</p>
@@ -103,7 +103,7 @@ export default function AdminProducts() {
                                     <tr key={product.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/50 transition-colors">
                                         <td className="py-4 px-6">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-zinc-800 overflow-hidden relative shrink-0">
+                                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gray-100 dark:bg-zinc-800 overflow-hidden relative shrink-0">
                                                     {product.images && product.images.length > 0 ? (
                                                         <img src={product.images[0]} alt={product.name} className="object-cover w-full h-full" />
                                                     ) : (
@@ -112,12 +112,12 @@ export default function AdminProducts() {
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="font-semibold text-sm">{product.name}</span>
+                                                <span className="font-semibold text-sm line-clamp-2">{product.name}</span>
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-sm font-medium">${product.price.toLocaleString()}</td>
-                                        <td className="py-4 px-6 text-sm text-gray-500 uppercase tracking-wide text-xs">{product.category}</td>
-                                        <td className="py-4 px-6 text-sm">
+                                        <td className="hidden md:table-cell py-4 px-6 text-sm text-gray-500 uppercase tracking-wide text-xs">{product.category}</td>
+                                        <td className="hidden sm:table-cell py-4 px-6 text-sm">
                                             <span className={cn(
                                                 "font-bold",
                                                 product.stock > 10 ? "text-emerald-500" : product.stock > 0 ? "text-amber-500" : "text-red-500"
@@ -125,7 +125,7 @@ export default function AdminProducts() {
                                                 {product.stock ?? 0}
                                             </span>
                                         </td>
-                                        <td className="py-4 px-6">
+                                        <td className="hidden lg:table-cell py-4 px-6">
                                             {product.isNew ? (
                                                 <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 flex-shrink-0">
                                                     NUEVO

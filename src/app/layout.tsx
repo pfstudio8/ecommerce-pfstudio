@@ -46,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="scroll-smooth">
+    <html lang="es" className="dark scroll-smooth bg-[var(--background)] text-[var(--foreground)]">
       <body className={`${montserrat.variable} antialiased min-h-screen bg-[var(--background)] text-[var(--foreground)]`}>
         <Toaster position="top-center" />
         <AuthListener />
