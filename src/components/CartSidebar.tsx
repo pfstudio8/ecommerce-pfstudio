@@ -29,7 +29,7 @@ export default function CartSidebar() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ items }),
+                body: JSON.stringify({ items, user_email: user.email }),
             });
 
             const data = await res.json();
@@ -184,32 +184,7 @@ export default function CartSidebar() {
                 {/* Footer / Checkout */}
                 {items.length > 0 && (
                     <div className="p-6 border-t border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col gap-4">
-                        {/* Free Shipping Progress */}
-                        {(() => {
-                            const FREE_SHIPPING_THRESHOLD = 100000;
-                            const total = getTotalPrice();
-                            const progress = Math.min((total / FREE_SHIPPING_THRESHOLD) * 100, 100);
-                            const amountRemaining = FREE_SHIPPING_THRESHOLD - total;
 
-                            return (
-                                <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-xl border border-gray-100 dark:border-zinc-800 flex flex-col gap-2">
-                                    <div className="flex justify-between items-end">
-                                        <span className="text-sm font-semibold max-w-[80%] text-[var(--foreground)]">
-                                            {total >= FREE_SHIPPING_THRESHOLD
-                                                ? "¡Felicidades! Tienes envío gratis."
-                                                : `Agrega $${amountRemaining.toLocaleString("es-AR")} para envío gratis.`}
-                                        </span>
-                                        <span className="text-xs font-bold text-[var(--color-main)]">{Math.round(progress)}%</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 dark:bg-zinc-700 h-2 rounded-full overflow-hidden">
-                                        <div
-                                            className="bg-[var(--color-main)] h-full transition-all duration-500 ease-out"
-                                            style={{ width: `${progress}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            );
-                        })()}
 
                         <div className="flex justify-between items-center text-lg font-bold">
                             <span>Total</span>

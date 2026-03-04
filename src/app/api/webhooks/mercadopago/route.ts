@@ -29,67 +29,57 @@ export async function POST(request: Request) {
             }
 
             // 2. Extraer los items vendidos para descontar stock
-            // Extraer items del webhook de MP es complejo a través de additional_info
-            // Extraeremos directamente desde la metadata que enviamos al crear la preferencia
-            const itemsToProcess = paymentInfo.metadata?.items || [];
+            const itemsToProcess = paymentInfo.metadata?.cart_items || [];
+            const userEmail = paymentInfo.metadata?.user_email || paymentInfo.payer?.email || 'invitado@mercadopago.com';
 
-            // Si no hay items formados en metadata, tratamos de sacarlos de description o fallback a nothing
-            if (itemsToProcess.length === 0 && paymentInfo.additional_info?.items) {
-                paymentInfo.additional_info.items.forEach((i: any) => {
-                    itemsToProcess.push({
-                        id: i.id, // ID del producto de Supabase
-                        quantity: Number(i.quantity) || 1
-                    });
-                });
-            }
-
-            // 3. Registrar la orden en la base de datos (Requiere tabla 'orders')
-            // Ajustado al esquema visual provisto por el usuario:
-            // user_id, user_email, status, total, items
-            const payerEmail = paymentInfo.payer?.email || 'pago_invitado@mercadopago.com';
-
+            // 3. Registrar la orden en la base de datos
             const { error: orderError } = await supabase
                 .from('orders')
                 .insert([
                     {
-                        // IMPORTANTE: Tu base de datos tiene `user_id` como NOT NULL en el esquema de la foto.
-                        // Para compras de invitados (sin login), esto va a dar error.
-                        // Debes ir a Supabase y hacer que `user_id` sea opcional (Nullable)
-                        user_email: payerEmail,
-                        status: status === 'approved' ? 'Aprobado' : 'Pendiente',
-                        total: paymentInfo.transaction_amount,
-                        items: itemsToProcess
+                        mp_payment_id: String(paymentInfo.id),
+                        mp_merchant_order_id: paymentInfo.order?.id ? String(paymentInfo.order.id) : null,
+                        user_email: userEmail,
+                        status: status, // 'approved', 'pending', 'rejected'
+                        total_amount: paymentInfo.transaction_amount,
+                        items: itemsToProcess,
+                        payer_info: paymentInfo.payer || {}
                     }
                 ]);
 
             if (orderError) {
-                console.error("Error guardando orden:", orderError);
-            } else if (status === 'approved' && payerEmail) {
-                // Enviar el correo solo si se guardó bien y se aprobó
-                await sendPurchaseSuccessEmail(payerEmail, String(paymentInfo.id), paymentInfo.transaction_amount || 0);
+                // Posiblemente el pago ya se registró (Unique Constraint sobre mp_payment_id)
+                console.error("Error guardando orden o orden duplicada:", orderError);
+                return NextResponse.json({ received: true, note: "Order insertion failed or duplicate" });
             }
 
-            // 4. Descontar Stock si la inserción fue exitosa (Incluso si da error de clave única)
-            for (const item of itemsToProcess) {
-                const productId = item.id;
-                const qtyBought = item.quantity;
+            if (status === 'approved') {
+                // Enviar el correo electrónico
+                if (userEmail && userEmail !== 'invitado@mercadopago.com') {
+                    await sendPurchaseSuccessEmail(userEmail, String(paymentInfo.id), paymentInfo.transaction_amount || 0);
+                }
 
-                if (!productId) continue;
+                // 4. Descontar Stock
+                for (const item of itemsToProcess) {
+                    const productId = item.id;
+                    const qtyBought = item.quantity;
+                    const size = item.size;
 
-                // Restar stock usando una función básica, lee -> resta -> escribe
-                // Ideally this would be an RPC call in Supabase to be atomic
-                const { data: prodData } = await supabase
-                    .from('products')
-                    .select('stock')
-                    .eq('id', productId)
-                    .single();
+                    if (!productId) continue;
 
-                if (prodData && prodData.stock >= qtyBought) {
-                    const newStock = prodData.stock - qtyBought;
-                    await supabase
+                    const { data: prodData } = await supabase
                         .from('products')
-                        .update({ stock: newStock })
-                        .eq('id', productId);
+                        .select('stock, name')
+                        .eq('id', productId)
+                        .single();
+
+                    if (prodData && prodData.stock >= qtyBought) {
+                        const newStock = prodData.stock - qtyBought;
+                        await supabase
+                            .from('products')
+                            .update({ stock: newStock })
+                            .eq('id', productId);
+                    }
                 }
             }
         }

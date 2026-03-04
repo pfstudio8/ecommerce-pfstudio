@@ -41,6 +41,7 @@ export async function POST(request: Request) {
         const bodyPayload: any = {
             items: mpItems,
             metadata: {
+                user_email: body.user_email || null,
                 cart_items: items.map((item: any) => ({
                     id: item.product.id,
                     quantity: item.quantity,
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
                 }))
             },
             back_urls: {
-                success: `${origin}/?status=success`,
+                success: `${origin}/success`,
                 failure: `${origin}/?status=failure`,
                 pending: `${origin}/?status=pending`
             }
