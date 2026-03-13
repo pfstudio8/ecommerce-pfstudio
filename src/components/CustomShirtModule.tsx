@@ -16,11 +16,11 @@ export default function CustomShirtModule() {
     const sizes = ["S", "M", "L", "XL"];
 
     const shirtTypes = [
-        { id: "oversize", label: "Oversize", price: 45000 },
-        { id: "boxy", label: "Boxy Fit", price: 42000 },
-        { id: "clasica-mujer", label: "Clásica Mujer", price: 35000 },
-        { id: "clasica-hombre", label: "Clásica Hombre", price: 35000 },
-        { id: "clasica-nino", label: "Clásica Niño", price: 25000 },
+        { id: "oversize", label: "Oversize", price: 20000 },
+        { id: "boxy", label: "Boxy Fit", price: 17000 },
+        { id: "clasica-mujer", label: "Clásica Mujer", price: 15000 },
+        { id: "clasica-hombre", label: "Clásica Hombre", price: 15000 },
+        { id: "clasica-nino", label: "Clásica Niño", price: 10000 },
     ];
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +48,7 @@ export default function CustomShirtModule() {
         }
 
         const selectedTypeData = shirtTypes.find(t => t.id === selectedShirtType);
-        const price = selectedTypeData ? selectedTypeData.price : 45000;
+        const price = selectedTypeData ? selectedTypeData.price : 20000;
         const productName = `Remera Personalizada - ${selectedTypeData?.label || 'Estándar'}`;
 
         // Add to global cart as a custom product
@@ -202,6 +202,7 @@ export default function CustomShirtModule() {
                                     <li>Algodón Premium 24/1 Peinado.</li>
                                     <li>Estampado DTF de altísima duración.</li>
                                     <li>Demora de confección: 48-72hs hábiles.</li>
+                                    <li>RECOMENDACION: Lavar pasadas las 48hs de recibido el producto.</li>
                                 </ul>
                             </div>
 

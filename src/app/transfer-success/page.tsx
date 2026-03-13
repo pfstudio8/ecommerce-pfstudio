@@ -30,14 +30,14 @@ function TransferSuccessContent() {
 
     // Fallback bank details if not stored yet
     const bankDetails = {
-        bankName: storeInfo?.bankName || "Banco Galicia",
-        accountHolder: storeInfo?.accountHolder || "PF Studio SA",
-        cbu: storeInfo?.cbu || "1234567890123456789012",
+        bankName: storeInfo?.bankName || "Naranja X",
+        accountHolder: storeInfo?.accountHolder || "Paula Alvarenga/",
+        cbu: storeInfo?.cbu || "4530000800010655590139",
         alias: storeInfo?.alias || "PFSTUDIO.VENTAS",
-        cuit: storeInfo?.cuit || "30-12345678-9"
+        cuit: storeInfo?.cuit || "27-44685115-8"
     };
 
-    const whatsappNumber = storeInfo?.whatsapp || "5491100000000";
+    const whatsappNumber = storeInfo?.whatsapp || "543704245651";
 
     useEffect(() => {
         // Clear the cart when they land on the success page
