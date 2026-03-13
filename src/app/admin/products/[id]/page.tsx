@@ -23,8 +23,15 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         name: "",
         price: "",
         category: "Clásicas",
+        department: "Hombres",
         isNew: false,
-        stock: "0",
+    });
+
+    const [stockSizes, setStockSizes] = useState<Record<string, number>>({
+        S: 0,
+        M: 0,
+        L: 0,
+        XL: 0
     });
 
     useEffect(() => {
@@ -45,11 +52,30 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                     name: data.name,
                     price: data.price.toString(),
                     category: data.category,
+                    department: data.department || "Hombres",
                     isNew: data.isNew,
-                    stock: (data.stock ?? 0).toString(),
                 });
                 if (data.images && data.images.length > 0) {
                     setExistingImages(data.images);
+                }
+
+                // Fetch sizes if any
+                const { data: stockData } = await supabase
+                    .from('product_stock')
+                    .select('*')
+                    .eq('product_id', productId);
+
+                if (stockData && stockData.length > 0) {
+                    const loadedStock: Record<string, number> = { S: 0, M: 0, L: 0, XL: 0 };
+                    stockData.forEach((s: any) => {
+                        if (['S', 'M', 'L', 'XL'].includes(s.size)) {
+                            loadedStock[s.size] = s.stock_quantity;
+                        }
+                    });
+                    setStockSizes(loadedStock);
+                } else {
+                    // Si no tiene stock migrado, asume el stock total de la prenda en M (o dejalo vacio)
+                    setStockSizes(prev => ({ ...prev, M: data.stock || 0 }));
                 }
             }
         } catch (error) {
@@ -110,20 +136,40 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 }
             }
 
-            // 2. Update record
+            // Calculate legacy total
+            const totalStock = Object.values(stockSizes).reduce((acc, curr) => acc + curr, 0);
+
+            // 2. Update parent record
             const { error: updateError } = await supabase
                 .from('products')
                 .update({
                     name: formData.name,
                     price: parseFloat(formData.price),
                     category: formData.category,
+                    department: formData.department,
                     isNew: formData.isNew,
-                    stock: parseInt(formData.stock, 10),
+                    stock: totalStock,
                     images: finalImageUrls.length > 0 ? finalImageUrls : undefined,
                 })
                 .eq('id', productId);
 
             if (updateError) throw updateError;
+
+            // 3. Upsert specific sizes to product_stock
+            const stockEntries = Object.entries(stockSizes).map(([size, quantity]) => ({
+                product_id: productId,
+                size: size,
+                stock_quantity: quantity,
+                sku: `PF-${productId.substring(0, 5)}-${size}`
+            }));
+
+            const { error: stockError } = await supabase
+                .from('product_stock')
+                .upsert(stockEntries, { onConflict: 'product_id, size' });
+
+            if (stockError) {
+                console.error("Error upserting product_stock:", stockError);
+            }
 
             router.push("/admin/products");
 
@@ -170,7 +216,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Precio ($)</label>
                                 <input
@@ -185,20 +231,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Stock</label>
-                                <input
-                                    type="number"
-                                    required
-                                    min="0"
-                                    step="1"
-                                    value={formData.stock}
-                                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:border-[var(--color-main)] transition-all"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Categoría</label>
+                                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Corte</label>
                                 <select
                                     value={formData.category}
                                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -209,17 +242,50 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                                     <option value="Oversize">Oversize</option>
                                 </select>
                             </div>
+
+                            <div className="space-y-2 sm:col-span-2">
+                                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Departamento</label>
+                                <select
+                                    value={formData.department}
+                                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                    className="w-full px-4 py-3 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:border-[var(--color-main)] transition-all"
+                                >
+                                    <option value="Hombres">Hombres</option>
+                                    <option value="Mujeres">Mujeres</option>
+                                    <option value="Niños">Niños</option>
+                                </select>
+                            </div>
                         </div>
 
-                        <label className="flex items-center gap-3 p-4 border border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-950/50 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">
-                            <input
-                                type="checkbox"
-                                checked={formData.isNew}
-                                onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
-                                className="w-5 h-5 accent-[var(--color-main)] rounded border-gray-300"
-                            />
-                            <span className="font-semibold text-sm">Marcar como "NUEVO" en la tienda</span>
-                        </label>
+                        <div className="space-y-4 border border-gray-100 dark:border-zinc-800 p-5 rounded-xl bg-gray-50/50 dark:bg-zinc-950/50">
+                            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-zinc-800 pb-3">Stock por Tallas</h3>
+                            <div className="grid grid-cols-4 gap-4">
+                                {['S', 'M', 'L', 'XL'].map((size) => (
+                                    <div key={size} className="flex flex-col gap-2 relative">
+                                        <span className="text-xs font-bold text-gray-500 w-full text-center">{size}</span>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={stockSizes[size]}
+                                            onChange={(e) => setStockSizes({ ...stockSizes, [size]: parseInt(e.target.value) || 0 })}
+                                            className="w-full text-center px-2 py-3 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg focus:outline-none focus:ring-2 focus:border-[var(--color-main)] transition-all font-bold text-sm"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="pt-4">
+                            <label className="flex items-center gap-3 p-4 border border-gray-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-950/50 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-900 transition-colors">
+                                <input
+                                    type="checkbox"
+                                    checked={formData.isNew}
+                                    onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
+                                    className="w-5 h-5 accent-[var(--color-main)] rounded border-gray-300"
+                                />
+                                <span className="font-semibold text-sm">Marcar como "NUEVO" en la tienda</span>
+                            </label>
+                        </div>
                     </div>
 
                     {/* Image Upload */}

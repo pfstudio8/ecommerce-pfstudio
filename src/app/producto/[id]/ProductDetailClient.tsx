@@ -7,6 +7,7 @@ import { useCartStore } from "@/store/cart";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
+import ReviewsSection from "@/components/ReviewsSection";
 
 interface Product {
     id: string;
@@ -212,6 +213,9 @@ export default function ProductDetailClient({
                         </motion.div>
                     </div>
                 </div>
+
+                {/* Reviews Section */}
+                <ReviewsSection productId={product.id} />
 
                 {/* Related Products */}
                 {relatedProducts && relatedProducts.length > 0 && (

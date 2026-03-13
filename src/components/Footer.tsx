@@ -1,11 +1,33 @@
 "use client";
 
 import { Instagram, Facebook } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Footer() {
     return (
-        <footer className="bg-[var(--background)] text-[var(--foreground)] py-16 border-t border-zinc-800">
-            <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12">
+        <footer className="bg-[var(--background)] text-[var(--foreground)] border-t border-zinc-800 flex flex-col items-center overflow-hidden">
+            {/* Infinite Marquee Banner */}
+            <div className="w-full bg-[var(--foreground)] text-[var(--background)] py-4 overflow-hidden flex relative z-10 border-b border-black/10 dark:border-white/10">
+                <motion.div 
+                    initial={{ x: "0%" }}
+                    animate={{ x: "-50%" }}
+                    transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+                    className="flex whitespace-nowrap items-center font-bold uppercase tracking-widest text-sm"
+                >
+                    {[...Array(20)].map((_, i) => (
+                        <div key={i} className="flex items-center">
+                            <span className="mx-6">ENVÍOS A TODO EL PAÍS</span>
+                            <span className="mx-6 text-[var(--color-main)]">✦</span>
+                            <span className="mx-6">CALIDAD PREMIUM</span>
+                            <span className="mx-6 text-[var(--color-main)]">✦</span>
+                            <span className="mx-6">DISEÑOS EXCLUSIVOS</span>
+                            <span className="mx-6 text-[var(--color-main)]">✦</span>
+                        </div>
+                    ))}
+                </motion.div>
+            </div>
+
+            <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 py-16 w-full relative z-20 bg-[var(--background)]">
 
                 {/* Brand */}
                 <div className="col-span-1 md:col-span-2">

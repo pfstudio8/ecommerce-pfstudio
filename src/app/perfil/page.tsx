@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth";
 import { supabase } from "@/lib/supabase";
-import { Package, User as UserIcon, LogOut, Loader2, ArrowRight } from "lucide-react";
+import { Package, User as UserIcon, LogOut, Loader2, ArrowRight, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { sileo } from "sileo";
@@ -14,6 +14,8 @@ interface Order {
     status: string;
     total: number;
     items: any[];
+    tracking_number?: string;
+    carrier?: string;
 }
 
 export default function ProfilePage() {
@@ -190,6 +192,26 @@ export default function ProfilePage() {
                                                     </div>
                                                 ))}
                                             </div>
+
+                                            {/* Tracking Details */}
+                                            {(order.tracking_number || order.carrier) && (
+                                                <div className="mt-5 pt-4 border-t border-gray-100 dark:border-zinc-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-xl">
+                                                    <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-300">
+                                                        <Truck className="w-5 h-5 flex-shrink-0" />
+                                                        <span>
+                                                            Envío a cargo de <strong className="font-bold">{order.carrier || 'nuestro servicio de correo'}</strong>
+                                                        </span>
+                                                    </div>
+                                                    {order.tracking_number && (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm font-medium text-gray-500">Guía:</span>
+                                                            <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 px-3 py-1.5 rounded-lg shadow-sm">
+                                                                <span className="font-mono text-sm font-bold tracking-wider text-[var(--foreground)]">{order.tracking_number}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

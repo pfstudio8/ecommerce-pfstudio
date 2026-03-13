@@ -32,41 +32,81 @@ export async function POST(request: Request) {
             const itemsToProcess = paymentInfo.metadata?.cart_items || [];
             const userEmail = paymentInfo.metadata?.user_email || paymentInfo.payer?.email || 'invitado@mercadopago.com';
 
-            // 3. Registrar la orden en la base de datos
-            const { error: orderError } = await supabase
+            // 3. Registrar la orden matriz en la base de datos
+            const { data: orderResult, error: orderError } = await supabase
                 .from('orders')
                 .insert([
                     {
-                        mp_payment_id: String(paymentInfo.id),
-                        mp_merchant_order_id: paymentInfo.order?.id ? String(paymentInfo.order.id) : null,
-                        user_email: userEmail,
+                        customer_email: userEmail,
                         status: status, // 'approved', 'pending', 'rejected'
                         total_amount: paymentInfo.transaction_amount,
-                        items: itemsToProcess,
-                        payer_info: paymentInfo.payer || {}
+                        payment_method: 'mercadopago',
+                        payment_id: String(paymentInfo.id),
+                        shipping_address: paymentInfo.payer?.address ? JSON.stringify(paymentInfo.payer.address) : null
                     }
-                ]);
+                ])
+                .select('id')
+                .single();
 
-            if (orderError) {
-                // Posiblemente el pago ya se registró (Unique Constraint sobre mp_payment_id)
+            if (orderError || !orderResult) {
                 console.error("Error guardando orden o orden duplicada:", orderError);
                 return NextResponse.json({ received: true, note: "Order insertion failed or duplicate" });
+            }
+
+            const newOrderId = orderResult.id;
+
+            // 3.1 Registrar los artículos vendidos en order_items
+            if (itemsToProcess.length > 0) {
+                const orderItemsToInsert = itemsToProcess.map((item: any) => ({
+                    order_id: newOrderId,
+                    product_id: item.id || null,
+                    size: item.size || 'N/A',
+                    quantity: item.quantity || 1,
+                    price_at_purchase: item.unit_price || 0
+                }));
+                
+                const { error: itemsError } = await supabase
+                    .from('order_items')
+                    .insert(orderItemsToInsert);
+                    
+                if (itemsError) {
+                    console.error("Error insertando order_items:", itemsError);
+                }
             }
 
             if (status === 'approved') {
                 // Enviar el correo electrónico
                 if (userEmail && userEmail !== 'invitado@mercadopago.com') {
-                    await sendPurchaseSuccessEmail(userEmail, String(paymentInfo.id), paymentInfo.transaction_amount || 0);
+                    await sendPurchaseSuccessEmail(userEmail, String(paymentInfo.id), paymentInfo.transaction_amount || 0, itemsToProcess);
                 }
 
                 // 4. Descontar Stock
                 for (const item of itemsToProcess) {
                     const productId = item.id;
-                    const qtyBought = item.quantity;
+                    const qtyBought = Number(item.quantity) || 1;
                     const size = item.size;
 
                     if (!productId) continue;
 
+                    // Deduct from size-specific stock chart (product_stock)
+                    if (size) {
+                        const { data: sizeStockData } = await supabase
+                            .from('product_stock')
+                            .select('stock_quantity')
+                            .eq('product_id', productId)
+                            .eq('size', size)
+                            .single();
+                        
+                        if (sizeStockData && sizeStockData.stock_quantity >= qtyBought) {
+                            await supabase
+                                .from('product_stock')
+                                .update({ stock_quantity: sizeStockData.stock_quantity - qtyBought })
+                                .eq('product_id', productId)
+                                .eq('size', size);
+                        }
+                    }
+
+                    // Deduct from legacy parent products.stock
                     const { data: prodData } = await supabase
                         .from('products')
                         .select('stock, name')

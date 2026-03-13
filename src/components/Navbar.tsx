@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ShoppingBag, Menu, X, LogOut, User, LayoutDashboard } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, LogOut, User, LayoutDashboard, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cart";
 import { useRouter } from "next/navigation";
 import CartSidebar from "./CartSidebar";
 import { useAuthStore } from "@/store/auth";
+import { useFavoritesStore } from "@/store/favorites";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { sileo } from "sileo";
@@ -43,6 +44,14 @@ export default function Navbar() {
     const [isMounted, setIsMounted] = useState(false);
     const { items, isCartOpen, setCartOpen } = useCartStore();
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+    
+    const fetchFavorites = useFavoritesStore(state => state.fetchFavorites);
+
+    useEffect(() => {
+        if (isInitialized) {
+            fetchFavorites();
+        }
+    }, [isInitialized, user, fetchFavorites]);
 
     useEffect(() => {
         setIsMounted(true);
@@ -85,13 +94,13 @@ export default function Navbar() {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden lg:flex gap-8">
-                        {["Boxy Fit", "Clásicas", "Oversize", "Todas"].map((cat) => (
+                        {["Hombres", "Mujeres", "Niños", "Todas"].map((dept) => (
                             <Link
-                                key={cat}
-                                href={`/?cat=${cat}#productos`}
+                                key={dept}
+                                href={`/?dept=${dept}#productos`}
                                 className="text-[var(--foreground)] font-medium text-sm hover:text-[var(--color-main)] transition-colors uppercase tracking-wider relative group"
                             >
-                                {cat}
+                                {dept}
                                 <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[var(--color-main)] transition-all group-hover:w-full"></span>
                             </Link>
                         ))}
@@ -150,6 +159,13 @@ export default function Navbar() {
                                                 Mi Perfil
                                             </Link>
                                         )}
+                                        <Link
+                                            href="/favoritos"
+                                            className="w-full text-left px-4 py-2 mt-1 text-sm text-[var(--foreground)] hover:bg-gray-50 dark:hover:bg-zinc-900 rounded-lg transition-colors flex items-center gap-2 font-medium"
+                                        >
+                                            <Heart className="w-4 h-4 text-red-500" />
+                                            Mis Favoritos
+                                        </Link>
                                         <button
                                             onClick={handleLogout}
                                             className="w-full text-left px-4 py-2 mt-1 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors flex items-center gap-2 font-medium"
@@ -170,17 +186,34 @@ export default function Navbar() {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
                             </button>
                         )}
-                        <button
+                        <motion.button
+                            whileTap={{ scale: 0.9 }}
                             onClick={() => setCartOpen(true)}
-                            className="text-[var(--foreground)] hover:text-[var(--color-main)] transition-colors relative"
+                            className="text-[var(--foreground)] hover:text-[var(--color-main)] transition-colors relative flex items-center justify-center"
                         >
-                            <ShoppingBag className="w-5 h-5" />
-                            {isMounted && totalItems > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-[var(--color-main)] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                                    {totalItems}
-                                </span>
-                            )}
-                        </button>
+                            <motion.div
+                                key={`cart-icon-${totalItems}`}
+                                initial={isMounted && totalItems > 0 ? { scale: 1.2, rotate: 10 } : false}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                            >
+                                <ShoppingBag className="w-5 h-5" />
+                            </motion.div>
+                            
+                            <AnimatePresence>
+                                {isMounted && totalItems > 0 && (
+                                    <motion.span 
+                                        key={`badge-${totalItems}`}
+                                        initial={{ scale: 0, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0, opacity: 0 }}
+                                        className="absolute -top-2 -right-2 bg-[var(--color-main)] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-md shadow-[var(--color-main)]/30"
+                                    >
+                                        {totalItems}
+                                    </motion.span>
+                                )}
+                            </AnimatePresence>
+                        </motion.button>
                     </div>
                 </div>
             </header>
@@ -248,6 +281,14 @@ export default function Navbar() {
                                     Mi Perfil
                                 </Link>
                             )}
+                            <Link
+                                href="/favoritos"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="w-full py-3 border border-gray-200 dark:border-gray-800 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors rounded uppercase text-sm font-bold tracking-wider flex items-center justify-center gap-2"
+                            >
+                                <Heart className="w-4 h-4 fill-current" />
+                                Mis Favoritos
+                            </Link>
                             <button
                                 onClick={handleLogout}
                                 className="w-full py-3 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-colors rounded uppercase text-sm font-bold tracking-wider flex items-center justify-center gap-2"

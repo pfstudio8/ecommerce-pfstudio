@@ -46,11 +46,22 @@ export default function AuthModal() {
                     }
                 });
                 if (error) throw error;
+
+                // Enviar email de bienvenida
+                try {
+                    await fetch('/api/send-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: 'welcome', email })
+                    });
+                } catch (err) {
+                    console.error("Failed to send welcome email", err);
+                }
+
                 sileo.success({ title: "Cuenta creada exitosamente." });
                 setModalOpen(false);
             }
         } catch (error: any) {
-            console.error("Auth error:", error);
             let errorMsg = error.message || "Error al autenticar";
 
             // Traducir errores comunes de Supabase

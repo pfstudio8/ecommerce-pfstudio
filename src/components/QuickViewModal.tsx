@@ -122,18 +122,43 @@ export default function QuickViewModal({ product, isOpen, onClose, onAddToCart, 
                                 <span className="text-xs text-gray-500 underline cursor-pointer">Guía de tallas</span>
                             </div>
                             <div className="flex gap-3">
-                                {sizes.map((size) => (
-                                    <button
-                                        key={size}
-                                        onClick={() => setSelectedSize(size)}
-                                        className={`flex-1 py-3 rounded border text-sm font-bold transition-all ${selectedSize === size
-                                            ? "border-[var(--color-main)] bg-[var(--color-main)] text-white shadow-md transform -translate-y-0.5"
-                                            : "border-gray-300 dark:border-zinc-700 text-gray-800 dark:text-gray-200 hover:border-[var(--color-main)]"
-                                            }`}
-                                    >
-                                        {size}
-                                    </button>
-                                ))}
+                                {sizes.map((size) => {
+                                    let sizeStock = 0;
+                                    if (product.product_stock && product.product_stock.length > 0) {
+                                        const found = product.product_stock.find(s => s.size === size);
+                                        sizeStock = found ? found.stock_quantity : 0;
+                                    } else {
+                                        sizeStock = product.stock ?? 1;
+                                    }
+                                    
+                                    const isOutOfStock = sizeStock <= 0;
+
+                                    return (
+                                        <button
+                                            key={size}
+                                            type="button"
+                                            disabled={isOutOfStock}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                if (!isOutOfStock) setSelectedSize(size);
+                                            }}
+                                            title={isOutOfStock ? "Agotado" : "Disponible"}
+                                            className={`flex-1 py-3 rounded border text-sm font-bold transition-all relative overflow-hidden ${selectedSize === size
+                                                ? "border-[var(--color-main)] bg-[var(--color-main)] text-white shadow-md transform -translate-y-0.5"
+                                                : isOutOfStock
+                                                    ? "border-gray-200 dark:border-zinc-800 text-gray-400 dark:text-gray-600 bg-transparent opacity-60 cursor-not-allowed"
+                                                    : "border-gray-300 dark:border-zinc-700 text-gray-800 dark:text-gray-200 hover:border-[var(--color-main)]"
+                                                }`}
+                                        >
+                                            {size}
+                                            {isOutOfStock && (
+                                                <svg className="absolute inset-0 w-full h-full text-gray-300 dark:text-gray-600/50 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                                    <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="4" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 

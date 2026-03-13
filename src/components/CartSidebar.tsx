@@ -13,6 +13,7 @@ export default function CartSidebar() {
     const { user, setModalOpen } = useAuthStore();
     const [removingId, setRemovingId] = useState<string | null>(null);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'mp' | 'transfer'>('mp');
 
     const handleCheckout = async () => {
         if (!user) {
@@ -24,27 +25,42 @@ export default function CartSidebar() {
 
         setIsCheckingOut(true);
         try {
-            const res = await fetch('/api/checkout', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ items, user_email: user.email }),
-            });
+            if (paymentMethod === 'transfer') {
+                const res = await fetch('/api/checkout/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items, user_email: user.email }),
+                });
 
-            const data = await res.json();
-
-            if (data.init_point) {
-                // Redirect user to MercadoPago
-                window.location.href = data.init_point;
+                const data = await res.json();
+                if (data.success && data.order_id) {
+                    window.location.href = `/transfer-success?orderId=${data.order_id}`;
+                } else {
+                    console.error("Transfer checkout error:", data);
+                    sileo.error({ title: "Hubo un error al generar tu pedido." });
+                    setIsCheckingOut(false);
+                }
             } else {
-                console.error("Checkout validation error:", data);
-                alert("Hubo un error al generar el pago. Intenta de nuevo.");
-                setIsCheckingOut(false);
+                const res = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items, user_email: user.email }),
+                });
+
+                const data = await res.json();
+
+                if (data.init_point) {
+                    // Redirect user to MercadoPago
+                    window.location.href = data.init_point;
+                } else {
+                    console.error("Checkout validation error:", data);
+                    sileo.error({ title: "Hubo un error al generar el pago. Intenta de nuevo." });
+                    setIsCheckingOut(false);
+                }
             }
         } catch (error) {
             console.error("Checkout connection error:", error);
-            alert("No se pudo conectar con MercadoPago.");
+            sileo.error({ title: "Ocurrió un error inesperado al procesar el pago." });
             setIsCheckingOut(false);
         }
     };
@@ -56,7 +72,7 @@ export default function CartSidebar() {
         setTimeout(() => {
             removeItem(productId, size);
             setRemovingId(null);
-        }, 300);
+        }, 150);
     };
 
     return (
@@ -192,6 +208,42 @@ export default function CartSidebar() {
                                 ${getTotalPrice().toLocaleString("es-AR")}
                             </span>
                         </div>
+
+                        {/* Payment Method Selector */}
+                        <div className="flex flex-col gap-2 mt-2">
+                            <p className="text-sm font-semibold text-gray-500 uppercase tracking-widest text-center mb-1">Método de Pago</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => setPaymentMethod('mp')}
+                                    className={cn(
+                                        "py-2 px-3 border rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1",
+                                        paymentMethod === 'mp'
+                                            ? "border-[#009EE3] bg-[#009EE3]/10 text-[#009EE3]"
+                                            : "border-gray-200 dark:border-zinc-700 text-gray-500 hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                    )}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM9 15.5V11L13 13.5V17L9 15.5ZM17 11V14.5L13 12V8.5L17 11Z" fill="currentColor" />
+                                    </svg>
+                                    Mercado Pago
+                                </button>
+                                <button
+                                    onClick={() => setPaymentMethod('transfer')}
+                                    className={cn(
+                                        "py-2 px-3 border rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1",
+                                        paymentMethod === 'transfer'
+                                            ? "border-[var(--color-main)] bg-[var(--color-main)]/10 text-[var(--color-main)]"
+                                            : "border-gray-200 dark:border-zinc-700 text-gray-500 hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                    )}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM11.5 17V15H10.5C9.67 15 9 14.33 9 13.5V11.5C9 10.67 9.67 10 10.5 10H12.5V8H9V6H11V5H13V7H14C14.83 7 15.5 7.67 15.5 8.5V10.5C15.5 11.33 14.83 12 14 12H12V14H15.5V16H13V17H11.5Z" fill="currentColor" />
+                                    </svg>
+                                    Transferencia
+                                </button>
+                            </div>
+                        </div>
+
                         <button
                             onClick={handleCheckout}
                             disabled={isCheckingOut}
