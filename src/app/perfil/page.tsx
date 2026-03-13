@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth";
 import { supabase } from "@/lib/supabase";
-import { Package, User as UserIcon, LogOut, Loader2, ArrowRight, Truck } from "lucide-react";
+import { Package, User as UserIcon, LogOut, Loader2, ArrowRight, Truck, XCircle, MessageCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { sileo } from "sileo";
@@ -12,7 +12,7 @@ interface Order {
     id: string;
     created_at: string;
     status: string;
-    total: number;
+    total_amount: number;
     items: any[];
     tracking_number?: string;
     carrier?: string;
@@ -43,14 +43,27 @@ export default function ProfilePage() {
                 const { data, error } = await supabase
                     .from('orders')
                     .select('*')
-                    .eq('user_id', user.id)
+                    .eq('customer_email', user.email)
                     .order('created_at', { ascending: false });
 
                 if (error) {
-                    // It's possible the table doesn't exist yet, log silently
                     console.warn("Could not fetch orders. Table might not exist yet.");
                 } else if (data) {
-                    setOrders(data);
+                    // Fetch order items for each order
+                    const ordersWithItems = await Promise.all(
+                        data.map(async (order: any) => {
+                            const { data: itemsData } = await supabase
+                                .from('order_items')
+                                .select(`
+                                    *,
+                                    product:products(*)
+                                `)
+                                .eq('order_id', order.id);
+                            
+                            return { ...order, items: itemsData || [] };
+                        })
+                    );
+                    setOrders(ordersWithItems);
                 }
             } catch (err) {
                 console.warn(err);
@@ -61,6 +74,28 @@ export default function ProfilePage() {
 
         fetchOrders();
     }, [user, isInitialized, router, setModalOpen]);
+
+    const handleCancelOrder = async (orderId: string) => {
+        if (!confirm("¿Estás seguro de que quieres cancelar este pedido? Esta acción no se puede deshacer.")) return;
+        
+        try {
+            const { error } = await supabase
+                .from('orders')
+                .update({ status: 'Cancelado' })
+                .eq('id', orderId);
+
+            if (error) throw error;
+
+            sileo.success({ title: "Pedido cancelado con éxito" });
+            
+            // Update local state to reflect change instantly
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Cancelado' } : o));
+            
+        } catch (error: any) {
+            console.error("Error cancelling order:", error);
+            sileo.error({ title: "Hubo un error al cancelar el pedido." });
+        }
+    };
 
     const handleLogout = async () => {
         setIsLoggingOut(true);
@@ -161,37 +196,69 @@ export default function ProfilePage() {
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase border
-                                                        ${order.status === 'Pendiente' ? 'bg-yellow-50 text-yellow-600 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50' :
+                                                        ${(order.status === 'Pendiente' || order.status === 'pending') ? 'bg-yellow-50 text-yellow-600 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-900/50' :
                                                             order.status === 'Pagado' ? 'bg-green-50 text-green-600 border-green-200 dark:bg-green-900/20 dark:border-green-900/50' :
+                                                            order.status === 'Cancelado' ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:border-red-900/50' :
                                                                 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-zinc-800 dark:text-gray-400 dark:border-zinc-700'
                                                         }`}
                                                     >
-                                                        {order.status}
+                                                        {order.status === 'pending' ? 'Pendiente' : order.status}
                                                     </span>
                                                     <p className="font-bold text-[var(--color-main)]">
-                                                        ${order.total.toLocaleString('es-AR')}
+                                                        ${(order.total_amount || 0).toLocaleString('es-AR')}
                                                     </p>
                                                 </div>
                                             </div>
 
-                                            <div className="flex flex-wrap gap-4">
-                                                {/* Simplified items preview */}
+                                            <div className="flex flex-col gap-4">
+                                                {/* Details of items in this order */}
                                                 {order.items?.map((item: any, idx: number) => (
-                                                    <div key={idx} className="flex items-center gap-3">
-                                                        <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden">
+                                                    <div key={idx} className="flex items-center gap-4 bg-gray-50 dark:bg-zinc-900/50 p-3 rounded-lg border border-gray-100 dark:border-zinc-800">
+                                                        <div className="w-16 h-20 bg-gray-200 dark:bg-zinc-800 rounded overflow-hidden flex-shrink-0 relative">
                                                             {item.product?.images?.[0] ? (
-                                                                <img src={item.product.images[0]} alt="" className="w-full h-full object-cover" />
+                                                                <img src={item.product.images[0]} alt={item.product.name || ''} className="w-full h-full object-cover" />
                                                             ) : (
-                                                                <div className="w-full h-full bg-gray-200 dark:bg-zinc-800"></div>
+                                                                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                                    <Package className="w-6 h-6" />
+                                                                </div>
                                                             )}
                                                         </div>
-                                                        <div className="text-sm">
-                                                            <p className="font-semibold line-clamp-1">{item.product?.name || 'Producto'}</p>
-                                                            <p className="text-gray-500 text-xs">Talle: {item.size} • Cant: {item.quantity}</p>
+                                                        <div className="flex-1 text-sm">
+                                                            <p className="font-bold text-[var(--foreground)] line-clamp-1 mb-1">{item.product?.name || 'Producto Personalizado'}</p>
+                                                            <div className="flex items-center gap-3 text-gray-500">
+                                                                <span className="bg-white dark:bg-zinc-900 px-2 py-0.5 rounded border border-gray-200 dark:border-zinc-700 text-xs font-medium">Talle: {item.size}</span>
+                                                                <span className="text-xs font-medium">Unidades: {item.quantity}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right whitespace-nowrap hidden sm:block">
+                                                            <p className="font-bold text-[var(--color-main)]">${(item.price_at_purchase * item.quantity).toLocaleString('es-AR')}</p>
                                                         </div>
                                                     </div>
                                                 ))}
                                             </div>
+                                            
+                                            {/* Action Buttons for Pending Orders */}
+                                            {(order.status === 'pending' || order.status === 'Pendiente') && (
+                                                <div className="mt-4 pt-4 border-t border-gray-50 dark:border-zinc-800/50 flex flex-wrap gap-3 justify-end">
+                                                    <button
+                                                        onClick={() => {
+                                                            const msg = encodeURIComponent(`Hola PFSTUDIO! Quiero modificar mi pedido de transferencia #${order.id.split('-')[0]}. Quiero cambiar...`);
+                                                            window.open(`https://wa.me/5493704245651?text=${msg}`, '_blank');
+                                                        }}
+                                                        className="px-4 py-2 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                                                    >
+                                                        <MessageCircle className="w-4 h-4" />
+                                                        Modificar Talle/Modelo via WhatsApp
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleCancelOrder(order.id)}
+                                                        className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 border border-red-200 dark:border-red-900/30 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors flex items-center gap-2"
+                                                    >
+                                                        <XCircle className="w-4 h-4" />
+                                                        Cancelar Pedido
+                                                    </button>
+                                                </div>
+                                            )}
 
                                             {/* Tracking Details */}
                                             {(order.tracking_number || order.carrier) && (

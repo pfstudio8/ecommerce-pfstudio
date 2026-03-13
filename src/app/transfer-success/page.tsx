@@ -31,7 +31,7 @@ function TransferSuccessContent() {
     // Fallback bank details if not stored yet
     const bankDetails = {
         bankName: storeInfo?.bankName || "Naranja X",
-        accountHolder: storeInfo?.accountHolder || "Paula Alvarenga/",
+        accountHolder: storeInfo?.accountHolder || "Paula Alvarenga",
         cbu: storeInfo?.cbu || "4530000800010655590139",
         alias: storeInfo?.alias || "PFSTUDIO.VENTAS",
         cuit: storeInfo?.cuit || "27-44685115-8"
