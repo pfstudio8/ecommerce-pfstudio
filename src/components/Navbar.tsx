@@ -242,23 +242,23 @@ export default function Navbar() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto py-4">
-                    <ul className="flex flex-col">
-                        <li>
-                            <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-3 text-lg hover:bg-white/5 transition-colors">Inicio</Link>
-                        </li>
-                        <li>
-                            <Link href="/#productos" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-3 text-lg hover:bg-white/5 transition-colors">Productos</Link>
-                        </li>
-                        <li>
-                            <Link href="/#nosotros" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-3 text-lg hover:bg-white/5 transition-colors">Quiénes Somos?</Link>
-                        </li>
-                        <li>
-                            <a href="mailto:hola@pfstudio.com" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-3 text-lg hover:bg-white/5 transition-colors">Contacto</a>
-                        </li>
-                    </ul>
+                    <nav className="flex flex-col">
+                        <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-lg hover:bg-black/5 dark: hover:bg-white/5 transition-colors font-medium border-b border-gray-100 dark:border-gray-800">
+                            Inicio
+                        </Link>
+                        <Link href="/#productos" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-medium border-b border-gray-100 dark:border-gray-800">
+                            Productos
+                        </Link>
+                        <Link href="/#nosotros" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-medium border-b border-gray-100 dark:border-gray-800">
+                            Quiénes Somos
+                        </Link>
+                        <a href="mailto:hola@pfstudio.com" onClick={() => setIsMobileMenuOpen(false)} className="block px-6 py-4 text-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-medium border-b border-gray-100 dark:border-gray-800">
+                            Contacto
+                        </a>
+                    </nav>
                 </div>
 
-                <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex flex-col gap-4">
+                <div className="p-6 pb-safe pb-10 border-t border-gray-200 dark:border-gray-800 flex flex-col gap-4">
                     {isInitialized && user ? (
                         <>
                             <p className="text-sm text-gray-500 text-center truncate px-2">{user.email}</p>

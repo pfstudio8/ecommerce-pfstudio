@@ -113,7 +113,11 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
 
             {/* Favorite (Wishlist) Button */}
             <button
-                onClick={handleFavoriteClick}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleFavoriteClick();
+                }}
                 className={`absolute top-4 left-4 z-20 bg-white/90 dark:bg-black/90 p-2 rounded-full shadow-md transition-all duration-300 hover:scale-110 ${
                     isFavorite 
                         ? "text-red-500 opacity-100" 
