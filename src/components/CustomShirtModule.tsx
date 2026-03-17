@@ -31,34 +31,34 @@ export default function CustomShirtModule() {
                 const { data, error } = await supabase
                     .from('products')
                     .select('name, category, price');
-                
+
                 if (error) throw error;
                 if (data) {
                     const updatedTypes = [
-                        { 
-                            id: "oversize", 
-                            label: "Oversize", 
-                            price: data.find(p => p.category === "Oversize")?.price || 20000 
+                        {
+                            id: "oversize",
+                            label: "Oversize",
+                            price: data.find(p => p.category === "Oversize")?.price || 20000
                         },
-                        { 
-                            id: "boxy", 
-                            label: "Boxy Fit", 
-                            price: data.find(p => p.category === "Boxy Fit")?.price || 17000 
+                        {
+                            id: "boxy",
+                            label: "Boxy Fit",
+                            price: data.find(p => p.category === "Boxy Fit")?.price || 17000
                         },
-                        { 
-                            id: "clasica-mujer", 
-                            label: "Clásica Mujer", 
-                            price: data.find(p => p.category === "Clásicas" && p.name.includes("Mujer"))?.price || 15000 
+                        {
+                            id: "clasica-mujer",
+                            label: "Clásica Mujer",
+                            price: data.find(p => p.category === "Clásicas" && p.name.includes("Mujer"))?.price || 15000
                         },
-                        { 
-                            id: "clasica-hombre", 
-                            label: "Clásica Hombre", 
-                            price: data.find(p => p.category === "Clásicas" && p.name.includes("Hombre"))?.price || 15000 
+                        {
+                            id: "clasica-hombre",
+                            label: "Clásica Hombre",
+                            price: data.find(p => p.category === "Clásicas" && p.name.includes("Hombre"))?.price || 15000
                         },
-                        { 
-                            id: "clasica-nino", 
-                            label: "Clásica Niño", 
-                            price: data.find(p => p.category === "Clásicas" && p.name.includes("Niño"))?.price || 10000 
+                        {
+                            id: "clasica-nino",
+                            label: "Clásica Niño",
+                            price: data.find(p => p.category === "Clásicas" && p.name.includes("Niño"))?.price || 10000
                         },
                     ];
                     setShirtTypes(updatedTypes);
@@ -121,8 +121,12 @@ export default function CustomShirtModule() {
     };
 
     return (
-        <section className="py-24 bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-900 overflow-hidden" id="personalizadas">
-            <div className="container mx-auto px-4">
+        <section className="py-24 bg-white dark:bg-zinc-950 border-t border-gray-100 dark:border-zinc-900 relative overflow-hidden" id="personalizadas">
+            {/* Elegant Grid Background overlay */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none z-0"></div>
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white/80 dark:to-zinc-950/80 pointer-events-none z-0"></div>
+
+            <div className="container mx-auto px-4 relative z-10">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -139,26 +143,26 @@ export default function CustomShirtModule() {
                     </p>
                 </motion.div>
 
-                <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-12 items-start">
-
+                <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-12 items-start relative z-10">
                     {/* Image Upload Area */}
                     <motion.div
                         initial={{ opacity: 0, x: -30 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true, margin: "-100px" }}
                         transition={{ duration: 0.6, delay: 0.2 }}
-                        className="flex-1 w-full relative"
+                        className="flex-1 w-full relative z-10"
                     >
                         {!selectedImage ? (
-                            <div
-                                onClick={() => fileInputRef.current?.click()}
-                                className="border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-xl p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[var(--color-main)] hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors aspect-[4/5] bg-gray-50 dark:bg-zinc-900 overflow-hidden"
-                            >
-                                <UploadCloud className="w-16 h-16 text-gray-400 mb-4" />
-                                <h3 className="text-xl font-semibold mb-2 text-[var(--foreground)]">Sube tu Diseño</h3>
-                                <p className="text-sm text-gray-500 max-w-[250px]">
-                                    Haz clic aquí o arrastra tu imagen (PNG, JPG o WebP) de alta calidad.
-                                </p>
+                            <div className="relative group cursor-pointer aspect-[4/5] w-full" onClick={() => fileInputRef.current?.click()}>
+                                {/* Animated Gradient Border */}
+                                <div className="absolute -inset-1 bg-gradient-to-r from-[var(--color-main)] via-purple-500 to-[var(--color-main)] rounded-2xl blur-md opacity-20 group-hover:opacity-60 transition duration-1000 group-hover:duration-200 animate-pulse z-0"></div>
+                                <div className="relative h-full border-2 border-dashed border-gray-300 dark:border-zinc-700 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-sm rounded-xl p-12 flex flex-col items-center justify-center text-center hover:border-transparent transition-all overflow-hidden z-10 shadow-sm group-hover:shadow-xl">
+                                    <UploadCloud className="w-16 h-16 text-gray-400 mb-4 group-hover:text-[var(--color-main)] group-hover:scale-110 transition-all duration-300" />
+                                    <h3 className="text-xl font-semibold mb-2 text-[var(--foreground)] group-hover:text-[var(--color-main)] transition-colors">Sube tu Diseño</h3>
+                                    <p className="text-sm text-gray-500 max-w-[250px]">
+                                        Haz clic aquí o arrastra tu imagen (PNG, JPG o WebP) de alta calidad.
+                                    </p>
+                                </div>
                             </div>
                         ) : (
                             <div className="relative aspect-[4/5] rounded-xl overflow-hidden bg-gray-100 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 shadow-xl group">
@@ -193,7 +197,7 @@ export default function CustomShirtModule() {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true, margin: "-100px" }}
                         transition={{ duration: 0.6, delay: 0.4 }}
-                        className="flex-1 w-full flex flex-col"
+                        className="flex-1 w-full flex flex-col relative z-10"
                     >
                         <div className="bg-gray-50 dark:bg-zinc-900 rounded-xl p-8 border border-gray-100 dark:border-zinc-800 shadow-sm">
                             <h3 className="text-2xl font-bold tracking-tight mb-2 flex items-center gap-2">
@@ -260,7 +264,8 @@ export default function CustomShirtModule() {
                                     <li>Algodón Premium 24/1 Peinado.</li>
                                     <li>Estampado DTF de altísima duración.</li>
                                     <li>Demora de confección: 48-72hs hábiles.</li>
-                                    <li>RECOMENDACION: Lavar pasadas las 48hs de recibido el producto.</li>
+                                    <li>RECOMENDACION: Lavar pasadas las 48hs, a mano con agua fria y sin suavizante. </li>
+
                                 </ul>
                             </div>
 

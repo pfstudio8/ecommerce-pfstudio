@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth";
 import { supabase } from "@/lib/supabase";
-import { Package, User as UserIcon, LogOut, Loader2, ArrowRight, Truck, XCircle, MessageCircle } from "lucide-react";
+import { Package, User as UserIcon, LogOut, Loader2, ArrowRight, Truck, XCircle, MessageCircle, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { sileo } from "sileo";
 
@@ -138,7 +139,14 @@ export default function ProfilePage() {
                                 <p className="text-sm text-gray-500 mt-1">{user?.email}</p>
                             </div>
 
-                            <div className="border-t border-gray-100 dark:border-zinc-800 pt-6">
+                            <div className="border-t border-gray-100 dark:border-zinc-800 pt-6 flex flex-col gap-3">
+                                <Link
+                                    href="/"
+                                    className="w-full py-3 flex items-center justify-center gap-2 bg-[var(--foreground)] text-[var(--background)] hover:bg-[var(--color-main)] hover:text-white rounded-xl transition-all duration-300 font-bold text-sm tracking-wide shadow-md hover:shadow-lg transform hover:-translate-y-1"
+                                >
+                                    <Home className="w-4 h-4" />
+                                    Volver al Inicio
+                                </Link>
                                 <button
                                     onClick={handleLogout}
                                     className="w-full py-3 flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl transition-colors font-medium text-sm"

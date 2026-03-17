@@ -2,67 +2,116 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Users, Mail, Loader2 } from "lucide-react";
+import { Users, Search, Loader2, ArrowUpDown, Shield, User as UserIcon } from "lucide-react";
 
-interface Customer {
+interface CustomerProfile {
     email: string;
-    orderCount: number;
+    totalOrders: number;
     totalSpent: number;
-    lastOrder: string;
+    firstSeen: string;
+    lastSeen: string;
+    isAdmin: boolean;
 }
 
-export default function UsersPage() {
-    const [customers, setCustomers] = useState<Customer[]>([]);
+const ADMIN_EMAILS = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(e => e.trim()) || [];
+
+export default function AdminUsersPage() {
+    const [users, setUsers] = useState<CustomerProfile[]>([]);
+    const [filteredUsers, setFilteredUsers] = useState<CustomerProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [sortField, setSortField] = useState<keyof CustomerProfile>("totalSpent");
+    const [sortAsc, setSortAsc] = useState(false);
 
     useEffect(() => {
-        fetchCustomers();
+        fetchUsers();
     }, []);
 
-    const fetchCustomers = async () => {
+    const fetchUsers = async () => {
+        setIsLoading(true);
         try {
-            // Extrayendo usuarios únicos de los pedidos ya que no usamos auth.users directamente
-            const { data: orders, error } = await supabase
+            // Fetch all orders to aggregate user data
+            const { data, error } = await supabase
                 .from('orders')
-                .select('user_email, total, created_at');
+                .select('customer_email, total_amount, created_at');
 
-            if (!error && orders) {
-                const customerMap = new Map<string, Customer>();
-
-                orders.forEach(order => {
-                    const email = order.user_email;
-                    if (!email) return;
-
-                    const existing = customerMap.get(email);
-                    const orderTotal = Number(order.total || 0);
-
-                    if (existing) {
-                        existing.orderCount += 1;
-                        existing.totalSpent += orderTotal;
-                        if (new Date(order.created_at) > new Date(existing.lastOrder)) {
-                            existing.lastOrder = order.created_at;
-                        }
-                    } else {
-                        customerMap.set(email, {
-                            email,
-                            orderCount: 1,
-                            totalSpent: orderTotal,
-                            lastOrder: order.created_at
-                        });
-                    }
-                });
-
-                setCustomers(Array.from(customerMap.values()).sort((a, b) => b.totalSpent - a.totalSpent));
+            if (error) {
+                console.error("Error fetching orders for users", error);
+                return;
             }
-        } catch (err) {
-            console.error("Error fetching customers", err);
+
+            const userMap = new Map<string, CustomerProfile>();
+
+            data?.forEach(order => {
+                const email = order.customer_email || 'Sin Correo';
+                const current = userMap.get(email);
+                
+                if (!current) {
+                    userMap.set(email, {
+                        email,
+                        totalOrders: 1,
+                        totalSpent: Number(order.total_amount || 0),
+                        firstSeen: order.created_at,
+                        lastSeen: order.created_at,
+                        isAdmin: ADMIN_EMAILS.includes(email)
+                    });
+                } else {
+                    current.totalOrders += 1;
+                    current.totalSpent += Number(order.total_amount || 0);
+                    // Update dates
+                    const orderDate = new Date(order.created_at).getTime();
+                    const firstDate = new Date(current.firstSeen).getTime();
+                    const lastDate = new Date(current.lastSeen).getTime();
+                    
+                    if (orderDate < firstDate) current.firstSeen = order.created_at;
+                    if (orderDate > lastDate) current.lastSeen = order.created_at;
+                }
+            });
+
+            const userList = Array.from(userMap.values());
+            // Default sort by spent desc
+            userList.sort((a, b) => b.totalSpent - a.totalSpent);
+            
+            setUsers(userList);
+            setFilteredUsers(userList);
+        } catch (error) {
+            console.error("Fetch errors", error);
         } finally {
             setIsLoading(false);
         }
     };
 
+    useEffect(() => {
+        const lower = searchTerm.toLowerCase();
+        let result = users.filter(u => u.email.toLowerCase().includes(lower));
+        
+        result.sort((a, b) => {
+            let valA = a[sortField];
+            let valB = b[sortField];
+            
+            if (valA < valB) return sortAsc ? -1 : 1;
+            if (valA > valB) return sortAsc ? 1 : -1;
+            return 0;
+        });
+
+        setFilteredUsers(result);
+    }, [searchTerm, sortField, sortAsc, users]);
+
+    const handleSort = (field: keyof CustomerProfile) => {
+        if (sortField === field) {
+            setSortAsc(!sortAsc);
+        } else {
+            setSortField(field);
+            setSortAsc(false); // default desc for new fields
+        }
+    };
+
     if (isLoading) {
-        return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[var(--color-main)]" /></div>;
+        return (
+            <div className="flex h-[60vh] items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-main)]" />
+            </div>
+        );
     }
 
     return (
@@ -74,51 +123,89 @@ export default function UsersPage() {
                 </div>
                 <div className="bg-[#1e212b] border border-[#2a2e3b] px-4 py-2 rounded-lg text-sm text-gray-300 flex items-center gap-2 w-fit">
                     <Users className="w-4 h-4 text-gray-400" />
-                    {customers.length} Clientes Únicos
+                    {users.length} Clientes Únicos
                 </div>
             </div>
 
-            <div className="bg-[#0c0e15] rounded-2xl border border-[#1e212b] shadow-sm overflow-hidden">
+            <div className="bg-[#0c0e15] rounded-2xl border border-[#1e212b] shadow-sm overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-[#1e212b] flex flex-col sm:flex-row gap-4 justify-between bg-[#0c0e15]">
+                    <div className="relative max-w-sm w-full">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar por correo..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 text-sm bg-[#1e212b] text-white border-[#2a2e3b] rounded-xl focus:ring-2 focus:ring-[var(--color-main)] focus:border-transparent transition-all outline-none border"
+                        />
+                    </div>
+                </div>
+                
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-sm text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50/5 dark:bg-zinc-900/30 border-b border-[#1e212b]">
-                                <th className="py-4 px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider">Cliente</th>
-                                <th className="py-4 px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider">Pedidos</th>
-                                <th className="py-4 px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Gastado</th>
-                                <th className="py-4 px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider">Último Pedido</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Usuario</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('totalOrders')}>
+                                    <div className="flex items-center gap-1">
+                                        Pedidos <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                </th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('totalSpent')}>
+                                    <div className="flex items-center gap-1">
+                                        Total Gastado <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                </th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('lastSeen')}>
+                                    <div className="flex items-center gap-1">
+                                        Última Compra <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                </th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rol</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#1e212b]">
-                            {customers.length === 0 ? (
+                            {filteredUsers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="py-16 text-center text-gray-500">
-                                        <Users className="w-12 h-12 mx-auto text-gray-500/50 mb-3" />
-                                        <p>No hay clientes registrados aún.</p>
+                                    <td colSpan={5} className="text-center py-16 text-gray-500">
+                                        No se encontraron usuarios con esos filtros.
                                     </td>
                                 </tr>
                             ) : (
-                                customers.map((customer) => (
-                                    <tr key={customer.email} className="hover:bg-[#141722] transition-colors">
-                                        <td className="py-4 px-6">
+                                filteredUsers.map((user, idx) => (
+                                    <tr key={idx} className="hover:bg-[#141722] transition-colors">
+                                        <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-[#1e212b] border border-[#2a2e3b] flex items-center justify-center text-sm font-medium text-gray-400 shrink-0">
-                                                    {customer.email.charAt(0).toUpperCase()}
+                                                <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold shrink-0">
+                                                    {user.email.charAt(0).toUpperCase()}
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[var(--foreground)] font-medium text-sm">{customer.email.split('@')[0]}</span>
-                                                    <span className="text-gray-500 text-xs">{customer.email}</span>
+                                                    <span className="text-[var(--foreground)] font-medium text-sm truncate max-w-[200px]" title={user.email}>
+                                                        {user.email.split('@')[0]}
+                                                    </span>
+                                                    <span className="text-gray-500 text-xs truncate max-w-[200px]" title={user.email}>{user.email}</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-6 text-gray-300 text-sm font-medium">
-                                            {customer.orderCount}
+                                        <td className="px-6 py-4 font-medium text-gray-300">
+                                            {user.totalOrders}
                                         </td>
-                                        <td className="py-4 px-6 text-gray-300 text-sm font-bold text-[var(--color-main)]">
-                                            ${customer.totalSpent.toLocaleString("es-AR")}
+                                        <td className="px-6 py-4 font-bold text-[var(--color-main)]">
+                                            ${user.totalSpent.toLocaleString('es-AR')}
                                         </td>
-                                        <td className="py-4 px-6 text-gray-400 text-sm">
-                                            {new Date(customer.lastOrder).toLocaleDateString()}
+                                        <td className="px-6 py-4 text-gray-400">
+                                            {new Date(user.lastSeen).toLocaleDateString('es-AR')}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {user.isAdmin ? (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                                    <Shield className="w-3 h-3" /> Admin
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-[#1e212b] text-gray-400 border border-[#2a2e3b]">
+                                                    <UserIcon className="w-3 h-3" /> Cliente
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
