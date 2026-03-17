@@ -30,19 +30,42 @@ export default function AdminUsersPage() {
     const fetchUsers = async () => {
         setIsLoading(true);
         try {
+            // Fetch registered users (from our profiles table)
+            const { data: profilesData, error: profilesError } = await supabase
+                .from('profiles')
+                .select('email, created_at');
+
+            // Log error if any (profiles table might not exist yet)
+            if (profilesError) {
+                console.error("Profiles fetch error (maybe table missing?):", profilesError);
+            }
+
             // Fetch all orders to aggregate user data
-            const { data, error } = await supabase
+            const { data: ordersData, error: ordersError } = await supabase
                 .from('orders')
                 .select('customer_email, total_amount, created_at');
 
-            if (error) {
-                console.error("Error fetching orders for users", error);
-                return;
+            if (ordersError) {
+                console.error("Error fetching orders for users", ordersError);
             }
 
             const userMap = new Map<string, CustomerProfile>();
 
-            data?.forEach(order => {
+            // 1. First populate map with all registered users (even if 0 orders)
+            profilesData?.forEach(profile => {
+                const email = profile.email || 'Sin Correo';
+                userMap.set(email, {
+                    email,
+                    totalOrders: 0,
+                    totalSpent: 0,
+                    firstSeen: profile.created_at || new Date().toISOString(),
+                    lastSeen: profile.created_at || new Date().toISOString(),
+                    isAdmin: ADMIN_EMAILS.includes(email)
+                });
+            });
+
+            // 2. Then merge in all the orders data (registered + guest buyers)
+            ordersData?.forEach(order => {
                 const email = order.customer_email || 'Sin Correo';
                 const current = userMap.get(email);
                 
