@@ -8,7 +8,7 @@ import QuickViewModal from "@/components/QuickViewModal";
 import { useCartStore } from "@/store/cart";
 import { sileo } from "sileo";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useFavoritesStore } from "@/store/favorites";
 
@@ -103,6 +103,13 @@ export default function FavoritosPage() {
     return (
         <main className="min-h-screen pt-24 pb-16 bg-[var(--background)]">
             <div className="container mx-auto px-6 md:px-4">
+                
+                <div className="mb-4">
+                    <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors shadow-sm font-medium text-sm text-[var(--foreground)] w-fit">
+                        <ArrowLeft className="w-4 h-4" />
+                        Volver al Inicio
+                    </Link>
+                </div>
                 
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

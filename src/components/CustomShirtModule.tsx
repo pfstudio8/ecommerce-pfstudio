@@ -1,27 +1,77 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { UploadCloud, Image as ImageIcon, ShoppingCart, Trash2 } from "lucide-react";
 import { useCartStore, CartStore } from "@/store/cart";
 import { sileo } from "sileo";
 import { motion } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 
 export default function CustomShirtModule() {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const [selectedShirtType, setSelectedShirtType] = useState<string | null>(null);
+    const [isLoadingPrices, setIsLoadingPrices] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const addItem = useCartStore((state: CartStore) => state.addItem);
 
     const sizes = ["S", "M", "L", "XL"];
 
-    const shirtTypes = [
+    const [shirtTypes, setShirtTypes] = useState([
         { id: "oversize", label: "Oversize", price: 20000 },
         { id: "boxy", label: "Boxy Fit", price: 17000 },
         { id: "clasica-mujer", label: "Clásica Mujer", price: 15000 },
         { id: "clasica-hombre", label: "Clásica Hombre", price: 15000 },
         { id: "clasica-nino", label: "Clásica Niño", price: 10000 },
-    ];
+    ]);
+
+    useEffect(() => {
+        const fetchPrices = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('name, category, price');
+                
+                if (error) throw error;
+                if (data) {
+                    const updatedTypes = [
+                        { 
+                            id: "oversize", 
+                            label: "Oversize", 
+                            price: data.find(p => p.category === "Oversize")?.price || 20000 
+                        },
+                        { 
+                            id: "boxy", 
+                            label: "Boxy Fit", 
+                            price: data.find(p => p.category === "Boxy Fit")?.price || 17000 
+                        },
+                        { 
+                            id: "clasica-mujer", 
+                            label: "Clásica Mujer", 
+                            price: data.find(p => p.category === "Clásicas" && p.name.includes("Mujer"))?.price || 15000 
+                        },
+                        { 
+                            id: "clasica-hombre", 
+                            label: "Clásica Hombre", 
+                            price: data.find(p => p.category === "Clásicas" && p.name.includes("Hombre"))?.price || 15000 
+                        },
+                        { 
+                            id: "clasica-nino", 
+                            label: "Clásica Niño", 
+                            price: data.find(p => p.category === "Clásicas" && p.name.includes("Niño"))?.price || 10000 
+                        },
+                    ];
+                    setShirtTypes(updatedTypes);
+                }
+            } catch (error) {
+                console.error("Error fetching shirt prices:", error);
+            } finally {
+                setIsLoadingPrices(false);
+            }
+        };
+
+        fetchPrices();
+    }, []);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -152,11 +202,17 @@ export default function CustomShirtModule() {
                             </h3>
 
                             {/* Dynamic Price Display */}
-                            <p className="text-3xl font-bold text-[var(--color-main)] mb-8">
-                                ${selectedShirtType
-                                    ? shirtTypes.find(t => t.id === selectedShirtType)?.price.toLocaleString("es-AR")
-                                    : "..."}
-                                <span className="text-sm font-normal text-gray-500">ARS</span>
+                            <p className="text-3xl font-bold text-[var(--color-main)] mb-8 flex items-end gap-1">
+                                {isLoadingPrices && selectedShirtType ? (
+                                    <div className="h-8 w-24 bg-gray-200 dark:bg-zinc-800 animate-pulse rounded mt-1"></div>
+                                ) : (
+                                    <>
+                                        ${selectedShirtType
+                                            ? shirtTypes.find(t => t.id === selectedShirtType)?.price.toLocaleString("es-AR")
+                                            : "..."}
+                                        <span className="text-sm font-normal text-gray-500 mb-1">ARS</span>
+                                    </>
+                                )}
                             </p>
 
                             <div className="mb-6">
@@ -172,7 +228,9 @@ export default function CustomShirtModule() {
                                                 }`}
                                         >
                                             <span>{type.label}</span>
-                                            <span className="text-sm font-normal">${type.price.toLocaleString("es-AR")}</span>
+                                            <span className="text-sm font-normal">
+                                                {isLoadingPrices ? <div className="w-16 h-4 bg-gray-200 dark:bg-zinc-800 animate-pulse rounded"></div> : `$${type.price.toLocaleString("es-AR")}`}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>

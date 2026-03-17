@@ -49,13 +49,13 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
     const handleFavoriteClick = async (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        
+
         if (!user) {
             sileo.info({ title: "Debes iniciar sesión para agregar a favoritos" });
             setAuthModalOpen(true);
             return;
         }
-        
+
         await toggleFavorite(product.id);
     };
 
@@ -116,13 +116,12 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    handleFavoriteClick();
+                    handleFavoriteClick(e);
                 }}
-                className={`absolute top-4 left-4 z-20 bg-white/90 dark:bg-black/90 p-2 rounded-full shadow-md transition-all duration-300 hover:scale-110 ${
-                    isFavorite 
-                        ? "text-red-500 opacity-100" 
-                        : "text-gray-400 dark:text-gray-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-red-500"
-                }`}
+                className={`absolute top-4 left-4 z-20 bg-white/90 dark:bg-black/90 p-2 rounded-full shadow-md transition-all duration-300 hover:scale-110 ${isFavorite
+                    ? "text-red-500 opacity-100"
+                    : "text-gray-400 dark:text-gray-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-red-500"
+                    }`}
                 title="Añadir a Favoritos"
             >
                 <Heart className={`w-5 h-5 transition-all ${isFavorite ? "fill-current scale-110" : ""}`} />
@@ -181,7 +180,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                         {product.name}
                     </h3>
                 </Link>
-                
+
                 {/* Reviews Summary */}
                 {product.reviews && product.reviews.length > 0 && (
                     <div className="flex items-center gap-1 mb-1">
@@ -194,7 +193,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                         </span>
                     </div>
                 )}
-                
+
                 <p className="text-lg text-[var(--color-main)] font-semibold mb-4 mt-1">
                     ${product.price.toLocaleString("es-AR")}
                 </p>
@@ -209,7 +208,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                         } else {
                             sizeStock = product.stock ?? 1;
                         }
-                        
+
                         const isOutOfStock = sizeStock <= 0;
 
                         return (
@@ -250,7 +249,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                             const found = product.product_stock?.find(s => s.size === selectedSize);
                             sizeStock = found ? found.stock_quantity : (product.stock ?? 0);
                         }
-                        
+
                         // Show warning if stock is between 1 and 3 (inclusive)
                         if (sizeStock > 0 && sizeStock <= 3) {
                             return (
@@ -260,8 +259,8 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
                                     className="flex items-center gap-2 text-red-500 bg-red-50 dark:bg-red-950/20 px-3 py-2 rounded-md border border-red-100 dark:border-red-900/50"
                                 >
-                                    <motion.span 
-                                        animate={{ scale: [1, 1.2, 1] }} 
+                                    <motion.span
+                                        animate={{ scale: [1, 1.2, 1] }}
                                         transition={{ repeat: Infinity, duration: 1.5 }}
                                         className="text-lg"
                                     >
@@ -282,11 +281,10 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                     <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={handleAddToCart}
-                        className={`w-full py-2.5 sm:py-3 rounded font-semibold flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 hover:shadow-lg uppercase tracking-wider text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none ${
-                            isAdded 
-                            ? "bg-green-500 text-white hover:bg-green-600 hover:shadow-green-500/20" 
+                        className={`w-full py-2.5 sm:py-3 rounded font-semibold flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 hover:shadow-lg uppercase tracking-wider text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none ${isAdded
+                            ? "bg-green-500 text-white hover:bg-green-600 hover:shadow-green-500/20"
                             : "bg-[var(--foreground)] text-[var(--background)] hover:bg-[var(--color-main)] hover:text-white hover:shadow-[var(--color-main)]/20"
-                        }`}
+                            }`}
                         disabled={!selectedSize && !isAdded}
                     >
                         <AnimatePresence mode="wait">
