@@ -139,9 +139,9 @@ export default function AdminDashboard() {
                             </div>
                             <h2 className="text-lg font-bold text-white">Recent Orders</h2>
                         </div>
-                        <button className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                        <a href="/admin/orders" className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
                             View all →
-                        </button>
+                        </a>
                     </div>
 
                     <div className="space-y-4 flex-1">
@@ -153,14 +153,19 @@ export default function AdminDashboard() {
                         ) : (
                             recentOrders.map((order) => {
                                 const statusColors: Record<string, any> = {
-                                    'Pendiente': { color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' },
-                                    'Pagado': { color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20' },
-                                    'Preparando': { color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20' },
-                                    'Enviado': { color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
-                                    'Entregado': { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20' },
-                                    'Cancelado': { color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20' },
+                                    'pending': { color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/20' },
+                                    'paid': { color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20' },
+                                    'shipped': { color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/20' },
+                                    'cancelled': { color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/20' },
                                 };
-                                const sColor = statusColors[order.status || 'Pendiente'] || statusColors['Pendiente'];
+                                const sColor = statusColors[order.status || 'pending'] || statusColors['pending'];
+                                
+                                const STATUS_LABELS: Record<string, string> = {
+                                    'pending': 'Pendiente',
+                                    'paid': 'Pagado',
+                                    'shipped': 'Enviado',
+                                    'cancelled': 'Cancelado'
+                                };
 
                                 return (
                                     <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-[#141722] border border-[#1e212b] rounded-xl hover:border-gray-700 transition-colors gap-4">
@@ -176,7 +181,7 @@ export default function AdminDashboard() {
                                         <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2">
                                             <p className="font-bold text-gray-200">${Number(order.total || 0).toLocaleString("es-AR")}</p>
                                             <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md border ${sColor.color} ${sColor.bg} ${sColor.border}`}>
-                                                {order.status}
+                                                {STATUS_LABELS[order.status] || 'Pendiente'}
                                             </span>
                                         </div>
                                     </div>
@@ -195,9 +200,9 @@ export default function AdminDashboard() {
                             </div>
                             <h2 className="text-lg font-bold text-white">Low Stock Alert</h2>
                         </div>
-                        <button className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                        <a href="/admin/products?filter=low_stock" className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
                             View all →
-                        </button>
+                        </a>
                     </div>
 
                     <div className="flex-1 flex flex-col items-center justify-center py-10 text-center">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { ShoppingCart, Search, Loader2, Package, ArrowRight, Truck } from "lucide-react";
+import { ShoppingCart, Search, Loader2, Package, ArrowRight, Truck, Trash2 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { sileo } from "sileo";
 
@@ -38,6 +38,7 @@ export default function AdminOrdersPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     
     // Tracking form states
@@ -97,6 +98,28 @@ export default function AdminOrdersPage() {
         }
     };
 
+    const handleDeleteOrder = async (orderId: string) => {
+        if (!confirm("¿Estás seguro de que quieres eliminar este pedido? Esta acción no se puede deshacer y eliminará los artículos asociados.")) return;
+        
+        setDeletingId(orderId);
+        try {
+            const { error } = await supabase
+                .from('orders')
+                .delete()
+                .eq('id', orderId);
+
+            if (error) throw error;
+
+            setOrders(orders.filter(o => o.id !== orderId));
+            sileo.success({ title: "Pedido eliminado correctamente." });
+        } catch (err) {
+            console.error("Error deleting order", err);
+            sileo.error({ title: "No se pudo eliminar el pedido. Revisa los permisos." });
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
     const handleSaveTracking = async () => {
         if (!selectedOrder) return;
         setIsSavingTracking(true);
@@ -149,12 +172,13 @@ export default function AdminOrdersPage() {
                                 <th className="px-6 py-4">Monto</th>
                                 <th className="px-6 py-4">Artículos</th>
                                 <th className="px-6 py-4">Estado</th>
+                                <th className="px-6 py-4 text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-zinc-800">
                             {orders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-12 text-gray-500">
+                                    <td colSpan={6} className="text-center py-12 text-gray-500">
                                         No hay pedidos registrados. Ejecuta el script SQL para iniciar.
                                     </td>
                                 </tr>
@@ -207,6 +231,16 @@ export default function AdminOrdersPage() {
                                                 </select>
                                                 {updatingId === order.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button
+                                                onClick={() => handleDeleteOrder(order.id)}
+                                                disabled={deletingId === order.id}
+                                                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                                title="Eliminar pedido"
+                                            >
+                                                {deletingId === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                            </button>
                                         </td>
                                     </tr>
                                 ))

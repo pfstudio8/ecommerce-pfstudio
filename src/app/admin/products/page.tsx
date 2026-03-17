@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Plus, Edit, Trash2, Loader2, Package } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 type Product = {
@@ -17,18 +18,25 @@ type Product = {
 };
 
 export default function AdminProducts() {
+    const searchParams = useSearchParams();
+    const filterOption = searchParams.get("filter");
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         fetchProducts();
-    }, []);
+    }, [filterOption]);
 
     const fetchProducts = async () => {
+        setIsLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('products')
-                .select('*');
+            let query = supabase.from('products').select('*');
+            
+            if (filterOption === 'low_stock') {
+                query = query.lt('stock', 5);
+            }
+            
+            const { data, error } = await query;
 
             if (error) {
                 console.warn("Tabla 'products' puede no existir aún:", error.message);
@@ -57,7 +65,7 @@ export default function AdminProducts() {
     };
 
     if (isLoading) {
-        return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[var(--color-main)]" /></div>;
+        return <div className="flex justify-center items-center py-40 min-h-[50vh]"><Loader2 className="w-10 h-10 animate-spin text-[var(--color-main)]" /></div>;
     }
 
     return (
@@ -65,7 +73,14 @@ export default function AdminProducts() {
             <div className="flex justify-between items-center flex-wrap gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight mb-1">Productos</h1>
-                    <p className="text-gray-500 text-sm">Gestiona el inventario de tu tienda</p>
+                    <div className="flex items-center gap-3">
+                        <p className="text-gray-500 text-sm">Gestiona el inventario de tu tienda</p>
+                        {filterOption === 'low_stock' && (
+                            <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-2 py-0.5 rounded-full text-xs font-bold">
+                                Filtro: Bajo Stock
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <Link
                     href="/admin/products/create"
