@@ -27,7 +27,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 const { count: pendingCount } = await supabase
                     .from('orders')
                     .select('id', { count: 'exact', head: true })
-                    .eq('status', 'Pendiente');
+                    .eq('status', 'pending');
 
                 const { data: allProducts } = await supabase
                     .from('products')

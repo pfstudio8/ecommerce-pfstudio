@@ -31,6 +31,7 @@ export async function POST(request: Request) {
             // 2. Extraer los items vendidos para descontar stock
             const itemsToProcess = paymentInfo.metadata?.cart_items || [];
             const userEmail = paymentInfo.metadata?.user_email || paymentInfo.payer?.email || 'invitado@mercadopago.com';
+            const billingDetails = paymentInfo.metadata?.billing_details || null;
 
             // 3. Registrar la orden matriz en la base de datos
             const { data: orderResult, error: orderError } = await supabase
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
             if (status === 'approved') {
                 // Enviar el correo electrónico
                 if (userEmail && userEmail !== 'invitado@mercadopago.com') {
-                    await sendPurchaseSuccessEmail(userEmail, String(paymentInfo.id), paymentInfo.transaction_amount || 0, itemsToProcess);
+                    await sendPurchaseSuccessEmail(userEmail, String(paymentInfo.id), paymentInfo.transaction_amount || 0, itemsToProcess, billingDetails);
                 }
 
                 // 4. Descontar Stock

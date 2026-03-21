@@ -24,17 +24,27 @@ export const generateWelcomeEmail = (email: string) => {
     `;
 };
 
-export const generateOrderEmail = (orderId: string, email: string, total: number, items: any[]) => {
+export const generateOrderEmail = (orderId: string, email: string, total: number, items: any[], billingDetails: any = null) => {
     const itemsHtml = items.map((item) => `
       <tr>
         <td style="padding: 10px 0; border-bottom: 1px solid #eee;">
-          <strong>${item.name || item.title}</strong>
+          <strong>${item.name || item.title || item.id}</strong>
           ${item.size ? `<br><small style="color: #777;">Talle: ${item.size}</small>` : ''}
         </td>
         <td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-        <td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right;">$${(item.price * item.quantity).toLocaleString("es-AR")}</td>
+        <td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right;">$${(item.unit_price || item.price || 0) * item.quantity}</td>
       </tr>
     `).join("");
+
+    const billingHtml = billingDetails ? `
+      <div style="margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-radius: 6px; border-left: 4px solid #111;">
+        <h3 style="margin-top: 0; color: #111; font-size: 16px;">Datos de Facturación / Comprobante</h3>
+        <p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Nombre/Razón Social:</strong> ${billingDetails.name}</p>
+        <p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>DNI/CUIT:</strong> ${billingDetails.dni}</p>
+        <p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Teléfono:</strong> ${billingDetails.phone}</p>
+        <p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Dirección:</strong> ${billingDetails.address}</p>
+      </div>
+    ` : '';
 
     return `
     <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; color: #333;">
@@ -69,6 +79,8 @@ export const generateOrderEmail = (orderId: string, email: string, total: number
             </tr>
           </tfoot>
         </table>
+
+        ${billingHtml}
 
       </div>
       <div style="text-align: center; padding: 20px; font-size: 12px; color: #999;">

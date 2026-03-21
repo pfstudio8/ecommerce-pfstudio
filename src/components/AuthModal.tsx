@@ -16,6 +16,7 @@ export default function AuthModal() {
     const [isLogin, setIsLogin] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [direction, setDirection] = useState(0);
+    const [showWelcome, setShowWelcome] = useState(false);
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -58,8 +59,11 @@ export default function AuthModal() {
                     console.error("Failed to send welcome email", err);
                 }
 
-                sileo.success({ title: "Cuenta creada exitosamente." });
-                setModalOpen(false);
+                setShowWelcome(true);
+                setTimeout(() => {
+                    setModalOpen(false);
+                    setShowWelcome(false);
+                }, 3500);
             }
         } catch (error: any) {
             let errorMsg = error.message || "Error al autenticar";
@@ -124,7 +128,7 @@ export default function AuthModal() {
 
     return (
         <AnimatePresence>
-            {isModalOpen && (
+            {isModalOpen && !showWelcome && (
                 <div key="modal-overlay" className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -294,7 +298,7 @@ export default function AuthModal() {
             )}
 
             {/* Global Loading Overlay for Auth Actions */}
-            {isLoading && (
+            {isLoading && !showWelcome && (
                 <motion.div
                     key="loading_overlay"
                     initial={{ opacity: 0 }}
@@ -304,6 +308,56 @@ export default function AuthModal() {
                 >
                     <Loader2 className="w-12 h-12 animate-spin text-[var(--color-main)] mb-4" />
                     <p className="text-sm font-bold tracking-widest uppercase">Autenticando...</p>
+                </motion.div>
+            )}
+
+            {/* Welcome Animation Screen */}
+            {showWelcome && (
+                <motion.div
+                    key="welcome_screen"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.05 }}
+                    className="fixed inset-0 z-[300] flex flex-col items-center justify-center p-4 bg-[var(--background)] backdrop-blur-3xl"
+                >
+                    {/* Confetti / Decorative background elements */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none flex justify-center items-center opacity-30">
+                        <motion.div 
+                            initial={{ scale: 0, rotate: 0 }}
+                            animate={{ scale: 1.5, rotate: 180 }}
+                            transition={{ duration: 3, ease: "easeOut" }}
+                            className="w-[80vw] h-[80vw] max-w-2xl max-h-2xl rounded-full bg-gradient-to-tr from-[var(--color-main)] to-transparent blur-3xl opacity-20"
+                        />
+                    </div>
+
+                    <motion.div 
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1, rotate: [0, -10, 10, -10, 10, 0] }}
+                        transition={{ type: "spring", stiffness: 260, damping: 20, duration: 1.5 }}
+                        className="relative z-10 w-24 h-24 bg-green-500 rounded-full flex items-center justify-center text-white mb-8 shadow-[0_0_50px_rgba(34,197,94,0.4)]"
+                    >
+                        <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                    </motion.div>
+                    
+                    <motion.h2 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="relative z-10 text-4xl md:text-5xl font-black text-center mb-4 tracking-tight"
+                    >
+                        ¡Hola, {name.split(' ')[0] || 'amigo'}!
+                    </motion.h2>
+
+                    <motion.p 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        className="relative z-10 text-lg text-gray-500 text-center max-w-sm"
+                    >
+                        Tu cuenta ha sido creada exitosamente. Bienvenido a la familia PFSTUDIO.
+                    </motion.p>
                 </motion.div>
             )}
         </AnimatePresence>

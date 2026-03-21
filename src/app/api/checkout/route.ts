@@ -9,7 +9,7 @@ const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCE
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { items } = body;
+        const { items, billingDetails } = body;
 
         if (!items || items.length === 0) {
             return NextResponse.json({ error: "No items provided" }, { status: 400 });
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
             items: mpItems,
             metadata: {
                 user_email: body.user_email || null,
+                billing_details: billingDetails,
                 cart_items: items.map((item: any) => ({
                     id: item.product.id,
                     quantity: item.quantity,

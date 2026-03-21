@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { items, user_email } = body;
+        const { items, user_email, billingDetails } = body;
 
         if (!items || items.length === 0) {
             return NextResponse.json({ error: "No items provided" }, { status: 400 });
@@ -97,6 +97,23 @@ export async function POST(request: Request) {
                     .from('products')
                     .update({ stock: prodData.stock - qtyBought })
                     .eq('id', productId);
+            }
+        }
+
+        // Send confirmation email
+        if (user_email) {
+            try {
+                const itemsForEmail = items.map((item: any) => ({
+                    name: item.product.name,
+                    size: item.size,
+                    quantity: item.quantity,
+                    price: item.product.price
+                }));
+                const { sendPurchaseSuccessEmail } = await import('@/lib/sendEmail');
+                await sendPurchaseSuccessEmail(user_email, orderData.id, totalAmount, itemsForEmail, billingDetails);
+            } catch (emailError) {
+                console.error("Error sending transfer confirmation email:", emailError);
+                // We don't fail the whole request if email fails
             }
         }
 

@@ -10,13 +10,13 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-export const sendPurchaseSuccessEmail = async (toEmail: string, orderId: string, totalAmount: number, items: any[] = []) => {
+export const sendPurchaseSuccessEmail = async (toEmail: string, orderId: string, totalAmount: number, items: any[] = [], billingDetails: any = null) => {
     try {
         const mailOptions = {
             from: `"PFSTUDIO" <${process.env.EMAIL_USER}>`,
             to: toEmail,
             subject: '¡Gracias por tu compra en PFSTUDIO! 🎉',
-            html: generateOrderEmail(orderId, toEmail, totalAmount, items)
+            html: generateOrderEmail(orderId, toEmail, totalAmount, items, billingDetails)
         };
 
         const info = await transporter.sendMail(mailOptions);
