@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Users, Search, Loader2, ArrowUpDown, Shield, User as UserIcon, Trash2 } from "lucide-react";
+import { sileo } from "sileo";
 
 interface CustomerProfile {
     id?: string;
@@ -133,7 +134,7 @@ export default function AdminUsersPage() {
 
     const handleDeleteUser = async (id: string | undefined, email: string) => {
         if (!id) {
-            alert("Este usuario no tiene un perfil registrado (es un usuario invitado) o no se encontró su ID.");
+            sileo.info({ title: "Atención", description: "Este usuario no tiene un perfil registrado (es un usuario invitado) o no se encontró su ID." });
             return;
         }
 
@@ -152,13 +153,13 @@ export default function AdminUsersPage() {
                 setUsers(prev => prev.filter(u => u.id !== id));
                 setFilteredUsers(prev => prev.filter(u => u.id !== id));
                 /* Opcionalmente recargar: fetchUsers() */
-                alert("Usuario eliminado correctamente.");
+                sileo.success({ title: "Usuario eliminado correctamente." });
             } else {
                 throw new Error(data.error || "Error al eliminar usuario del sistema.");
             }
         } catch (error: any) {
             console.error("Error eliminando usuario:", error);
-            alert(`Error: ${error.message}`);
+            sileo.error({ title: "Error", description: error.message });
         }
     };
 
