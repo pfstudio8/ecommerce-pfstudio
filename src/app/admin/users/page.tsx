@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Users, Search, Loader2, ArrowUpDown, Shield, User as UserIcon } from "lucide-react";
+import { Users, Search, Loader2, ArrowUpDown, Shield, User as UserIcon, Trash2 } from "lucide-react";
 
 interface CustomerProfile {
+    id?: string;
     email: string;
     totalOrders: number;
     totalSpent: number;
@@ -33,7 +34,7 @@ export default function AdminUsersPage() {
             // Fetch registered users (from our profiles table)
             const { data: profilesData, error: profilesError } = await supabase
                 .from('profiles')
-                .select('email, created_at');
+                .select('id, email, created_at');
 
             // Log error if any (profiles table might not exist yet)
             if (profilesError) {
@@ -55,6 +56,7 @@ export default function AdminUsersPage() {
             profilesData?.forEach(profile => {
                 const email = profile.email || 'Sin Correo';
                 userMap.set(email, {
+                    id: profile.id,
                     email,
                     totalOrders: 0,
                     totalSpent: 0,
@@ -68,7 +70,7 @@ export default function AdminUsersPage() {
             ordersData?.forEach(order => {
                 const email = order.customer_email || 'Sin Correo';
                 const current = userMap.get(email);
-                
+
                 if (!current) {
                     userMap.set(email, {
                         email,
@@ -85,7 +87,7 @@ export default function AdminUsersPage() {
                     const orderDate = new Date(order.created_at).getTime();
                     const firstDate = new Date(current.firstSeen).getTime();
                     const lastDate = new Date(current.lastSeen).getTime();
-                    
+
                     if (orderDate < firstDate) current.firstSeen = order.created_at;
                     if (orderDate > lastDate) current.lastSeen = order.created_at;
                 }
@@ -94,7 +96,7 @@ export default function AdminUsersPage() {
             const userList = Array.from(userMap.values());
             // Default sort by spent desc
             userList.sort((a, b) => b.totalSpent - a.totalSpent);
-            
+
             setUsers(userList);
             setFilteredUsers(userList);
         } catch (error) {
@@ -107,10 +109,10 @@ export default function AdminUsersPage() {
     useEffect(() => {
         const lower = searchTerm.toLowerCase();
         let result = users.filter(u => u.email.toLowerCase().includes(lower));
-        
+
         result.sort((a, b) => {
-            let valA = a[sortField];
-            let valB = b[sortField];
+            let valA: any = a[sortField] ?? "";
+            let valB: any = b[sortField] ?? "";
             
             if (valA < valB) return sortAsc ? -1 : 1;
             if (valA > valB) return sortAsc ? 1 : -1;
@@ -126,6 +128,37 @@ export default function AdminUsersPage() {
         } else {
             setSortField(field);
             setSortAsc(false); // default desc for new fields
+        }
+    };
+
+    const handleDeleteUser = async (id: string | undefined, email: string) => {
+        if (!id) {
+            alert("Este usuario no tiene un perfil registrado (es un usuario invitado) o no se encontró su ID.");
+            return;
+        }
+
+        const confirmData = window.confirm(`¿Estás seguro de que deseas eliminar permanentemente a ${email}? Esta acción no se puede deshacer.`);
+        if (!confirmData) return;
+
+        try {
+            const res = await fetch(`/api/admin/users/${id}`, {
+                method: 'DELETE',
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                // actualizar estado
+                setUsers(prev => prev.filter(u => u.id !== id));
+                setFilteredUsers(prev => prev.filter(u => u.id !== id));
+                /* Opcionalmente recargar: fetchUsers() */
+                alert("Usuario eliminado correctamente.");
+            } else {
+                throw new Error(data.error || "Error al eliminar usuario del sistema.");
+            }
+        } catch (error: any) {
+            console.error("Error eliminando usuario:", error);
+            alert(`Error: ${error.message}`);
         }
     };
 
@@ -163,7 +196,7 @@ export default function AdminUsersPage() {
                         />
                     </div>
                 </div>
-                
+
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left border-collapse">
                         <thead>
@@ -185,6 +218,7 @@ export default function AdminUsersPage() {
                                     </div>
                                 </th>
                                 <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rol</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#1e212b]">
@@ -228,6 +262,20 @@ export default function AdminUsersPage() {
                                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-[#1e212b] text-gray-400 border border-[#2a2e3b]">
                                                     <UserIcon className="w-3 h-3" /> Cliente
                                                 </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            {!user.isAdmin && user.id && (
+                                                <button
+                                                    onClick={() => handleDeleteUser(user.id, user.email)}
+                                                    className="p-2 text-gray-500 hover:text-red-500 transition-colors rounded-lg hover:bg-red-500/10"
+                                                    title="Eliminar usuario"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {!user.isAdmin && !user.id && (
+                                                <span className="text-xs text-gray-600 block pt-2" title="Usuario sin registrar (compra como invitado)">Invitado</span>
                                             )}
                                         </td>
                                     </tr>

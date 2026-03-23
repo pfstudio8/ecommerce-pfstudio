@@ -17,18 +17,31 @@ export default function AuthModal() {
     const [isLoading, setIsLoading] = useState(false);
     const [direction, setDirection] = useState(0);
     const [showWelcome, setShowWelcome] = useState(false);
+    const [isForgotPassword, setIsForgotPassword] = useState(false);
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
+    const [dni, setDni] = useState("");
+    const [phone, setPhone] = useState("");
+    const [address, setAddress] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [authError, setAuthError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        setAuthError(null);
 
         try {
-            if (isLogin) {
+            if (isForgotPassword) {
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/update-password`,
+                });
+                if (error) throw error;
+                sileo.success({ title: "Enlace de recuperación enviado. Revisa tu correo." });
+                setIsForgotPassword(false);
+            } else if (isLogin) {
                 const { error } = await supabase.auth.signInWithPassword({
                     email,
                     password,
@@ -43,6 +56,9 @@ export default function AuthModal() {
                     options: {
                         data: {
                             full_name: name,
+                            dni,
+                            phone,
+                            address
                         }
                     }
                 });
@@ -50,20 +66,22 @@ export default function AuthModal() {
 
                 // Enviar email de bienvenida
                 try {
-                    await fetch('/api/send-email', {
+                    await fetch('/api/notify', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ type: 'welcome', email })
                     });
                 } catch (err) {
-                    console.error("Failed to send welcome email", err);
+                    // Evitamos usar console.error para no disparar el Error Overlay de Next.js
+                    // en caso de que un AdBlocker bloquee la petición (ej. Brave Shields)
+                    console.warn("No se pudo enviar email de bienvenida (posible extensión bloqueando requests)", err);
                 }
 
                 setShowWelcome(true);
                 setTimeout(() => {
                     setModalOpen(false);
                     setShowWelcome(false);
-                }, 3500);
+                }, 2000);
             }
         } catch (error: any) {
             let errorMsg = error.message || "Error al autenticar";
@@ -81,7 +99,7 @@ export default function AuthModal() {
                 errorMsg = "La contraseña debe tener al menos 6 caracteres.";
             }
 
-            sileo.error({ title: errorMsg });
+            setAuthError(errorMsg);
         } finally {
             setIsLoading(false);
         }
@@ -104,6 +122,8 @@ export default function AuthModal() {
     const toggleMode = (login: boolean) => {
         setDirection(login ? -1 : 1);
         setIsLogin(login);
+        setIsForgotPassword(false);
+        setAuthError(null);
     };
 
     const variants = {
@@ -162,7 +182,7 @@ export default function AuthModal() {
                             {/* Form Wrapper */}
                             <form onSubmit={handleSubmit} className="w-full relative">
                                 {/* Animated Inputs Wrapper */}
-                                <div className="relative h-[280px] overflow-hidden flex items-start justify-center w-full mb-6">
+                                <div className="relative overflow-hidden flex items-start justify-center w-full mb-6 min-h-[500px] h-full">
                                     <AnimatePresence custom={direction} mode="wait">
                                         <motion.div
                                             key={isLogin ? "login" : "register"}
@@ -179,32 +199,73 @@ export default function AuthModal() {
                                         >
                                             <div className="text-center mb-6">
                                                 <h2 className="text-3xl font-black tracking-tight mb-2 text-[var(--foreground)]">
-                                                    {isLogin ? "Bienvenido" : "Crea tu Cuenta"}
+                                                    {isForgotPassword ? "Recuperar Clave" : isLogin ? "Bienvenido" : "Crea tu Cuenta"}
                                                 </h2>
                                                 <p className="text-gray-500 text-sm">
-                                                    {isLogin
-                                                        ? "Ingresa tus datos para continuar"
-                                                        : "Únete a PFSTUDIO y accede a ofertas"}
+                                                    {isForgotPassword 
+                                                        ? "Ingresa tu email para recibir el enlace" 
+                                                        : isLogin
+                                                            ? "Ingresa tus datos para continuar"
+                                                            : "Únete a PFSTUDIO y accede a ofertas"}
                                                 </p>
                                             </div>
 
                                             <div className="space-y-4">
 
-                                                {!isLogin && (
-                                                    <div className="space-y-1">
-                                                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Nombre Completo</label>
-                                                        <div className="relative group">
-                                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[var(--color-main)] transition-colors" />
+                                                {!isLogin && !isForgotPassword && (
+                                                    <>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Nombre Completo</label>
+                                                            <div className="relative group">
+                                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[var(--color-main)] transition-colors" />
+                                                                <input
+                                                                    type="text"
+                                                                    required={!isLogin && !isForgotPassword}
+                                                                    value={name}
+                                                                    onChange={(e) => setName(e.target.value)}
+                                                                    className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                    placeholder="Juan Pérez"
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Factura Fields */}
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <div className="space-y-1">
+                                                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">DNI / CUIT</label>
+                                                                <input
+                                                                    type="text"
+                                                                    required={!isLogin && !isForgotPassword}
+                                                                    value={dni}
+                                                                    onChange={(e) => setDni(e.target.value)}
+                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                    placeholder="Sin puntos"
+                                                                />
+                                                            </div>
+                                                            <div className="space-y-1">
+                                                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Teléfono</label>
+                                                                <input
+                                                                    type="tel"
+                                                                    required={!isLogin && !isForgotPassword}
+                                                                    value={phone}
+                                                                    onChange={(e) => setPhone(e.target.value)}
+                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                    placeholder="+54 11 ..."
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Dirección / Localidad</label>
                                                             <input
                                                                 type="text"
-                                                                required={!isLogin}
-                                                                value={name}
-                                                                onChange={(e) => setName(e.target.value)}
-                                                                className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
-                                                                placeholder="Juan Pérez"
+                                                                required={!isLogin && !isForgotPassword}
+                                                                value={address}
+                                                                onChange={(e) => setAddress(e.target.value)}
+                                                                className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                placeholder="Av. Falsa 123"
                                                             />
                                                         </div>
-                                                    </div>
+                                                    </>
                                                 )}
 
                                                 <div className="space-y-1">
@@ -225,38 +286,58 @@ export default function AuthModal() {
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-1">
-                                                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Contraseña</label>
-                                                    <div className="relative group">
-                                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[var(--color-main)] transition-colors" />
-                                                        <input
-                                                            type={showPassword ? "text" : "password"}
-                                                            required
-                                                            value={password}
-                                                            onChange={(e) => setPassword(e.target.value)}
-                                                            className="w-full pl-12 pr-12 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
-                                                            placeholder="••••••••"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowPassword(!showPassword)}
-                                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--foreground)] transition-colors"
-                                                        >
-                                                            {showPassword ? (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 2 20 20" /><path d="M6.71 6.71a10 10 0 0 0-4.08 5.29 10 10 0 0 0 11.52 7.15" /><path d="M10.96 10.96a3 3 0 0 0 4.08 4.08" /><path d="M14.54 9.17A3 3 0 0 0 10.95 5.6" /><path d="M22 12a10 10 0 0 0-14.71-7.06" /></svg>
-                                                            ) : (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                                                {!isForgotPassword && (
+                                                    <div className="space-y-1">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Contraseña</label>
+                                                            {isLogin && (
+                                                                <button onClick={() => setIsForgotPassword(true)} type="button" className="text-xs font-bold text-[var(--color-main)] hover:underline transition-all">
+                                                                    ¿Olvidaste tu contraseña?
+                                                                </button>
                                                             )}
-                                                        </button>
+                                                        </div>
+                                                        <div className="relative group">
+                                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[var(--color-main)] transition-colors" />
+                                                            <input
+                                                                type={showPassword ? "text" : "password"}
+                                                                required={!isForgotPassword}
+                                                                value={password}
+                                                                onChange={(e) => setPassword(e.target.value)}
+                                                                className="w-full pl-12 pr-12 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                placeholder="••••••••"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowPassword(!showPassword)}
+                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--foreground)] transition-colors"
+                                                            >
+                                                                {showPassword ? (
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 2 20 20" /><path d="M6.71 6.71a10 10 0 0 0-4.08 5.29 10 10 0 0 0 11.52 7.15" /><path d="M10.96 10.96a3 3 0 0 0 4.08 4.08" /><path d="M14.54 9.17A3 3 0 0 0 10.95 5.6" /><path d="M22 12a10 10 0 0 0-14.71-7.06" /></svg>
+                                                                ) : (
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></svg>
+                                                                )}
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                )}
 
-                                                {isLogin && (
-                                                    <div className="text-right pb-2">
-                                                        <button type="button" className="text-xs font-medium text-[var(--color-main)] hover:underline transition-all">
-                                                            ¿Olvidaste tu contraseña?
+                                                {isForgotPassword && (
+                                                    <div className="text-center pb-2">
+                                                        <button onClick={() => setIsForgotPassword(false)} type="button" className="text-xs font-medium text-gray-500 hover:text-[var(--foreground)] transition-all">
+                                                            Volver a Iniciar Sesión
                                                         </button>
                                                     </div>
+                                                )}
+
+                                                {/* Inline Auth Error Message */}
+                                                {authError && (
+                                                    <motion.div 
+                                                        initial={{ opacity: 0, y: -10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        className="p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 rounded-lg text-sm text-red-600 dark:text-red-400 font-medium text-center"
+                                                    >
+                                                        {authError}
+                                                    </motion.div>
                                                 )}
 
                                             </div>
@@ -271,7 +352,7 @@ export default function AuthModal() {
                                     className="w-full py-4 bg-[var(--foreground)] text-[var(--background)] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-main)] hover:text-white transition-all duration-300 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 uppercase tracking-widest text-sm relative overflow-hidden"
                                 >
                                     <span className={cn("transition-opacity flex items-center gap-2", isLoading ? "opacity-0" : "opacity-100")}>
-                                        {isLogin ? "Ingresar" : "Crear Cuenta"}
+                                        {isForgotPassword ? "Enviar Enlace" : isLogin ? "Ingresar" : "Crear Cuenta"}
                                     </span>
                                     {isLoading && (
                                         <div className="absolute inset-0 flex items-center justify-center">
@@ -332,7 +413,7 @@ export default function AuthModal() {
 
                     <motion.div 
                         initial={{ scale: 0 }}
-                        animate={{ scale: 1, rotate: [0, -10, 10, -10, 10, 0] }}
+                        animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: "spring", stiffness: 260, damping: 20, duration: 1.5 }}
                         className="relative z-10 w-24 h-24 bg-green-500 rounded-full flex items-center justify-center text-white mb-8 shadow-[0_0_50px_rgba(34,197,94,0.4)]"
                     >
@@ -347,7 +428,7 @@ export default function AuthModal() {
                         transition={{ delay: 0.3 }}
                         className="relative z-10 text-4xl md:text-5xl font-black text-center mb-4 tracking-tight"
                     >
-                        ¡Hola, {name.split(' ')[0] || 'amigo'}!
+                        ¡Hola, {name || 'amigo'}!
                     </motion.h2>
 
                     <motion.p 
