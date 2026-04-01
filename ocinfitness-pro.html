@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OcinFitness Center Club</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          green: { DEFAULT:'#4ECB3D', light:'#A3E89A', dark:'#267A18', xdark:'#163D0D' },
+          ink: '#0A0A0A', cream: '#F4F4F0'
+        },
+        fontFamily: {
+          display: ['Barlow Condensed','sans-serif'],
+          body: ['Outfit','sans-serif']
+        }
+      }
+    }
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{font-family:'Outfit',sans-serif;}
+  :root{
+    --green:#4ECB3D;--green-light:#A3E89A;--green-dark:#267A18;
+    --ink:#0A0A0A;--cream:#F4F4F0;
+  }
+  body{background:var(--ink);color:var(--cream);overflow-x:hidden;cursor:none;}
+  /* Custom cursor */
+  #cursor{position:fixed;width:12px;height:12px;background:var(--green);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .2s,height .2s,background .2s;}
+  #cursor-ring{position:fixed;width:40px;height:40px;border:1.5px solid rgba(78,203,61,.4);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:width .3s,height .3s,opacity .3s;transition-timing-function:ease-out;}
+  body:hover #cursor{opacity:1;}
+  /* Progress bar */
+  #progress-bar{position:fixed;top:0;left:0;height:2px;background:var(--green);z-index:200;width:0%;transition:width .1s;}
+  /* Noise texture */
+  body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:1;opacity:.4;}
+  /* Nav */
+  nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:1.25rem 5%;display:flex;align-items:center;justify-content:space-between;transition:background .4s,backdrop-filter .4s,border .4s;}
+  nav.scrolled{background:rgba(10,10,10,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(78,203,61,.15);}
+  .logo{font-family:'Barlow Condensed',sans-serif;font-size:1.75rem;font-weight:900;letter-spacing:1px;color:var(--cream);}
+  .logo em{color:var(--green);font-style:normal;}
+  .nav-links{display:flex;align-items:center;gap:2.5rem;}
+  .nav-links a{font-size:.78rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(244,244,240,.5);text-decoration:none;transition:color .2s;position:relative;}
+  .nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:1.5px;background:var(--green);transition:width .3s;}
+  .nav-links a:hover{color:var(--cream);}
+  .nav-links a:hover::after{width:100%;}
+  .btn-nav{background:var(--green)!important;color:var(--ink)!important;padding:.45rem 1.4rem;border-radius:2rem;font-weight:700!important;letter-spacing:1px!important;transition:all .2s!important;}
+  .btn-nav::after{display:none!important;}
+  .btn-nav:hover{background:#3ab52b!important;transform:scale(1.04);}
+  /* HERO */
+  #hero{min-height:100vh;display:grid;place-items:center;position:relative;padding:7rem 5% 4rem;overflow:hidden;}
+  .hero-bg-circle{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;}
+  .hero-line{overflow:hidden;display:block;}
+  .hero-word{display:inline-block;}
+  /* Marquee */
+  .marquee-wrap{overflow:hidden;border-top:1px solid rgba(78,203,61,.2);border-bottom:1px solid rgba(78,203,61,.2);padding:.6rem 0;}
+  .marquee-track{display:flex;gap:3rem;width:max-content;animation:marquee 20s linear infinite;}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  .marquee-item{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(244,244,240,.3);white-space:nowrap;display:flex;align-items:center;gap:1.5rem;}
+  .marquee-dot{width:6px;height:6px;background:var(--green);border-radius:50%;flex-shrink:0;}
+  /* Section base */
+  section{position:relative;z-index:2;}
+  .section-label{font-size:.7rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--green);display:inline-flex;align-items:center;gap:.6rem;margin-bottom:1.25rem;}
+  .section-label::before{content:'';width:24px;height:1.5px;background:var(--green);}
+  .display-title{font-family:'Barlow Condensed',sans-serif;font-size:clamp(3rem,6vw,5.5rem);font-weight:900;line-height:.92;text-transform:uppercase;letter-spacing:-1px;}
+  /* Services */
+  .svc-card{position:relative;border:1px solid rgba(244,244,240,.08);border-radius:20px;padding:2.25rem;overflow:hidden;transition:border-color .3s,transform .3s;cursor:pointer;}
+  .svc-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(78,203,61,.07) 0%,transparent 60%);opacity:0;transition:opacity .4s;}
+  .svc-card:hover{border-color:rgba(78,203,61,.4);transform:translateY(-6px);}
+  .svc-card:hover::before{opacity:1;}
+  .svc-num{font-family:'Barlow Condensed',sans-serif;font-size:4.5rem;font-weight:900;line-height:1;color:rgba(78,203,61,.12);position:absolute;top:1rem;right:1.5rem;transition:color .3s;}
+  .svc-card:hover .svc-num{color:rgba(78,203,61,.25);}
+  .svc-icon-wrap{width:52px;height:52px;border-radius:14px;background:rgba(78,203,61,.12);border:1px solid rgba(78,203,61,.2);display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:1.25rem;transition:background .3s;}
+  .svc-card:hover .svc-icon-wrap{background:rgba(78,203,61,.2);}
+  /* Pricing */
+  .price-card{border:1px solid rgba(244,244,240,.08);border-radius:24px;padding:2.5rem 2rem;transition:all .3s;position:relative;overflow:hidden;}
+  .price-card.featured{border-color:var(--green);background:rgba(78,203,61,.05);}
+  .price-card.featured::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green-dark),var(--green),var(--green-light));}
+  .price-tag{font-family:'Barlow Condensed',sans-serif;font-size:4.5rem;font-weight:900;color:var(--green);line-height:1;}
+  .check-item{display:flex;align-items:center;gap:.6rem;font-size:.88rem;color:rgba(244,244,240,.7);padding:.4rem 0;}
+  .check-item svg{width:16px;height:16px;color:var(--green);flex-shrink:0;}
+  .cross-item{color:rgba(244,244,240,.25);}
+  .cross-item svg{color:rgba(244,244,240,.2);}
+  /* Gallery */
+  .gallery-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;}
+  .gal{border-radius:16px;overflow:hidden;position:relative;background:rgba(78,203,61,.08);border:1px solid rgba(78,203,61,.1);display:flex;align-items:center;justify-content:center;}
+  .gal::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(78,203,61,.15),rgba(10,10,10,.6));opacity:0;transition:opacity .4s;}
+  .gal:hover::after{opacity:1;}
+  .gal-icon{font-size:2rem;opacity:.25;z-index:1;}
+  .g1{grid-column:span 7;height:320px;}
+  .g2{grid-column:span 5;height:320px;}
+  .g3{grid-column:span 4;height:220px;}
+  .g4{grid-column:span 4;height:220px;}
+  .g5{grid-column:span 4;height:220px;}
+  /* Team */
+  .team-card{border-radius:20px;overflow:hidden;border:1px solid rgba(244,244,240,.07);transition:all .3s;position:relative;}
+  .team-card:hover{border-color:rgba(78,203,61,.3);transform:translateY(-8px);}
+  .team-avatar{height:260px;background:linear-gradient(145deg,rgba(78,203,61,.15),rgba(10,10,10,.8));display:flex;align-items:center;justify-content:center;font-size:5rem;position:relative;overflow:hidden;}
+  .team-avatar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:50%;background:linear-gradient(to top,rgba(10,10,10,1),transparent);}
+  .team-body{padding:1.5rem;}
+  .specialty-tag{display:inline-block;font-size:.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;background:rgba(78,203,61,.15);color:var(--green);padding:.25rem .75rem;border-radius:2rem;border:1px solid rgba(78,203,61,.25);margin-bottom:.75rem;}
+  /* Contact */
+  .contact-card{background:rgba(244,244,240,.03);border:1px solid rgba(244,244,240,.08);border-radius:16px;padding:1.5rem;display:flex;align-items:flex-start;gap:1rem;transition:border-color .3s;}
+  .contact-card:hover{border-color:rgba(78,203,61,.3);}
+  .ci-dot{width:44px;height:44px;border-radius:12px;background:rgba(78,203,61,.12);border:1px solid rgba(78,203,61,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;}
+  /* Stat counter */
+  .stat-block{text-align:center;}
+  .stat-num{font-family:'Barlow Condensed',sans-serif;font-size:5rem;font-weight:900;color:var(--green);line-height:1;}
+  .stat-label{font-size:.75rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(244,244,240,.4);margin-top:.25rem;}
+  /* Footer */
+  footer{background:#050505;border-top:1px solid rgba(78,203,61,.1);padding:2rem 5%;display:flex;align-items:center;justify-content:space-between;}
+  /* Btn styles */
+  .btn-green{display:inline-block;background:var(--green);color:var(--ink);font-weight:700;font-size:.85rem;letter-spacing:.5px;padding:.8rem 2rem;border-radius:2rem;text-decoration:none;transition:all .2s;}
+  .btn-green:hover{background:#3ab52b;transform:translateY(-2px);}
+  .btn-ghost{display:inline-block;border:1.5px solid rgba(244,244,240,.2);color:var(--cream);font-weight:500;font-size:.85rem;padding:.78rem 2rem;border-radius:2rem;text-decoration:none;transition:all .2s;}
+  .btn-ghost:hover{border-color:var(--green);color:var(--green);}
+  /* Map placeholder */
+  .map-box{border:1px solid rgba(244,244,240,.08);border-radius:20px;height:360px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;background:rgba(78,203,61,.03);}
+  /* Scrollbar */
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-track{background:#0a0a0a;}
+  ::-webkit-scrollbar-thumb{background:var(--green);border-radius:4px;}
+  /* Hamburger mobile */
+  .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:.5rem;}
+  .hamburger span{width:24px;height:2px;background:var(--cream);border-radius:2px;transition:all .3s;}
+  .mobile-menu{display:none;position:fixed;inset:0;background:rgba(10,10,10,.98);z-index:90;flex-direction:column;align-items:center;justify-content:center;gap:2rem;}
+  .mobile-menu a{font-family:'Barlow Condensed',sans-serif;font-size:3rem;font-weight:900;text-transform:uppercase;color:var(--cream);text-decoration:none;}
+  .mobile-menu a:hover{color:var(--green);}
+  @media(max-width:768px){
+    .hamburger{display:flex;}
+    .nav-links{display:none;}
+    .hero-grid{grid-template-columns:1fr!important;}
+    .hero-cards{display:none!important;}
+    .gallery-grid{grid-template-columns:1fr 1fr;}
+    .g1,.g2,.g3,.g4,.g5{grid-column:span 1;height:160px;}
+    footer{flex-direction:column;gap:1rem;text-align:center;}
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<div id="progress-bar"></div>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#servicios" onclick="closeMobile()">Servicios</a>
+  <a href="#precios" onclick="closeMobile()">Precios</a>
+  <a href="#galeria" onclick="closeMobile()">Galería</a>
+  <a href="#equipo" onclick="closeMobile()">Equipo</a>
+  <a href="#contacto" onclick="closeMobile()">Contacto</a>
+</div>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="logo">OCIN<em>FITNESS</em></div>
+  <div class="nav-links">
+    <a href="#servicios">Servicios</a>
+    <a href="#precios">Precios</a>
+    <a href="#galeria">Galería</a>
+    <a href="#equipo">Equipo</a>
+    <a href="#contacto">Contacto</a>
+    <a href="#precios" class="btn-nav">Únete ya</a>
+  </div>
+  <div class="hamburger" id="hamburger" onclick="toggleMobile()">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- ══════════ HERO ══════════ -->
+<section id="hero">
+  <div class="hero-bg-circle" style="width:700px;height:700px;background:rgba(78,203,61,.06);top:-200px;right:-200px;"></div>
+  <div class="hero-bg-circle" style="width:400px;height:400px;background:rgba(78,203,61,.04);bottom:-100px;left:-150px;"></div>
+
+  <div class="w-full max-w-7xl mx-auto grid hero-grid" style="grid-template-columns:1fr 420px;gap:4rem;align-items:center;">
+    <!-- LEFT -->
+    <div>
+      <div class="section-label mb-6" id="hero-label" style="opacity:0">Centro de Alto Rendimiento</div>
+      <h1 class="display-title mb-6" style="font-size:clamp(4.5rem,9vw,9rem);">
+        <span class="hero-line"><span class="hero-word" id="hw1" style="opacity:0;transform:translateY(60px);display:inline-block;">FORJA</span></span>
+        <span class="hero-line"><span class="hero-word" id="hw2" style="opacity:0;transform:translateY(60px);display:inline-block;color:var(--green);">TU</span>
+        <span class="hero-word" id="hw3" style="opacity:0;transform:translateY(60px);display:inline-block;margin-left:.3em;">MEJOR</span></span>
+        <span class="hero-line"><span class="hero-word" id="hw4" style="opacity:0;transform:translateY(60px);display:inline-block;">VERSIÓN</span></span>
+      </h1>
+      <p id="hero-p" style="opacity:0;color:rgba(244,244,240,.5);font-size:1rem;line-height:1.8;max-width:480px;margin-bottom:2.5rem;">
+        OcinFitness Center Club: el espacio donde la disciplina se convierte en resultados. Entrenadores certificados, equipamiento profesional y una comunidad que te empuja más allá de tus límites.
+      </p>
+      <div id="hero-btns" style="opacity:0;display:flex;gap:1rem;flex-wrap:wrap;">
+        <a href="#precios" class="btn-green">Ver Membresías →</a>
+        <a href="#servicios" class="btn-ghost">Explorar Servicios</a>
+      </div>
+
+      <!-- Stats row -->
+      <div id="hero-stats" style="opacity:0;display:flex;gap:3rem;margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid rgba(244,244,240,.08);">
+        <div class="stat-block" style="text-align:left;">
+          <div class="stat-num" data-target="500">0</div>
+          <div class="stat-label">Miembros Activos</div>
+        </div>
+        <div class="stat-block" style="text-align:left;">
+          <div class="stat-num" data-target="15">0</div>
+          <div class="stat-label">Clases Semanales</div>
+        </div>
+        <div class="stat-block" style="text-align:left;">
+          <div class="stat-num" data-target="8">0</div>
+          <div class="stat-label">Entrenadores</div>
+        </div>
+        <div class="stat-block" style="text-align:left;">
+          <div class="stat-num" data-target="3">0</div>
+          <div class="stat-label">Años de Excelencia</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT CARDS -->
+    <div class="hero-cards" style="display:flex;flex-direction:column;gap:.75rem;" id="hero-cards">
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap relative z-10">
+  <div class="marquee-track" id="marqueeTrack"></div>
+</div>
+
+<!-- ══════════ SERVICIOS ══════════ -->
+<section id="servicios" class="py-28 px-[5%]">
+  <div class="max-w-7xl mx-auto">
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:4rem;align-items:end;margin-bottom:4rem;">
+      <div>
+        <div class="section-label" id="svc-label">Lo que ofrecemos</div>
+        <h2 class="display-title">NUESTROS<br/><span style="color:var(--green);">SERVICIOS</span></h2>
+      </div>
+      <p style="color:rgba(244,244,240,.45);font-size:.95rem;line-height:1.8;align-self:end;">Cada programa está diseñado para adaptarse a tu nivel y objetivos. Desde principiante hasta atleta de élite, tenemos el plan perfecto para ti.</p>
+    </div>
+    <div class="grid gap-4" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));" id="servicesGrid"></div>
+  </div>
+</section>
+
+<!-- ══════════ PRECIOS ══════════ -->
+<section id="precios" class="py-28 px-[5%]" style="background:rgba(78,203,61,.03);border-top:1px solid rgba(78,203,61,.1);border-bottom:1px solid rgba(78,203,61,.1);">
+  <div class="max-w-6xl mx-auto">
+    <div style="text-align:center;margin-bottom:4rem;">
+      <div class="section-label" style="justify-content:center;">Membresías</div>
+      <h2 class="display-title">ELIGE TU <span style="color:var(--green);">PLAN</span></h2>
+      <p style="color:rgba(244,244,240,.4);margin-top:1rem;font-size:.95rem;">Sin permanencia mínima · Cancela cuando quieras · Acceso inmediato</p>
+    </div>
+    <div class="grid gap-6" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));" id="pricingGrid"></div>
+  </div>
+</section>
+
+<!-- ══════════ GALERÍA ══════════ -->
+<section id="galeria" class="py-28 px-[5%]">
+  <div class="max-w-7xl mx-auto">
+    <div style="display:flex;align-items:end;justify-content:space-between;margin-bottom:3rem;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div class="section-label">Instalaciones</div>
+        <h2 class="display-title">+800 m² PARA<br/><span style="color:var(--green);">ENTRENAR</span></h2>
+      </div>
+      <p style="color:rgba(244,244,240,.35);font-size:.85rem;max-width:280px;text-align:right;">Reemplaza estas áreas con tus fotos reales del centro.</p>
+    </div>
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+</section>
+
+<!-- ══════════ EQUIPO ══════════ -->
+<section id="equipo" class="py-28 px-[5%]" style="background:rgba(244,244,240,.02);">
+  <div class="max-w-7xl mx-auto">
+    <div style="text-align:center;margin-bottom:4rem;">
+      <div class="section-label" style="justify-content:center;">Nuestros Expertos</div>
+      <h2 class="display-title">EL EQUIPO <span style="color:var(--green);">DETRÁS</span><br/>DE TU ÉXITO</h2>
+    </div>
+    <div class="grid gap-5" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));" id="teamGrid"></div>
+  </div>
+</section>
+
+<!-- ══════════ CONTACTO ══════════ -->
+<section id="contacto" class="py-28 px-[5%]">
+  <div class="max-w-7xl mx-auto">
+    <div style="margin-bottom:3.5rem;">
+      <div class="section-label">Estamos aquí</div>
+      <h2 class="display-title">VISÍTANOS<br/><span style="color:var(--green);">HOY MISMO</span></h2>
+    </div>
+    <div class="grid gap-12" style="grid-template-columns:1fr 1fr;align-items:start;" id="contactGrid">
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="contact-card">
+          <div class="ci-dot">📍</div>
+          <div><p style="font-weight:600;font-size:.95rem;margin-bottom:.25rem;">Dirección</p><p style="color:rgba(244,244,240,.45);font-size:.88rem;line-height:1.6;">Av. Principal 1234, Centro<br/>Tu Ciudad, Provincia</p></div>
+        </div>
+        <div class="contact-card">
+          <div class="ci-dot">📞</div>
+          <div><p style="font-weight:600;font-size:.95rem;margin-bottom:.25rem;">Teléfono / WhatsApp</p><p style="color:rgba(244,244,240,.45);font-size:.88rem;">+54 9 XXX XXX-XXXX</p></div>
+        </div>
+        <div class="contact-card">
+          <div class="ci-dot">📧</div>
+          <div><p style="font-weight:600;font-size:.95rem;margin-bottom:.25rem;">Email</p><p style="color:rgba(244,244,240,.45);font-size:.88rem;">info@ocinfitness.com</p></div>
+        </div>
+        <div class="contact-card">
+          <div class="ci-dot">🕐</div>
+          <div>
+            <p style="font-weight:600;font-size:.95rem;margin-bottom:.5rem;">Horarios</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem;">
+              <p style="color:rgba(244,244,240,.35);font-size:.8rem;">Lun – Vie</p><p style="color:var(--cream);font-size:.8rem;font-weight:600;">06:00 – 22:00</p>
+              <p style="color:rgba(244,244,240,.35);font-size:.8rem;">Sábado</p><p style="color:var(--cream);font-size:.8rem;font-weight:600;">08:00 – 18:00</p>
+              <p style="color:rgba(244,244,240,.35);font-size:.8rem;">Domingo</p><p style="color:var(--cream);font-size:.8rem;font-weight:600;">09:00 – 14:00</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="map-box">
+        <span style="font-size:2.5rem;opacity:.3;">🗺️</span>
+        <p style="color:rgba(244,244,240,.25);font-size:.85rem;letter-spacing:1px;">INSERTAR GOOGLE MAPS</p>
+        <p style="color:rgba(244,244,240,.15);font-size:.75rem;">iframe embed aquí</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo">OCIN<em>FITNESS</em> <span style="font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:300;color:rgba(244,244,240,.3);letter-spacing:.5px;">Center Club</span></div>
+  <p style="color:rgba(244,244,240,.2);font-size:.78rem;">© 2025 OcinFitness Center Club · Todos los derechos reservados</p>
+  <div style="display:flex;gap:1rem;">
+    <a href="#" style="width:36px;height:36px;border:1px solid rgba(244,244,240,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;text-decoration:none;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='rgba(244,244,240,.1)'">📘</a>
+    <a href="#" style="width:36px;height:36px;border:1px solid rgba(244,244,240,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.9rem;text-decoration:none;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='rgba(244,244,240,.1)'">📸</a>
+  </div>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+//  M O D E L  (POO — datos del gimnasio)
+// ═══════════════════════════════════════════════
+class GymModel {
+  constructor() {
+    this.services = [
+      { icon:'🏋️', num:'01', title:'Sala de Pesas', desc:'Equipamiento profesional libre y máquinas de última generación. Zona musculación con más de 200 implementos.', tag:'Acceso libre' },
+      { icon:'🔥', num:'02', title:'HIIT & Funcional', desc:'Sesiones de alta intensidad de 45 minutos que queman grasa, aumentan resistencia y potencian tu metabolismo.', tag:'Clases grupales' },
+      { icon:'🧘', num:'03', title:'Yoga & Movilidad', desc:'Equilibra cuerpo y mente. Clases de yoga, movilidad y stretching para complementar cualquier rutina de entrenamiento.', tag:'3 niveles' },
+      { icon:'🥊', num:'04', title:'Boxeo & Kickboxing', desc:'Descarga adrenalina y trabaja todo tu cuerpo. Clases de boxeo técnico y kickboxing para todos los niveles.', tag:'Principiante a pro' },
+      { icon:'🚴', num:'05', title:'Spinning / Cycling', desc:'Sala de ciclismo indoor con instructores motivadores, sistemas de sonido premium y seguimiento de potencia en tiempo real.', tag:'Con instructor' },
+      { icon:'👤', num:'06', title:'Entrenamiento Personal', desc:'Sesiones one-to-one con entrenador certificado. Plan de entrenamiento y nutrición completamente personalizado para ti.', tag:'100% a medida' },
+    ];
+    this.plans = [
+      {
+        name:'Básico', subtitle:'Ideal para empezar', price:25, featured:false,
+        features:[
+          {ok:true,text:'Sala de pesas y cardio'},{ok:true,text:'Horario completo de apertura'},{ok:true,text:'Vestuarios y duchas'},
+          {ok:true,text:'App de seguimiento'},{ok:false,text:'Clases grupales'},{ok:false,text:'Entrenador personal'},
+        ], cta:'Comenzar Ahora', ctaStyle:'ghost'
+      },
+      {
+        name:'Premium', subtitle:'La experiencia completa', price:45, featured:true,
+        features:[
+          {ok:true,text:'Todo el plan Básico'},{ok:true,text:'Clases grupales ilimitadas'},{ok:true,text:'1 sesión personal / mes'},
+          {ok:true,text:'Plan nutricional básico'},{ok:true,text:'Acceso prioritario'},{ok:false,text:'Entrenador dedicado'},
+        ], cta:'Elegir Premium', ctaStyle:'green'
+      },
+      {
+        name:'Elite', subtitle:'Para atletas comprometidos', price:75, featured:false,
+        features:[
+          {ok:true,text:'Todo el plan Premium'},{ok:true,text:'Entrenador personal dedicado'},{ok:true,text:'4 sesiones personales / mes'},
+          {ok:true,text:'Nutrición personalizada'},{ok:true,text:'Análisis de composición corporal'},{ok:true,text:'Acceso VIP 24/7'},
+        ], cta:'Ser Elite', ctaStyle:'ghost'
+      },
+    ];
+    this.team = [
+      { emoji:'💪', name:'Carlos Medina', specialty:'Musculación & Fuerza', bio:'Certificado NSCA. 8 años moldeando atletas. Especialista en hipertrofia, fuerza y rendimiento funcional.' },
+      { emoji:'🧘', name:'Laura Ramos', specialty:'Yoga & Bienestar', bio:'Instructora certificada en Rishikesh, India. Transforma cuerpo y mente a través del movimiento consciente.' },
+      { emoji:'🥊', name:'Diego Torres', specialty:'Boxeo & HIIT', bio:'Ex-boxeador semiprofesional. Convierte cada sesión en una experiencia intensa, efectiva y adictiva.' },
+      { emoji:'🚴', name:'Valeria Sosa', specialty:'Spinning & Cardio', bio:'Certificación Les Mills RPM. Su energía es contagiosa y sus clases, las más esperadas del mes.' },
+    ];
+    this.marqueeItems = ['Pesas Libres','Yoga','HIIT','Spinning','Boxeo','Nutrición','Funcional','CrossFit','Personal Training','Cardio','Pilates','Movilidad'];
+    this.heroCards = [
+      { icon:'🏋️', title:'Sala de Pesas', sub:'Equipos de última generación' },
+      { icon:'📊', title:'Seguimiento Personalizado', sub:'App de progreso incluida' },
+      { icon:'🔥', title:'Quema más calorías', sub:'Métodos de entrenamiento HIIT' },
+      { icon:'🧑‍🤝‍🧑', title:'Comunidad activa', sub:'500+ miembros motivados' },
+    ];
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  V I E W  (POO — renderizado del DOM)
+// ═══════════════════════════════════════════════
+class GymView {
+  renderHeroCards(cards, container) {
+    container.innerHTML = cards.map(c => `
+      <div class="hero-card-item" style="background:rgba(244,244,240,.04);border:1px solid rgba(244,244,240,.07);border-radius:14px;padding:1.1rem 1.4rem;display:flex;align-items:center;gap:.9rem;opacity:0;transform:translateX(30px);">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(78,203,61,.15);border:1px solid rgba(78,203,61,.2);display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;">${c.icon}</div>
+        <div><p style="font-weight:600;font-size:.9rem;">${c.title}</p><p style="color:rgba(244,244,240,.4);font-size:.78rem;margin-top:.1rem;">${c.sub}</p></div>
+      </div>
+    `).join('');
+  }
+
+  renderMarquee(items, container) {
+    const doubled = [...items, ...items];
+    container.innerHTML = doubled.map(i => `<span class="marquee-item"><span class="marquee-dot"></span>${i}</span>`).join('');
+  }
+
+  renderServices(services, container) {
+    container.innerHTML = services.map(s => `
+      <div class="svc-card" style="opacity:0;transform:translateY(40px);">
+        <span class="svc-num">${s.num}</span>
+        <div class="svc-icon-wrap">${s.icon}</div>
+        <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:.6rem;">${s.title}</h3>
+        <p style="color:rgba(244,244,240,.45);font-size:.85rem;line-height:1.7;">${s.desc}</p>
+        <span style="display:inline-block;margin-top:1rem;font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;background:rgba(78,203,61,.12);color:var(--green);padding:.25rem .75rem;border-radius:2rem;border:1px solid rgba(78,203,61,.2);">${s.tag}</span>
+      </div>
+    `).join('');
+  }
+
+  renderPricing(plans, container) {
+    container.innerHTML = plans.map(p => `
+      <div class="price-card${p.featured?' featured':''}" style="opacity:0;transform:translateY(40px);">
+        ${p.featured ? '<span style="display:inline-block;font-size:.65rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;background:var(--green);color:var(--ink);padding:.3rem .9rem;border-radius:2rem;margin-bottom:1rem;">⭐ Más Popular</span>' : '<div style="height:1.6rem;"></div>'}
+        <h3 style="font-size:1.5rem;font-family:\'Barlow Condensed\',sans-serif;font-weight:900;letter-spacing:.5px;">${p.name}</h3>
+        <p style="color:rgba(244,244,240,.35);font-size:.82rem;margin-bottom:.75rem;">${p.subtitle}</p>
+        <div class="price-tag">$${p.price}<span style="font-family:\'Outfit\',sans-serif;font-size:.9rem;color:rgba(244,244,240,.35);font-weight:400;">/ mes</span></div>
+        <div style="border-top:1px solid rgba(244,244,240,.07);margin:1.5rem 0;"></div>
+        <div>${p.features.map(f => `
+          <div class="check-item${f.ok?'':' cross-item'}">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              ${f.ok ? '<polyline points="2,8 6,12 14,4"/>' : '<line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/>'}
+            </svg>
+            ${f.text}
+          </div>`).join('')}</div>
+        <a href="#contacto" class="${p.ctaStyle==='green'?'btn-green':'btn-ghost'}" style="display:block;text-align:center;margin-top:1.5rem;">${p.cta}</a>
+      </div>
+    `).join('');
+  }
+
+  renderGallery(container) {
+    const items = [
+      {cls:'g1',label:'Sala de Pesas',icon:'🏋️'},{cls:'g2',label:'Zona Cardio',icon:'🚴'},
+      {cls:'g3',label:'Box',icon:'🥊'},{cls:'g4',label:'Yoga',icon:'🧘'},{cls:'g5',label:'Spinning',icon:'🔥'},
+    ];
+    container.innerHTML = items.map(i => `
+      <div class="gal ${i.cls}" style="opacity:0;">
+        <span class="gal-icon">${i.icon}</span>
+        <div class="gal-overlay"></div>
+        <div style="position:absolute;bottom:1rem;left:1rem;z-index:2;font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(244,244,240,.3);transition:color .3s;">${i.label}</div>
+      </div>
+    `).join('');
+  }
+
+  renderTeam(team, container) {
+    container.innerHTML = team.map(m => `
+      <div class="team-card" style="opacity:0;transform:translateY(40px);">
+        <div class="team-avatar">${m.emoji}</div>
+        <div class="team-body">
+          <span class="specialty-tag">${m.specialty}</span>
+          <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem;">${m.name}</h3>
+          <p style="color:rgba(244,244,240,.4);font-size:.83rem;line-height:1.65;">${m.bio}</p>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  C O N T R O L L E R  (POO — lógica + eventos)
+// ═══════════════════════════════════════════════
+class GymController {
+  constructor(model, view) {
+    this.model = model;
+    this.view  = view;
+    this.cursor     = document.getElementById('cursor');
+    this.cursorRing = document.getElementById('cursor-ring');
+    this.progressBar= document.getElementById('progress-bar');
+    this.nav        = document.getElementById('mainNav');
+  }
+
+  init() {
+    this._renderAll();
+    this._initCursor();
+    this._initNav();
+    this._initProgress();
+    this._initHeroAnimations();
+    this._initScrollAnimations();
+    this._initCounters();
+  }
+
+  _renderAll() {
+    const m = this.model, v = this.view;
+    v.renderHeroCards(m.heroCards, document.getElementById('hero-cards'));
+    v.renderMarquee(m.marqueeItems, document.getElementById('marqueeTrack'));
+    v.renderServices(m.services, document.getElementById('servicesGrid'));
+    v.renderPricing(m.plans, document.getElementById('pricingGrid'));
+    v.renderGallery(document.getElementById('galleryGrid'));
+    v.renderTeam(m.team, document.getElementById('teamGrid'));
+  }
+
+  _initCursor() {
+    let mx=0,my=0,rx=0,ry=0;
+    document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+    const animate = () => {
+      this.cursor.style.left=mx+'px'; this.cursor.style.top=my+'px';
+      rx += (mx-rx)*.12; ry += (my-ry)*.12;
+      this.cursorRing.style.left=rx+'px'; this.cursorRing.style.top=ry+'px';
+      requestAnimationFrame(animate);
+    };
+    animate();
+    document.querySelectorAll('a,button,.svc-card,.team-card,.price-card').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        this.cursor.style.width='20px'; this.cursor.style.height='20px';
+        this.cursorRing.style.width='60px'; this.cursorRing.style.height='60px';
+      });
+      el.addEventListener('mouseleave', () => {
+        this.cursor.style.width='12px'; this.cursor.style.height='12px';
+        this.cursorRing.style.width='40px'; this.cursorRing.style.height='40px';
+      });
+    });
+  }
+
+  _initNav() {
+    window.addEventListener('scroll', () => {
+      this.nav.classList.toggle('scrolled', window.scrollY > 60);
+    });
+  }
+
+  _initProgress() {
+    window.addEventListener('scroll', () => {
+      const total = document.body.scrollHeight - window.innerHeight;
+      this.progressBar.style.width = (window.scrollY / total * 100) + '%';
+    });
+  }
+
+  _initHeroAnimations() {
+    gsap.registerPlugin(ScrollTrigger);
+    const tl = gsap.timeline({ delay: .2 });
+    tl.to('#hero-label', { opacity:1, y:0, duration:.6, ease:'power3.out' })
+      .to(['#hw1','#hw2','#hw3','#hw4'], { opacity:1, y:0, duration:.7, stagger:.12, ease:'power3.out' }, '-=.3')
+      .to('#hero-p', { opacity:1, duration:.6, ease:'power2.out' }, '-=.3')
+      .to('#hero-btns', { opacity:1, duration:.5 }, '-=.2')
+      .to('#hero-stats', { opacity:1, duration:.5 }, '-=.2');
+
+    // Hero cards stagger
+    const cards = document.querySelectorAll('.hero-card-item');
+    tl.to(cards, { opacity:1, x:0, duration:.5, stagger:.1, ease:'power2.out' }, '-=.4');
+  }
+
+  _initScrollAnimations() {
+    // Services
+    gsap.utils.toArray('#servicesGrid .svc-card').forEach((el, i) => {
+      gsap.to(el, { opacity:1, y:0, duration:.6, delay:i*.08, ease:'power3.out',
+        scrollTrigger:{ trigger:el, start:'top 85%' }});
+    });
+    // Pricing
+    gsap.utils.toArray('#pricingGrid .price-card').forEach((el, i) => {
+      gsap.to(el, { opacity:1, y:0, duration:.65, delay:i*.12, ease:'power3.out',
+        scrollTrigger:{ trigger:el, start:'top 85%' }});
+    });
+    // Gallery
+    gsap.utils.toArray('#galleryGrid .gal').forEach((el, i) => {
+      gsap.to(el, { opacity:1, duration:.5, delay:i*.08, ease:'power2.out',
+        scrollTrigger:{ trigger:'#galleryGrid', start:'top 80%' }});
+    });
+    // Team
+    gsap.utils.toArray('#teamGrid .team-card').forEach((el, i) => {
+      gsap.to(el, { opacity:1, y:0, duration:.6, delay:i*.1, ease:'power3.out',
+        scrollTrigger:{ trigger:el, start:'top 85%' }});
+    });
+    // Section titles parallax
+    gsap.utils.toArray('.display-title').forEach(el => {
+      gsap.from(el, { opacity:0, y:50, duration:.8, ease:'power3.out',
+        scrollTrigger:{ trigger:el, start:'top 85%' }});
+    });
+  }
+
+  _initCounters() {
+    const counters = document.querySelectorAll('.stat-num[data-target]');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        const target = +e.target.dataset.target;
+        const suffix = target >= 500 ? '+' : target >= 15 ? '+' : '';
+        let start = 0;
+        const step = Math.ceil(target / 60);
+        const timer = setInterval(() => {
+          start = Math.min(start + step, target);
+          e.target.textContent = start + suffix;
+          if (start >= target) clearInterval(timer);
+        }, 22);
+        observer.unobserve(e.target);
+      });
+    }, { threshold: .5 });
+    counters.forEach(c => observer.observe(c));
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  B O O T S T R A P  — instanciar MVC
+// ═══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const model      = new GymModel();
+  const view       = new GymView();
+  const controller = new GymController(model, view);
+  controller.init();
+});
+
+// Mobile menu helpers
+let mobileOpen = false;
+function toggleMobile() {
+  mobileOpen = !mobileOpen;
+  document.getElementById('mobileMenu').style.display = mobileOpen ? 'flex' : 'none';
+}
+function closeMobile() {
+  mobileOpen = false;
+  document.getElementById('mobileMenu').style.display = 'none';
+}
+</script>
+</body>
+</html>
