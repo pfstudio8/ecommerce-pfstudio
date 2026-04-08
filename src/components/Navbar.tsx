@@ -44,7 +44,7 @@ export default function Navbar() {
     const [isMounted, setIsMounted] = useState(false);
     const { items, isCartOpen, setCartOpen } = useCartStore();
     const totalItems = items.reduce((total, item) => total + item.quantity, 0);
-    
+
     const fetchFavorites = useFavoritesStore(state => state.fetchFavorites);
 
     useEffect(() => {
@@ -71,44 +71,69 @@ export default function Navbar() {
             <header
                 className={cn(
                     "fixed top-0 left-0 right-0 z-40 transition-all duration-300",
-                    isScrolled ? "glass py-3" : "bg-transparent py-5"
+                    isScrolled ? "bg-[var(--background)] shadow-[0_24px_24px_0_rgba(0,168,122,0.06)] h-20" : "bg-transparent h-24"
                 )}
             >
-                <div className="container mx-auto px-4 flex items-center justify-between">
+                <div className="flex justify-between items-center px-4 md:px-8 h-full w-full max-w-[1400px] mx-auto relative px-safe">
 
-                    {/* Mobile Menu Button */}
-                    <button
-                        className="lg:hidden text-[var(--foreground)]"
-                        onClick={() => setIsMobileMenuOpen(true)}
-                    >
-                        <Menu className="w-6 h-6" />
-                    </button>
+                    {/* Left Section (Mobile Menu / Desktop Logo) */}
+                    <div className="flex-1 flex items-center justify-start z-50">
+                        {/* Mobile Menu Button */}
+                        <button
+                            className="lg:hidden text-[var(--foreground)] active:scale-95 transition-transform"
+                            onClick={() => setIsMobileMenuOpen(true)}
+                        >
+                            <Menu className="w-6 h-6" />
+                        </button>
 
-                    {/* Logo */}
-                    <div className="flex flex-col items-center lg:items-start">
-                        <h1 className="text-2xl font-bold tracking-[0.1em] m-0">PFSTUDIO</h1>
-                        <span className="text-[10px] uppercase tracking-wider text-gray-500 hidden lg:block">
-                            Oversize - Boxy Fit - Clásicas
-                        </span>
+                        {/* Desktop Logo */}
+                        <div className="hidden lg:flex">
+                            <button
+                                onClick={() => {
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    router.push('/');
+                                }}
+                                className="text-[28px] font-extrabold tracking-tight text-[var(--foreground)] m-0 hover:text-[var(--color-main)] transition-colors whitespace-nowrap outline-none"
+                                title="Ir al inicio"
+                            >
+                                PFSTUDIO
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Desktop Navigation */}
-                    <nav className="hidden lg:flex gap-8">
-                        {["Hombres", "Mujeres", "Niños", "Todas"].map((dept) => (
-                            <Link
-                                key={dept}
-                                href={`/?dept=${dept}#productos`}
-                                className="text-[var(--foreground)] font-medium text-sm hover:text-[var(--color-main)] transition-colors uppercase tracking-wider relative group"
+                    {/* Center Section (Mobile Logo / Desktop Nav) */}
+                    <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:transform-none z-50 flex-none flex items-center justify-center">
+                        {/* Mobile Logo */}
+                        <div className="flex lg:hidden">
+                            <button
+                                onClick={() => {
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                    router.push('/');
+                                }}
+                                className="text-[24px] font-extrabold tracking-tight text-[var(--foreground)] m-0 hover:text-[var(--color-main)] transition-colors whitespace-nowrap outline-none"
+                                title="Ir al inicio"
                             >
-                                {dept}
-                                <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[var(--color-main)] transition-all group-hover:w-full"></span>
-                            </Link>
-                        ))}
-                    </nav>
+                                PFSTUDIO
+                            </button>
+                        </div>
+
+                        {/* Desktop Navigation */}
+                        <nav className="hidden lg:flex items-center space-x-8 font-bold tracking-tight">
+                            {["Hombres", "Mujeres", "Niños", "Todas"].map((dept) => (
+                                <Link
+                                    key={dept}
+                                    href={`/?dept=${dept}#productos`}
+                                    className="text-gray-400 hover:text-[var(--foreground)] transition-colors duration-200 active:scale-95 uppercase text-sm tracking-wider"
+                                >
+                                    {dept}
+                                </Link>
+                            ))}
+                        </nav>
+                    </div>
 
                     {/* Icons */}
-                    <div className="flex items-center gap-4">
-                        <div className="relative flex items-center">
+                    <div className="flex-1 flex items-center justify-end space-x-4 sm:space-x-6 z-50">
+                        <div className="relative flex items-center hidden sm:flex">
                             {isSearchOpen && (
                                 <input
                                     type="text"
@@ -121,31 +146,34 @@ export default function Navbar() {
                                         }
                                     }}
                                     placeholder="Buscar..."
-                                    className="absolute right-8 w-48 px-3 py-1 bg-white/80 dark:bg-black/80 border border-gray-200 dark:border-gray-800 rounded-full text-sm focus:outline-none focus:border-[var(--color-main)] animate-slideInRight"
+                                    className="absolute right-8 w-48 px-3 py-1 bg-white/10 dark:bg-black/80 border border-gray-200/20 dark:border-gray-800 rounded-full text-sm focus:outline-none focus:border-[var(--color-main)] animate-slideInRight"
                                     autoFocus
                                 />
                             )}
                             <button
                                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                                className="text-[var(--foreground)] hover:text-[var(--color-main)] transition-colors"
+                                className="active:scale-95 transition-transform text-gray-400 hover:text-[var(--foreground)]"
                             >
                                 <Search className="w-5 h-5" />
                             </button>
                         </div>
+
+                        {/* Search icon logic for mobile - we use the drawer instead, this simply opens the search bar */}
+
                         {isInitialized && user ? (
                             <div className="relative group flex items-center">
-                                <button className="text-[var(--foreground)] hover:text-[var(--color-main)] transition-colors flex items-center gap-2">
+                                <button className="active:scale-95 transition-transform text-gray-400 hover:text-[var(--foreground)] flex items-center gap-2">
                                     <User className="w-5 h-5" />
                                 </button>
                                 <div className="absolute right-0 top-full pt-2 w-48 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all">
-                                    <div className="bg-[var(--background)] border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg p-2 flex flex-col">
-                                        <span className="px-4 py-2 text-xs text-gray-500 border-b border-gray-100 dark:border-gray-800 mb-1 truncate text-center">
+                                    <div className="bg-[var(--background)] border border-white/5 rounded-xl shadow-2xl p-2 flex flex-col">
+                                        <span className="px-4 py-2 text-xs text-gray-500 border-b border-white/5 mb-1 truncate text-center font-medium">
                                             {user.email}
                                         </span>
                                         {isAdmin ? (
                                             <Link
                                                 href="/admin"
-                                                className="w-full text-left px-4 py-2 mt-1 text-sm text-[var(--foreground)] hover:bg-gray-50 dark:hover:bg-zinc-900 rounded-lg transition-colors flex items-center gap-2 font-medium"
+                                                className="w-full text-left px-4 py-2 mt-1 text-sm text-[var(--foreground)] hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2 font-medium"
                                             >
                                                 <LayoutDashboard className="w-4 h-4" />
                                                 Panel Admin
@@ -153,7 +181,7 @@ export default function Navbar() {
                                         ) : (
                                             <Link
                                                 href="/perfil"
-                                                className="w-full text-left px-4 py-2 mt-1 text-sm text-[var(--foreground)] hover:bg-gray-50 dark:hover:bg-zinc-900 rounded-lg transition-colors flex items-center gap-2 font-medium"
+                                                className="w-full text-left px-4 py-2 mt-1 text-sm text-[var(--foreground)] hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2 font-medium"
                                             >
                                                 <User className="w-4 h-4" />
                                                 Mi Perfil
@@ -161,14 +189,14 @@ export default function Navbar() {
                                         )}
                                         <Link
                                             href="/favoritos"
-                                            className="w-full text-left px-4 py-2 mt-1 text-sm text-[var(--foreground)] hover:bg-gray-50 dark:hover:bg-zinc-900 rounded-lg transition-colors flex items-center gap-2 font-medium"
+                                            className="w-full text-left px-4 py-2 mt-1 text-sm text-[var(--foreground)] hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2 font-medium"
                                         >
-                                            <Heart className="w-4 h-4 text-red-500" />
+                                            <Heart className="w-4 h-4 text-[var(--color-main)]" />
                                             Mis Favoritos
                                         </Link>
                                         <button
                                             onClick={handleLogout}
-                                            className="w-full text-left px-4 py-2 mt-1 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors flex items-center gap-2 font-medium"
+                                            className="w-full text-left px-4 py-2 mt-1 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2 font-medium"
                                         >
                                             <LogOut className="w-4 h-4" />
                                             Cerrar Sesión
@@ -180,16 +208,16 @@ export default function Navbar() {
                         ) : (
                             <button
                                 onClick={() => setModalOpen(true)}
-                                className="flex text-[var(--foreground)] hover:text-[var(--color-main)] transition-colors"
+                                className="flex active:scale-95 transition-transform text-gray-400 hover:text-[var(--foreground)]"
                                 title="Mi Cuenta"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                                <User className="w-5 h-5" />
                             </button>
                         )}
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setCartOpen(true)}
-                            className="text-[var(--foreground)] hover:text-[var(--color-main)] transition-colors relative flex items-center justify-center"
+                            className="active:scale-95 transition-transform text-gray-400 hover:text-[var(--foreground)] relative flex items-center justify-center"
                         >
                             <motion.div
                                 key={`cart-icon-${totalItems}`}
@@ -199,15 +227,15 @@ export default function Navbar() {
                             >
                                 <ShoppingBag className="w-5 h-5" />
                             </motion.div>
-                            
+
                             <AnimatePresence>
                                 {isMounted && totalItems > 0 && (
-                                    <motion.span 
+                                    <motion.span
                                         key={`badge-${totalItems}`}
                                         initial={{ scale: 0, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
                                         exit={{ scale: 0, opacity: 0 }}
-                                        className="absolute -top-2 -right-2 bg-[var(--color-main)] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-md shadow-[var(--color-main)]/30"
+                                        className="absolute -top-2 -right-2 bg-[var(--color-main)] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-md shadow-[var(--color-main)]/30"
                                     >
                                         {totalItems}
                                     </motion.span>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 import Link from "next/link";
-import { LayoutDashboard, Package, ShoppingCart, LogOut, ArrowLeft, Users, MessageSquare, Tag, Settings, Store } from "lucide-react";
+import { LayoutGrid, Box, Package, ShoppingCart, LogOut, ArrowLeft, Users, MessageSquare, Tag, Settings, Store } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -75,9 +75,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     const navItems = [
-        { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-        { name: "Products", href: "/admin/products", icon: Package },
-        { name: "Categories", href: "/admin/categories", icon: Package },
+        { name: "Dashboard", href: "/admin", icon: LayoutGrid },
+        { name: "Products", href: "/admin/products", icon: Box },
+        { name: "Categories", href: "/admin/categories", icon: Box },
         { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
         { name: "Users", href: "/admin/users", icon: Users },
         { name: "Messages", href: "/admin/messages", icon: MessageSquare },
@@ -89,8 +89,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Sidebar */}
             <aside className="w-[280px] bg-[#0c0e15] border-r border-[#1e212b] p-6 flex-col hidden md:flex sticky top-0 h-screen transition-all">
                 <div className="mb-10 flex items-center gap-3">
-                    <div className="bg-white text-black p-2 rounded-lg flex items-center justify-center font-bold text-xl h-10 w-10">
-                        V
+                    <div className="bg-white text-black p-2 rounded-lg flex items-center justify-center font-bold text-xl h-10 w-10 shrink-0">
+                        PF
                     </div>
                     <div>
                         <h1 className="text-lg font-bold leading-none">PFSTUDIO</h1>
@@ -139,8 +139,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {/* Top Header */}
                 <header className="bg-[#0c0e15] border-b border-[#1e212b] p-4 flex items-center justify-between lg:justify-end shrink-0 h-[72px]">
                     <div className="flex md:hidden items-center gap-2">
-                        <div className="bg-white text-black p-1.5 rounded-md flex items-center justify-center font-bold text-sm h-8 w-8">
-                            V
+                        <div className="bg-white text-black p-1.5 rounded-md flex items-center justify-center font-bold text-sm h-8 w-8 shrink-0">
+                            PF
                         </div>
                         <h1 className="font-bold text-sm">PFSTUDIO</h1>
                     </div>

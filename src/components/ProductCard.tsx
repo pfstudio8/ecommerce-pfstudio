@@ -93,34 +93,34 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
 
     return (
         <motion.article
-            whileHover={{ y: -5 }}
+            whileHover={{ y: -8 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="group flex flex-col bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-lg overflow-hidden relative shadow-sm hover:shadow-xl"
+            className="group relative flex flex-col bg-white/5 dark:bg-white/5 border border-white/5 rounded-xl overflow-hidden shadow-2xl transition-all duration-300"
         >
 
-            {/* Quick View Button (Premium Feature) */}
+            {/* Quick View Button */}
             <button
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     onQuickView(product);
                 }}
-                className="absolute top-4 right-4 z-20 bg-white/90 dark:bg-black/90 p-2 rounded-full shadow-md opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 hover:bg-[var(--color-main)] hover:text-white dark:hover:text-white text-gray-700 dark:text-gray-300"
+                className="absolute top-4 right-4 z-20 bg-black/60 backdrop-blur-md p-2 rounded-full shadow-md opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 hover:bg-[var(--color-main)] text-white hover:scale-110"
                 title="Vista Rápida"
             >
                 <Eye className="w-5 h-5" />
             </button>
 
-            {/* Favorite (Wishlist) Button */}
+            {/* Favorite Button */}
             <button
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     handleFavoriteClick(e);
                 }}
-                className={`absolute top-4 left-4 z-20 bg-white/90 dark:bg-black/90 p-2 rounded-full shadow-md transition-all duration-300 hover:scale-110 ${isFavorite
+                className={`absolute top-14 right-4 z-20 bg-black/60 backdrop-blur-md p-2 rounded-full shadow-md transition-all duration-300 hover:scale-110 ${isFavorite
                     ? "text-red-500 opacity-100"
-                    : "text-gray-400 dark:text-gray-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-red-500"
+                    : "text-white opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-red-500"
                     }`}
                 title="Añadir a Favoritos"
             >
@@ -128,18 +128,41 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
             </button>
 
             {/* Product Image Slider */}
-            <div className="relative aspect-[3/4] overflow-hidden bg-gray-100 dark:bg-zinc-800">
-                {product.isNew && (
-                    <span className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-[var(--color-main)] text-white text-xs font-bold px-3 py-1 uppercase tracking-wider rounded">
-                        Nuevo
-                    </span>
-                )}
+            <div className="relative aspect-[3/4] overflow-hidden bg-black/40">
+                {/* Product Tags overlay */}
+                {(() => {
+                    let sizeStock = 0;
+                    if (!selectedSize) {
+                        sizeStock = product.product_stock?.reduce((acc, curr) => acc + curr.stock_quantity, 0) ?? product.stock ?? 0;
+                    } else {
+                        const found = product.product_stock?.find(s => s.size === selectedSize);
+                        sizeStock = found ? found.stock_quantity : (product.stock ?? 0);
+                    }
 
-                {/* Images are mapped with a wrapper div to sustain the slider layout and Next.js fill prop */}
+                    if (sizeStock > 0 && sizeStock <= 3) {
+                        return (
+                            <div className="absolute top-4 left-4 z-20">
+                                <span className="bg-red-900/80 backdrop-blur-sm text-red-200 text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase border border-red-500/30">
+                                    ¡ÚLTIMAS {sizeStock}!
+                                </span>
+                            </div>
+                        );
+                    } else if (product.isNew) {
+                        return (
+                            <div className="absolute top-4 left-4 z-20">
+                                <span className="bg-[var(--color-main)]/80 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase border border-[var(--color-main)]">
+                                    NUEVO
+                                </span>
+                            </div>
+                        );
+                    }
+                    return null;
+                })()}
+
                 <Link href={`/producto/${product.id}`} className="block h-full w-full">
                     <div
-                        className="flex transition-transform duration-200 ease-in-out h-full w-full"
-                        style={{ transform: `translateX(-${currentImageIndex * 100}%)` }}
+                        className="flex transition-transform duration-500 ease-in-out h-full w-full group-hover:scale-105"
+                        style={{ transform: `scale(1) translateX(-${currentImageIndex * 100}%)` }}
                     >
                         {product.images.map((img, idx) => (
                             <div key={idx} className="relative w-full h-full flex-shrink-0">
@@ -147,7 +170,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                                     src={img}
                                     alt={`${product.name} - Vista ${idx + 1}`}
                                     fill
-                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                     className="object-cover"
                                 />
                             </div>
@@ -159,13 +182,13 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                     <>
                         <button
                             onClick={handlePrevImage}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-black/90 hover:scale-110 shadow-lg"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-[var(--color-main)] hover:scale-110 shadow-lg"
                         >
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                         </button>
                         <button
                             onClick={handleNextImage}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-black/90 hover:scale-110 shadow-lg"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-[var(--color-main)] hover:scale-110 shadow-lg"
                         >
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
                         </button>
@@ -173,33 +196,24 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                 )}
             </div>
 
-            {/* Product Info */}
-            <div className="p-5 flex flex-col flex-grow">
-                <Link href={`/producto/${product.id}`} className="w-fit hover:opacity-80 transition-opacity">
-                    <h3 className="text-xl font-bold tracking-tight text-[var(--foreground)] mb-1">
-                        {product.name}
-                    </h3>
-                </Link>
-
-                {/* Reviews Summary */}
-                {product.reviews && product.reviews.length > 0 && (
-                    <div className="flex items-center gap-1 mb-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {(product.reviews.reduce((acc, curr) => acc + curr.rating, 0) / product.reviews.length).toFixed(1)}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                            ({product.reviews.length})
-                        </span>
+            {/* Product Info Bento Block */}
+            <div className="p-6 flex flex-col flex-grow">
+                <div className="flex justify-between items-start mb-4 gap-4">
+                    <div>
+                        <Link href={`/producto/${product.id}`} className="w-fit hover:opacity-80 transition-opacity">
+                            <h3 className="text-xl font-bold tracking-tight text-[var(--foreground)] mb-1 leading-tight">
+                                {product.name.toUpperCase()}
+                            </h3>
+                        </Link>
+                        <p className="text-gray-400 text-sm font-medium">{product.category}</p>
                     </div>
-                )}
-
-                <p className="text-lg text-[var(--color-main)] font-semibold mb-4 mt-1">
-                    ${product.price.toLocaleString("es-AR")}
-                </p>
+                    <span className="font-black text-xl text-[var(--color-main)] shrink-0">
+                        ${product.price.toLocaleString("es-AR")}
+                    </span>
+                </div>
 
                 {/* Size Selector */}
-                <div className="flex gap-2 mb-4 mt-auto">
+                <div className="flex gap-2 mb-6 mt-auto">
                     {sizes.map((size) => {
                         let sizeStock = 0;
                         if (product.product_stock && product.product_stock.length > 0) {
@@ -221,16 +235,16 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                                     if (!isOutOfStock) setSelectedSize(size);
                                 }}
                                 title={isOutOfStock ? "Agotado" : "Disponible"}
-                                className={`w-10 h-10 rounded border flex items-center justify-center text-sm font-medium transition-colors relative overflow-hidden ${selectedSize === size
-                                    ? "border-[var(--color-main)] bg-[var(--color-main)] text-white"
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold transition-all relative overflow-hidden ${selectedSize === size
+                                    ? "bg-[var(--color-main)] text-white shadow-[0_4px_12px_rgba(0,168,122,0.4)] scale-105"
                                     : isOutOfStock
-                                        ? "border-gray-200 dark:border-zinc-800 text-gray-400 dark:text-gray-600 bg-transparent opacity-60"
-                                        : "border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 hover:border-[var(--color-main)] active:bg-gray-100 dark:active:bg-zinc-800"
+                                        ? "bg-white/5 border border-white/5 text-gray-600 opacity-50 cursor-not-allowed"
+                                        : "bg-white/5 border border-white/10 text-gray-300 hover:bg-[var(--color-main)]/20 hover:border-[var(--color-main)]/50 active:scale-95"
                                     }`}
                             >
                                 {size}
                                 {isOutOfStock && (
-                                    <svg className="absolute inset-0 w-full h-full text-gray-300 dark:text-gray-600/50 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                    <svg className="absolute inset-0 w-full h-full text-white/5 pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
                                         <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="4" />
                                     </svg>
                                 )}
@@ -239,51 +253,14 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                     })}
                 </div>
 
-                {/* Low Stock Warning */}
-                <AnimatePresence>
-                    {(() => {
-                        let sizeStock = 0;
-                        if (!selectedSize) {
-                            sizeStock = product.product_stock?.reduce((acc, curr) => acc + curr.stock_quantity, 0) ?? product.stock ?? 0;
-                        } else {
-                            const found = product.product_stock?.find(s => s.size === selectedSize);
-                            sizeStock = found ? found.stock_quantity : (product.stock ?? 0);
-                        }
-
-                        // Show warning if stock is between 1 and 3 (inclusive)
-                        if (sizeStock > 0 && sizeStock <= 3) {
-                            return (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                                    animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
-                                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                                    className="flex items-center gap-2 text-red-500 bg-red-50 dark:bg-red-950/20 px-3 py-2 rounded-md border border-red-100 dark:border-red-900/50"
-                                >
-                                    <motion.span
-                                        animate={{ scale: [1, 1.2, 1] }}
-                                        transition={{ repeat: Infinity, duration: 1.5 }}
-                                        className="text-lg"
-                                    >
-                                        🔥
-                                    </motion.span>
-                                    <span className="text-xs font-bold uppercase tracking-wider">
-                                        ¡Últimas {sizeStock} unidades!
-                                    </span>
-                                </motion.div>
-                            );
-                        }
-                        return null;
-                    })()}
-                </AnimatePresence>
-
-                <div className="flex flex-col gap-2.5 mt-4">
-                    {/* Add to Cart Button */}
+                {/* Actions Row */}
+                <div className="flex gap-3 mt-auto">
                     <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={handleAddToCart}
-                        className={`w-full py-2.5 sm:py-3 rounded font-semibold flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 hover:shadow-lg uppercase tracking-wider text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none ${isAdded
-                            ? "bg-green-500 text-white hover:bg-green-600 hover:shadow-green-500/20"
-                            : "bg-[var(--foreground)] text-[var(--background)] hover:bg-[var(--color-main)] hover:text-white hover:shadow-[var(--color-main)]/20"
+                        className={`flex-grow py-3 rounded-lg flex items-center justify-center transition-all font-extrabold text-sm tracking-wider shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${isAdded
+                            ? "bg-green-500 text-white shadow-green-500/20"
+                            : "bg-gradient-to-r from-[var(--color-main)] to-[#008f65] text-white hover:opacity-90 shadow-[var(--color-main)]/20"
                             }`}
                         disabled={!selectedSize && !isAdded}
                     >
@@ -291,25 +268,24 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                             {isAdded ? (
                                 <motion.div key="added" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.2 }} className="flex items-center gap-2">
                                     <Check className="w-4 h-4 shrink-0" />
-                                    <span>¡Agregado!</span>
+                                    <span>¡AGREGADO!</span>
                                 </motion.div>
                             ) : (
                                 <motion.div key="add" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.2 }} className="flex items-center gap-2">
                                     <ShoppingCart className="w-4 h-4 shrink-0" />
-                                    <span className="truncate">{selectedSize ? "Agregar Producto" : "Selecciona Talla"}</span>
+                                    <span className="truncate">{selectedSize ? "AGREGAR AL CARRITO" : "SELECCIONA TALLA"}</span>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </motion.button>
 
-                    {/* WhatsApp Order Button */}
                     <button
                         onClick={handleWhatsAppOrder}
-                        className="w-full py-2.5 sm:py-3 border-2 border-green-600 text-green-600 rounded font-semibold flex items-center justify-center gap-2 hover:bg-green-600 hover:text-white transition-all uppercase tracking-wider text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-green-600"
                         disabled={!selectedSize}
+                        className="px-4 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#006c49]/20 text-[#69f6b8] border border-[#006c49]/40 hover:bg-[#69f6b8] hover:text-[#00452d]"
+                        title={selectedSize ? "Pedir por WhatsApp" : "Selecciona talla primero"}
                     >
                         <FaWhatsapp className="w-5 h-5 shrink-0" />
-                        <span className="truncate">{selectedSize ? "Pedir por Whatsapp" : "Selecciona Talla"}</span>
                     </button>
                 </div>
             </div>

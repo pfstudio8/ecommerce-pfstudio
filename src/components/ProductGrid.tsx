@@ -102,41 +102,21 @@ export function ProductGrid() {
     };
 
     return (
-        <section className="py-24 bg-[var(--background)] overflow-hidden" id="productos">
-            <div className="container mx-auto px-6 md:px-4">
-
-                {/* Section Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-100px" }}
-                    transition={{ duration: 0.3 }}
-                    className="flex flex-col items-center mb-10"
-                >
-                    <h2 className="text-4xl font-bold tracking-tight text-[var(--foreground)] mb-4">
-                        Nuestros Diseños
-                    </h2>
-                    <motion.div 
-                        initial={{ width: 0 }}
-                        whileInView={{ width: 96 }} // represents w-24 (6rem ~ 96px)
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.1, duration: 0.4, ease: "easeOut" }}
-                        className="h-1 bg-[var(--color-main)] mb-2 rounded-full"
-                    />
-                </motion.div>
+        <section className="pb-24 bg-[var(--background)] overflow-hidden" id="productos">
+            <div className="container mx-auto px-6 md:px-8 max-w-[1400px]">
 
                 <div className="flex flex-col gap-8">
                     {/* Header Controls */}
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center mb-4 mt-8">
                         <button
                             onClick={() => setIsFilterMenuOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors shadow-sm font-medium text-sm"
+                            className="px-6 py-3 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 transition-colors flex items-center gap-2 font-bold uppercase tracking-wider text-sm shadow-sm"
                         >
                             <Filter className="w-4 h-4" />
-                            Filtrar Productos
+                            Filtros
                         </button>
-                        <div className="text-sm text-gray-500">
-                            Mostrando {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''}
+                        <div className="text-sm font-medium tracking-wider text-gray-500 uppercase">
+                            {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''}
                         </div>
                     </div>
 

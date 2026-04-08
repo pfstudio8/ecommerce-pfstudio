@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function FloatingWhatsApp() {
-    const [whatsapp, setWhatsapp] = useState("5491100000000");
+    const [whatsapp, setWhatsapp] = useState("5493704724837");
 
     useEffect(() => {
         const fetchNumber = async () => {

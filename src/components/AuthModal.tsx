@@ -163,7 +163,7 @@ export default function AuthModal() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         transition={{ type: "spring", duration: 0.5 }}
-                        className="relative w-full max-w-md bg-[var(--background)]/80 backdrop-blur-xl border border-white/10 dark:border-zinc-800/50 rounded-3xl shadow-2xl overflow-hidden"
+                        className="relative w-full max-w-md max-h-[95vh] flex flex-col bg-[var(--background)]/80 backdrop-blur-xl border border-white/10 dark:border-zinc-800/50 rounded-3xl shadow-2xl overflow-y-auto overflow-x-hidden"
                     >
                         {/* Header Decoration */}
                         <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-[var(--color-main)]/20 to-transparent pointer-events-none" />
@@ -177,12 +177,10 @@ export default function AuthModal() {
 
                         <div className="p-8 pt-10">
 
-                            {/* Social Login - Removed because it requires explicit Supabase dashboard configuration */}
-
                             {/* Form Wrapper */}
-                            <form onSubmit={handleSubmit} className="w-full relative">
+                            <form onSubmit={handleSubmit} className="w-full relative flex flex-col">
                                 {/* Animated Inputs Wrapper */}
-                                <div className="relative overflow-hidden flex items-start justify-center w-full mb-6 min-h-[500px] h-full">
+                                <div className="relative overflow-hidden flex-1 w-full mb-6">
                                     <AnimatePresence custom={direction} mode="wait">
                                         <motion.div
                                             key={isLogin ? "login" : "register"}
@@ -210,7 +208,7 @@ export default function AuthModal() {
                                                 </p>
                                             </div>
 
-                                            <div className="space-y-4">
+                                            <div className="space-y-3">
 
                                                 {!isLogin && !isForgotPassword && (
                                                     <>
@@ -223,7 +221,7 @@ export default function AuthModal() {
                                                                     required={!isLogin && !isForgotPassword}
                                                                     value={name}
                                                                     onChange={(e) => setName(e.target.value)}
-                                                                    className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                    className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
                                                                     placeholder="Juan Pérez"
                                                                 />
                                                             </div>
@@ -238,7 +236,7 @@ export default function AuthModal() {
                                                                     required={!isLogin && !isForgotPassword}
                                                                     value={dni}
                                                                     onChange={(e) => setDni(e.target.value)}
-                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
                                                                     placeholder="Sin puntos"
                                                                 />
                                                             </div>
@@ -249,7 +247,7 @@ export default function AuthModal() {
                                                                     required={!isLogin && !isForgotPassword}
                                                                     value={phone}
                                                                     onChange={(e) => setPhone(e.target.value)}
-                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
                                                                     placeholder="+54 11 ..."
                                                                 />
                                                             </div>
@@ -261,7 +259,7 @@ export default function AuthModal() {
                                                                 required={!isLogin && !isForgotPassword}
                                                                 value={address}
                                                                 onChange={(e) => setAddress(e.target.value)}
-                                                                className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
                                                                 placeholder="Av. Falsa 123"
                                                             />
                                                         </div>
@@ -280,7 +278,7 @@ export default function AuthModal() {
                                                             spellCheck="false"
                                                             value={email}
                                                             onChange={(e) => setEmail(e.target.value)}
-                                                            className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                            className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
                                                             placeholder="tu@email.com"
                                                         />
                                                     </div>
@@ -303,7 +301,7 @@ export default function AuthModal() {
                                                                 required={!isForgotPassword}
                                                                 value={password}
                                                                 onChange={(e) => setPassword(e.target.value)}
-                                                                className="w-full pl-12 pr-12 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-main)]/50 focus:border-[var(--color-main)] transition-all"
+                                                                className="w-full pl-12 pr-12 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
                                                                 placeholder="••••••••"
                                                             />
                                                             <button
@@ -349,10 +347,10 @@ export default function AuthModal() {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full py-4 bg-[var(--foreground)] text-[var(--background)] rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[var(--color-main)] hover:text-white transition-all duration-300 shadow-[0_0_20px_rgba(0,0,0,0.1)] hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 uppercase tracking-widest text-sm relative overflow-hidden"
+                                    className="w-full py-4 mt-auto bg-[var(--foreground)] text-[var(--background)] rounded-xl font-black flex items-center justify-center gap-2 hover:bg-[var(--color-main)] hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 uppercase tracking-[0.2em] text-[13px] relative overflow-hidden"
                                 >
                                     <span className={cn("transition-opacity flex items-center gap-2", isLoading ? "opacity-0" : "opacity-100")}>
-                                        {isForgotPassword ? "Enviar Enlace" : isLogin ? "Ingresar" : "Crear Cuenta"}
+                                        {isForgotPassword ? "Enviar Enlace" : isLogin ? "Ingresar a mi cuenta" : "Crear mi Cuenta"}
                                     </span>
                                     {isLoading && (
                                         <div className="absolute inset-0 flex items-center justify-center">
@@ -362,12 +360,34 @@ export default function AuthModal() {
                                 </button>
                             </form>
 
+                            {/* Social Login (Moved to bottom) */}
+                            <div className="mt-6">
+                                <div className="mb-6 relative flex items-center justify-center">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-gray-200 dark:border-zinc-800"></div>
+                                    </div>
+                                    <span className="relative bg-[var(--background)] px-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                        O INGRESA MÁS RÁPIDO
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => handleOAuth('google')}
+                                    className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-[#141416] text-white border border-[#2a2e3b] rounded-xl hover:bg-[#1e212b] transition-all font-bold group"
+                                >
+                                    <div className="bg-white p-1 rounded-full group-hover:scale-110 transition-transform">
+                                        <FcGoogle className="w-4 h-4" />
+                                    </div>
+                                    Continuar con Google
+                                </button>
+                            </div>
+
                             {/* Toggle Bottom */}
-                            <div className="mt-2 text-center text-sm font-medium text-gray-500">
+                            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-zinc-800/50 text-center text-sm font-medium text-gray-500">
                                 {isLogin ? "¿Nuevo en PFSTUDIO? " : "¿Ya eres miembro? "}
                                 <button
                                     onClick={() => toggleMode(!isLogin)}
-                                    className="font-bold text-[var(--color-main)] hover:underline ml-1"
+                                    className="font-black text-[var(--foreground)] hover:text-[var(--color-main)] transition-colors ml-1"
                                 >
                                     {isLogin ? "Regístrate ahora" : "Inicia Sesión"}
                                 </button>

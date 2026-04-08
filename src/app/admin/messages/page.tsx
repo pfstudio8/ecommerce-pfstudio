@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Mail, Loader2, Search, Trash2, CheckCircle2, ChevronDown, Clock, Archive } from "lucide-react";
+import { Mail, Search, RefreshCw, Archive, Trash2, Star, Bolt, Smile, Loader2, Inbox, Send } from "lucide-react";
 import { sileo } from "sileo";
 
 interface Message {
@@ -92,128 +92,168 @@ export default function AdminMessagesPage() {
             setMessages(prev => prev.filter(m => m.id !== id));
             sileo.success({ title: "Mensaje eliminado", description: "El mensaje ha sido borrado exitosamente." });
         } catch (error) {
-            console.error("Error deleting message:", error);
-            sileo.error({ title: "Error", description: "No se pudo eliminar el mensaje." });
+             console.error("Error deleting message:", error);
+             sileo.error({ title: "Error", description: "No se pudo eliminar el mensaje." });
         }
     };
 
     if (isLoading) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-main)]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#85adff]" />
             </div>
         );
     }
 
-    const unreadCount = messages.filter(m => m.status === 'unread').length;
-
     return (
-        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+            {/* Editorial Header Section */}
+            <div className="mb-10 pt-4 flex flex-col md:flex-row justify-between md:items-end gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-white mb-1 flex items-center gap-3">
-                        Bandeja de Entrada
-                        {unreadCount > 0 && (
-                            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
-                                {unreadCount} nuevos
-                            </span>
-                        )}
-                    </h1>
-                    <p className="text-sm text-gray-400">Lee y responde los mensajes enviados desde el formulario de contacto.</p>
+                    <h1 className="text-4xl font-extrabold tracking-tight text-[#f9f5f8] mb-2 font-['Manrope']">Message Inbox</h1>
+                    <p className="text-[#adaaad] max-w-2xl text-sm">Manage your customer inquiries, supplier communications, and internal team threads from a single command center.</p>
                 </div>
             </div>
 
-            <div className="bg-[#0c0e15] rounded-2xl border border-[#1e212b] shadow-sm overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-[#1e212b] flex flex-col sm:flex-row gap-4 justify-between bg-[#0c0e15]">
-                    <div className="relative max-w-sm w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar nombre, correo o mensaje..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 text-sm bg-[#1e212b] text-white border-[#2a2e3b] rounded-xl focus:ring-2 focus:ring-[var(--color-main)] focus:border-transparent transition-all outline-none border"
-                        />
+            {/* Bento Grid Communication Dashboard */}
+            <div className="grid grid-cols-12 gap-6">
+                
+                {/* Left: Navigation Chips & Filters */}
+                <div className="col-span-12 lg:col-span-3 space-y-6">
+                    <div className="bg-[#19191c] p-6 rounded-xl border border-[#48474a]/10 space-y-4">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-[#adaaad]">Folders</h3>
+                        <div className="space-y-1">
+                            <button 
+                                onClick={() => setFilterStatus('all')}
+                                className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-colors ${filterStatus === 'all' ? 'bg-[#85adff]/10 text-[#85adff] font-semibold' : 'text-[#adaaad] hover:bg-[#1f1f22]'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Inbox className="w-4 h-4" />
+                                    <span className="text-sm">All Messages</span>
+                                </div>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${filterStatus === 'all' ? 'bg-[#85adff] text-[#000000] font-bold' : 'bg-[#262528] text-[#f9f5f8]'}`}>{messages.length}</span>
+                            </button>
+                            <button 
+                                onClick={() => setFilterStatus('unread')}
+                                className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-colors ${filterStatus === 'unread' ? 'bg-[#85adff]/10 text-[#85adff] font-semibold' : 'text-[#adaaad] hover:bg-[#1f1f22]'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Mail className="w-4 h-4" />
+                                    <span className="text-sm">Unread</span>
+                                </div>
+                                {messages.filter(m => m.status === 'unread').length > 0 && (
+                                    <span className="bg-[#ff716c] text-[#000000] text-[10px] font-bold px-2 py-0.5 rounded-full">{messages.filter(m => m.status === 'unread').length}</span>
+                                )}
+                            </button>
+                            <button 
+                                onClick={() => setFilterStatus('read')}
+                                className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-colors ${filterStatus === 'read' ? 'bg-[#85adff]/10 text-[#85adff] font-semibold' : 'text-[#adaaad] hover:bg-[#1f1f22]'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Send className="w-4 h-4" />
+                                    <span className="text-sm">Read</span>
+                                </div>
+                            </button>
+                            <button 
+                                onClick={() => setFilterStatus('archived')}
+                                className={`w-full flex justify-between items-center px-4 py-3 rounded-lg transition-colors ${filterStatus === 'archived' ? 'bg-[#85adff]/10 text-[#85adff] font-semibold' : 'text-[#adaaad] hover:bg-[#1f1f22]'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <Archive className="w-4 h-4" />
+                                    <span className="text-sm">Archived</span>
+                                </div>
+                            </button>
+                        </div>
                     </div>
-                    
-                    <div className="flex gap-2 relative">
-                        <select 
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="appearance-none pl-4 pr-10 py-2 text-sm bg-[#1e212b] text-white border border-[#2a2e3b] rounded-xl focus:ring-2 focus:ring-[var(--color-main)] focus:border-transparent transition-all outline-none font-medium cursor-pointer"
-                        >
-                            <option value="all">Todas las bandejas</option>
-                            <option value="unread">No leídos</option>
-                            <option value="read">Leídos</option>
-                            <option value="archived">Archivados</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+
+                    <div className="bg-[#19191c] p-6 rounded-xl border border-[#48474a]/10 space-y-4">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-[#adaaad]">Labels</h3>
+                        <div className="flex flex-wrap gap-2">
+                            <span className="bg-[#69f6b8]/10 text-[#69f6b8] border border-[#69f6b8]/20 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-[#69f6b8]/20 transition-colors">Support</span>
+                            <span className="bg-[#ac8aff]/10 text-[#ac8aff] border border-[#ac8aff]/20 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-[#ac8aff]/20 transition-colors">Inquiries</span>
+                            <span className="bg-[#262528] text-[#adaaad] border border-[#48474a]/10 px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:bg-[#2c2c2f] transition-colors">Feedback</span>
+                        </div>
                     </div>
                 </div>
-                
-                <div className="divide-y divide-[#1e212b]">
-                    {filteredMessages.length === 0 ? (
-                        <div className="text-center py-16 text-gray-500">
-                            <Mail className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                            <p>No se encontraron mensajes condichos filtros.</p>
-                        </div>
-                    ) : (
-                        filteredMessages.map((msg) => (
-                            <div key={msg.id} className={`p-6 flex flex-col sm:flex-row gap-6 hover:bg-[#141722] transition-colors ${msg.status === 'unread' ? 'bg-[#1e212b]/30' : ''}`}>
-                                <div className="flex-1 space-y-2">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <h3 className={`font-bold text-base ${msg.status === 'unread' ? 'text-white' : 'text-gray-300'}`}>
-                                            {msg.user_name}
-                                        </h3>
-                                        <span className="text-xs text-gray-500 bg-[#1e212b] px-2 py-0.5 rounded-full border border-[#2a2e3b]">
-                                            {msg.user_email}
-                                        </span>
-                                        {msg.status === 'unread' && (
-                                            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></span>
-                                        )}
-                                    </div>
-                                    <p className={`text-sm ${msg.status === 'unread' ? 'text-gray-300' : 'text-gray-500'}`}>
-                                        {msg.content}
-                                    </p>
-                                    <div className="flex items-center gap-2 text-xs text-gray-600 mt-2">
-                                        <Clock className="w-3 h-3" />
-                                        {new Date(msg.created_at).toLocaleString('es-AR', {
-                                            day: '2-digit', month: 'short', year: 'numeric',
-                                            hour: '2-digit', minute: '2-digit'
-                                        })}
-                                    </div>
+
+                {/* Right: Main Inbox List */}
+                <div className="col-span-12 lg:col-span-9 flex flex-col gap-6">
+                    <div className="bg-[#19191c] rounded-xl overflow-hidden shadow-xl border border-[#48474a]/10 relative min-h-[500px]">
+                        {/* Inbox Header Actions */}
+                        <div className="px-6 py-4 flex flex-col sm:flex-row gap-4 items-center justify-between bg-[#1f1f22]/50 border-b border-[#48474a]/10">
+                            <div className="flex items-center gap-4 w-full sm:w-auto">
+                                <div className="relative w-full sm:w-64">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#adaaad]" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search messages..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-9 pr-4 py-2 text-sm bg-[#131315] text-[#f9f5f8] border border-[#48474a]/10 rounded-lg focus:ring-1 focus:ring-[#85adff] focus:border-transparent transition-all outline-none"
+                                    />
                                 </div>
-                                
-                                <div className="flex sm:flex-col gap-2 shrink-0 justify-end sm:justify-start">
-                                    {msg.status !== 'read' && (
-                                        <button 
-                                            onClick={() => handleUpdateStatus(msg.id, 'read')}
-                                            className="p-2 bg-[#1e212b] hover:bg-gray-800 border border-[#2a2e3b] text-white rounded-lg transition-colors flex items-center justify-center group" 
-                                            title="Marcar como Leído"
-                                        >
-                                            <CheckCircle2 className="w-4 h-4 text-gray-400 group-hover:text-green-400" />
-                                        </button>
-                                    )}
-                                    {msg.status !== 'archived' && (
-                                        <button 
-                                            onClick={() => handleUpdateStatus(msg.id, 'archived')}
-                                            className="p-2 bg-[#1e212b] hover:bg-gray-800 border border-[#2a2e3b] text-white rounded-lg transition-colors flex items-center justify-center group" 
-                                            title="Archivar"
-                                        >
-                                            <Archive className="w-4 h-4 text-gray-400 group-hover:text-[var(--color-main)]" />
-                                        </button>
-                                    )}
-                                    <button 
-                                        onClick={() => handleDelete(msg.id)}
-                                        className="p-2 bg-[#1e212b] hover:bg-red-950/40 border border-[#2a2e3b] hover:border-red-900/50 text-white rounded-lg transition-colors flex items-center justify-center group" 
-                                        title="Eliminar permanentemente"
-                                    >
-                                        <Trash2 className="w-4 h-4 text-gray-400 group-hover:text-red-400" />
-                                    </button>
-                                </div>
+                                <button className="text-[#adaaad] hover:text-[#f9f5f8] transition-colors p-2 bg-[#131315] rounded-lg border border-[#48474a]/10 hover:border-[#48474a]/30" onClick={fetchMessages} title="Refresh Inbox">
+                                    <RefreshCw className="w-4 h-4" />
+                                </button>
                             </div>
-                        ))
-                    )}
+                            <div className="flex items-center gap-4 text-xs font-medium text-[#adaaad] w-full sm:w-auto justify-end">
+                                <span>Showing {filteredMessages.length} of {messages.length}</span>
+                            </div>
+                        </div>
+
+                        {/* Message List */}
+                        <div className="divide-y divide-[#48474a]/10 h-[600px] overflow-y-auto custom-scrollbar relative">
+                            {filteredMessages.length === 0 ? (
+                                <div className="px-6 py-24 text-center text-[#adaaad] absolute inset-0 flex flex-col items-center justify-center">
+                                    <Mail className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                                    <p className="text-lg font-bold text-[#f9f5f8]">Inbox Zero</p>
+                                    <p className="mt-1">You are all caught up!</p>
+                                </div>
+                            ) : (
+                                filteredMessages.map((msg) => (
+                                    <div key={msg.id} className={`px-6 py-6 flex flex-col md:flex-row md:items-center gap-4 hover:bg-[#1f1f22] transition-colors cursor-pointer group relative ${msg.status === 'unread' ? '' : 'opacity-80'}`}>
+                                        {msg.status === 'unread' && (
+                                            <div className="absolute left-0 top-3 bottom-3 w-1 bg-[#85adff] rounded-r-full"></div>
+                                        )}
+                                        <div className="flex items-center gap-4 w-full md:w-56 flex-shrink-0">
+                                            <Star className={`w-4 h-4 flex-shrink-0 ${msg.status === 'unread' ? 'text-[#85adff]' : 'text-[#adaaad]/50'} group-hover:text-[#85adff] transition-colors`} />
+                                            <div className="min-w-0">
+                                                <p className={`font-bold text-sm truncate ${msg.status === 'unread' ? 'text-[#f9f5f8]' : 'text-[#adaaad]'}`}>{msg.user_name}</p>
+                                                <p className="text-[10px] text-[#85adff] font-bold uppercase tracking-tight truncate mt-0.5">{msg.user_email}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex-grow min-w-0 pr-4 pl-8 md:pl-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`text-sm tracking-tight truncate ${msg.status === 'unread' ? 'font-bold text-[#f9f5f8]' : 'font-medium text-[#adaaad]'}`}>
+                                                    Mensaje web #{msg.id.substring(0, 5).toUpperCase()}
+                                                </span>
+                                                {msg.status === 'unread' && <span className="bg-[#ff716c]/20 flex-shrink-0 text-[#ff716c] text-[9px] px-2 py-0.5 rounded-full font-extrabold uppercase uppercase">Nuevo</span>}
+                                            </div>
+                                            <p className="text-sm text-[#adaaad] line-clamp-1 group-hover:line-clamp-none transition-all duration-300 relative">{msg.content}</p>
+                                        </div>
+                                        <div className="w-full md:w-32 pl-8 md:pl-0 text-left md:text-right flex-shrink-0 flex md:flex-col justify-between items-center md:items-end">
+                                            <p className={`text-xs ${msg.status === 'unread' ? 'font-bold text-[#f9f5f8]' : 'text-[#adaaad]'}`}>
+                                                {new Date(msg.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                            </p>
+                                            <div className="mt-2 text-[#adaaad] opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-1.5 md:gap-2">
+                                                {msg.status === 'unread' ? (
+                                                    <button onClick={(e) => { e.stopPropagation(); handleUpdateStatus(msg.id, 'read'); }} className="hover:bg-[#69f6b8]/10 hover:text-[#69f6b8] transition-colors p-1.5 rounded-md" title="Marcar como leído"><Star className="w-3.5 h-3.5" /></button>
+                                                ) : (
+                                                    <button onClick={(e) => { e.stopPropagation(); handleUpdateStatus(msg.id, 'unread'); }} className="hover:bg-[#85adff]/10 hover:text-[#85adff] transition-colors p-1.5 rounded-md" title="Marcar como no leído"><Mail className="w-3.5 h-3.5" /></button>
+                                                )}
+                                                
+                                                {msg.status !== 'archived' && (
+                                                    <button onClick={(e) => { e.stopPropagation(); handleUpdateStatus(msg.id, 'archived'); }} className="hover:bg-[#ac8aff]/10 hover:text-[#ac8aff] transition-colors p-1.5 rounded-md" title="Archivar"><Archive className="w-3.5 h-3.5" /></button>
+                                                )}
+                                                
+                                                <button onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); }} className="hover:bg-[#ff716c]/10 hover:text-[#ff716c] transition-colors p-1.5 rounded-md" title="Eliminar mensaje"><Trash2 className="w-3.5 h-3.5" /></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

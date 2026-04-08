@@ -37,7 +37,7 @@ function TransferSuccessContent() {
         cuit: storeInfo?.cuit || "27-44685115-8"
     };
 
-    const whatsappNumber = storeInfo?.whatsapp || "543704245651";
+    const whatsappNumber = storeInfo?.whatsapp || "5493704724837";
 
     useEffect(() => {
         // Clear the cart when they land on the success page

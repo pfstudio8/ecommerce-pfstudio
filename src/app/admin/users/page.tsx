@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Users, Search, Loader2, ArrowUpDown, Shield, User as UserIcon, Trash2 } from "lucide-react";
+import { Users, Search, Loader2, ArrowUpDown, Shield, User as UserIcon, Trash2, TrendingUp, DollarSign, ShoppingBag, Filter, Download, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
 import { sileo } from "sileo";
 
 interface CustomerProfile {
@@ -149,10 +149,8 @@ export default function AdminUsersPage() {
             const data = await res.json();
 
             if (res.ok && data.success) {
-                // actualizar estado
                 setUsers(prev => prev.filter(u => u.id !== id));
                 setFilteredUsers(prev => prev.filter(u => u.id !== id));
-                /* Opcionalmente recargar: fetchUsers() */
                 sileo.success({ title: "Usuario eliminado correctamente." });
             } else {
                 throw new Error(data.error || "Error al eliminar usuario del sistema.");
@@ -166,118 +164,167 @@ export default function AdminUsersPage() {
     if (isLoading) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-main)]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#85adff]" />
             </div>
         );
     }
 
+    // [Derived metric data]
+    const totalSpentGlobal = filteredUsers.reduce((sum, u) => sum + u.totalSpent, 0);
+    const totalOrdersGlobal = filteredUsers.reduce((sum, u) => sum + u.totalOrders, 0);
+    const avgLifeTimeValue = filteredUsers.length > 0 ? totalSpentGlobal / filteredUsers.length : 0;
+    const avgOrdersPerUser = filteredUsers.length > 0 ? totalOrdersGlobal / filteredUsers.length : 0;
+
     return (
-        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Clientes</h1>
-                    <p className="text-sm text-gray-400">Listado de usuarios que han interactuado con la tienda.</p>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+            
+            {/* Dashboard Header / Metrics Jewel Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-[#85adff] to-[#699cff] p-8 rounded-xl shadow-[0_24px_48px_-12px_rgba(133,173,255,0.2)] relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <p className="font-['Inter'] text-[#000000]/80 text-sm font-medium">Total Active Customers</p>
+                        <h2 className="font-['Manrope'] text-5xl font-extrabold text-[#000000] mt-2">{filteredUsers.length}</h2>
+                        <div className="mt-6 flex items-center gap-2 text-[#000000] bg-black/10 w-fit px-3 py-1 rounded-full text-xs font-bold">
+                            <TrendingUp className="w-4 h-4" />
+                            <span>Datos en Tiempo Real</span>
+                        </div>
+                    </div>
+                    <div className="absolute right-[-5%] bottom-[-40%] opacity-20 group-hover:scale-110 group-hover:rotate-6 transition-all duration-700">
+                        <Users className="w-64 h-64 text-[#000000]" strokeWidth={1} />
+                    </div>
                 </div>
-                <div className="bg-[#1e212b] border border-[#2a2e3b] px-4 py-2 rounded-lg text-sm text-gray-300 flex items-center gap-2 w-fit">
-                    <Users className="w-4 h-4 text-gray-400" />
-                    {users.length} Clientes Únicos
+                
+                <div className="bg-[#19191c] p-6 rounded-xl border border-[#48474a]/10 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#69f6b8]/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                    <div className="w-12 h-12 bg-[#262528] text-[#69f6b8] rounded-full flex items-center justify-center mb-4 border border-[#69f6b8]/20 relative z-10">
+                        <DollarSign className="w-6 h-6" />
+                    </div>
+                    <p className="font-['Inter'] text-[#adaaad] text-sm relative z-10">Avg. Life-time Value</p>
+                    <h3 className="font-['Manrope'] text-[#f9f5f8] text-2xl font-bold mt-1 relative z-10">${avgLifeTimeValue.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</h3>
+                </div>
+                
+                <div className="bg-[#19191c] p-6 rounded-xl border border-[#48474a]/10 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#ac8aff]/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+                    <div className="w-12 h-12 bg-[#262528] text-[#ac8aff] rounded-full flex items-center justify-center mb-4 border border-[#ac8aff]/20 relative z-10">
+                        <ShoppingBag className="w-6 h-6" />
+                    </div>
+                    <p className="font-['Inter'] text-[#adaaad] text-sm relative z-10">Avg. Orders / User</p>
+                    <h3 className="font-['Manrope'] text-[#f9f5f8] text-2xl font-bold mt-1 relative z-10">{avgOrdersPerUser.toFixed(1)}</h3>
                 </div>
             </div>
 
-            <div className="bg-[#0c0e15] rounded-2xl border border-[#1e212b] shadow-sm overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-[#1e212b] flex flex-col sm:flex-row gap-4 justify-between bg-[#0c0e15]">
-                    <div className="relative max-w-sm w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por correo..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 text-sm bg-[#1e212b] text-white border-[#2a2e3b] rounded-xl focus:ring-2 focus:ring-[var(--color-main)] focus:border-transparent transition-all outline-none border"
-                        />
+            {/* Users Table Section */}
+            <section className="bg-[#19191c] rounded-xl overflow-hidden shadow-2xl border border-[#48474a]/10">
+                <div className="px-8 py-6 flex flex-col xl:flex-row justify-between xl:items-center border-b border-[#48474a]/10 gap-4">
+                    <h3 className="font-['Manrope'] text-[#f9f5f8] text-xl font-bold">User Directory</h3>
+                    
+                    <div className="flex gap-2 w-full xl:w-auto">
+                        <div className="relative max-w-md w-full xl:w-64 mr-2">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#adaaad]" />
+                            <input
+                                type="text"
+                                placeholder="Search by email..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2 text-sm bg-[#131315] text-[#f9f5f8] border border-[#48474a]/20 rounded-lg focus:ring-1 focus:ring-[#85adff] focus:border-transparent transition-all outline-none"
+                            />
+                        </div>
+                        <button className="bg-[#262528] text-[#f9f5f8] px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 border border-[#48474a]/10 hover:bg-[#2c2c2f] transition-colors">
+                            <Filter className="w-4 h-4" /> Filter
+                        </button>
+                        <button className="bg-[#262528] text-[#f9f5f8] px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 border border-[#48474a]/10 hover:bg-[#2c2c2f] transition-colors">
+                            <Download className="w-4 h-4" /> Export
+                        </button>
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left border-collapse">
+                    <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-gray-50/5 dark:bg-zinc-900/30 border-b border-[#1e212b]">
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Usuario</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('totalOrders')}>
-                                    <div className="flex items-center gap-1">
-                                        Pedidos <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
+                            <tr className="bg-[#131315]/50 border-b border-[#48474a]/10">
+                                <th className="px-8 py-4 font-['Manrope'] text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad] cursor-pointer hover:text-[#f9f5f8] transition-colors" onClick={() => handleSort('email')}>
+                                    <div className="flex items-center gap-1">User {sortField === 'email' && <ArrowUpDown className="w-3 h-3" />}</div>
                                 </th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('totalSpent')}>
-                                    <div className="flex items-center gap-1">
-                                        Total Gastado <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
+                                <th className="px-8 py-4 font-['Manrope'] text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad]">
+                                    Status
                                 </th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors group" onClick={() => handleSort('lastSeen')}>
-                                    <div className="flex items-center gap-1">
-                                        Última Compra <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
+                                <th className="px-8 py-4 font-['Manrope'] text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad] cursor-pointer hover:text-[#f9f5f8] transition-colors" onClick={() => handleSort('isAdmin')}>
+                                    <div className="flex items-center gap-1">Role {sortField === 'isAdmin' && <ArrowUpDown className="w-3 h-3" />}</div>
                                 </th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rol</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Acciones</th>
+                                <th className="px-8 py-4 font-['Manrope'] text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad] cursor-pointer hover:text-[#f9f5f8] transition-colors" onClick={() => handleSort('totalOrders')}>
+                                    <div className="flex items-center gap-1">Orders {sortField === 'totalOrders' && <ArrowUpDown className="w-3 h-3" />}</div>
+                                </th>
+                                <th className="px-8 py-4 font-['Manrope'] text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad] cursor-pointer hover:text-[#f9f5f8] transition-colors" onClick={() => handleSort('totalSpent')}>
+                                    <div className="flex items-center gap-1">Total Spent {sortField === 'totalSpent' && <ArrowUpDown className="w-3 h-3" />}</div>
+                                </th>
+                                <th className="px-8 py-4 font-['Manrope'] text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad] text-right">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#1e212b]">
+                        <tbody className="divide-y divide-[#48474a]/10">
                             {filteredUsers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-16 text-gray-500">
-                                        No se encontraron usuarios con esos filtros.
+                                    <td colSpan={6} className="text-center py-12 text-[#adaaad]">
+                                        No se encontraron usuarios.
                                     </td>
                                 </tr>
                             ) : (
                                 filteredUsers.map((user, idx) => (
-                                    <tr key={idx} className="hover:bg-[#141722] transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 font-bold shrink-0">
-                                                    {user.email.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[var(--foreground)] font-medium text-sm truncate max-w-[200px]" title={user.email}>
-                                                        {user.email.split('@')[0]}
-                                                    </span>
-                                                    <span className="text-gray-500 text-xs truncate max-w-[200px]" title={user.email}>{user.email}</span>
+                                    <tr key={idx} className="group hover:bg-[#1f1f22] transition-colors duration-200">
+                                        <td className="px-8 py-6">
+                                            <div className="flex items-center gap-4">
+                                                {user.isAdmin ? (
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-[#ac8aff]/30 bg-[#262528] flex items-center justify-center text-[#ac8aff] font-bold shrink-0 shadow-[0_0_15px_rgba(172,138,255,0.1)]">
+                                                        {user.email.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-[#85adff]/30 bg-[#262528] flex items-center justify-center text-[#85adff] font-bold shrink-0">
+                                                        {user.email.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <p className="font-bold text-sm text-[#f9f5f8] line-clamp-1" title={user.email}>{user.email.split('@')[0]}</p>
+                                                    <p className="text-xs text-[#adaaad] mt-0.5 max-w-[150px] truncate" title={user.email}>{user.email}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 font-medium text-gray-300">
-                                            {user.totalOrders}
+                                        <td className="px-8 py-6">
+                                            {user.id ? (
+                                                <span className="bg-[#69f6b8]/10 text-[#69f6b8] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider line-clamp-1 border border-[#69f6b8]/20">Active</span>
+                                            ) : (
+                                                <span className="bg-[#48474a]/20 text-[#adaaad] px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider line-clamp-1 border border-[#48474a]/20" title="Usuario Invitado (Sin Registro)">Guest</span>
+                                            )}
                                         </td>
-                                        <td className="px-6 py-4 font-bold text-[var(--color-main)]">
-                                            ${user.totalSpent.toLocaleString('es-AR')}
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-400">
-                                            {new Date(user.lastSeen).toLocaleDateString('es-AR')}
-                                        </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-8 py-6">
                                             {user.isAdmin ? (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                                                    <Shield className="w-3 h-3" /> Admin
+                                                <span className="text-sm font-bold text-[#ac8aff] flex items-center gap-1.5">
+                                                    <Shield className="w-3.5 h-3.5" /> Admin
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-[#1e212b] text-gray-400 border border-[#2a2e3b]">
-                                                    <UserIcon className="w-3 h-3" /> Cliente
+                                                <span className="text-sm font-medium text-[#f9f5f8] flex items-center gap-1.5">
+                                                    Customer
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            {!user.isAdmin && user.id && (
-                                                <button
+                                        <td className="px-8 py-6">
+                                            <span className="text-sm font-bold text-[#f9f5f8]">{user.totalOrders}</span>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <span className="text-sm font-bold text-[#85adff]">${user.totalSpent.toLocaleString("es-AR")}</span>
+                                        </td>
+                                        <td className="px-8 py-6 text-right">
+                                            {!user.isAdmin && user.id ? (
+                                                <button 
                                                     onClick={() => handleDeleteUser(user.id, user.email)}
-                                                    className="p-2 text-gray-500 hover:text-red-500 transition-colors rounded-lg hover:bg-red-500/10"
+                                                    className="w-8 h-8 rounded-full inline-flex items-center justify-center text-[#adaaad] hover:text-[#ff716c] hover:bg-[#ff716c]/10 transition-colors"
                                                     title="Eliminar usuario"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
-                                            )}
-                                            {!user.isAdmin && !user.id && (
-                                                <span className="text-xs text-gray-600 block pt-2" title="Usuario sin registrar (compra como invitado)">Invitado</span>
-                                            )}
+                                            ) : !user.id ? (
+                                                <span className="text-[10px] text-[#adaaad] uppercase tracking-wider">Invitado</span>
+                                            ) : null}
                                         </td>
                                     </tr>
                                 ))
@@ -285,7 +332,16 @@ export default function AdminUsersPage() {
                         </tbody>
                     </table>
                 </div>
-            </div>
+                
+                <div className="px-8 py-6 bg-[#131315]/30 border-t border-[#48474a]/10 flex items-center justify-between">
+                    <p className="text-xs text-[#adaaad] font-medium">Showing <span className="text-[#f9f5f8]">{filteredUsers.length}</span> of <span className="text-[#f9f5f8]">{users.length}</span> customers</p>
+                    <div className="flex gap-2">
+                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#262528] text-[#f9f5f8] hover:bg-[#2c2c2f] transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#85adff] text-[#000000] font-bold text-xs">1</button>
+                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#262528] text-[#f9f5f8] hover:bg-[#2c2c2f] transition-colors"><ChevronRight className="w-4 h-4" /></button>
+                    </div>
+                </div>
+            </section>
         </div>
     );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
 import { motion, Variants } from "framer-motion";
 
 export default function Hero() {
@@ -21,51 +20,38 @@ export default function Hero() {
         visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200 } }
     };
 
-    return (
-        <section className="relative min-h-[90vh] flex items-center justify-center pt-20 overflow-hidden bg-[var(--background)]">
-            {/* The decorative blurred circles were removed here as requested */}
+    // Note: The filter button logic actually lives in ProductGrid. 
+    // Here we're just keeping the editorial header structure.
 
+    return (
+        <header className="pt-28 pb-4 px-4 md:px-8 max-w-[1400px] mx-auto w-full bg-[var(--background)]">
             <motion.div 
                 variants={textVariants}
                 initial="hidden"
                 animate="visible"
-                className="container mx-auto px-4 relative z-10 text-center flex flex-col items-center"
+                className="flex flex-col items-center text-center mt-6 md:mt-10 gap-6"
             >
-                <motion.span
-                    variants={childVariants}
-                    className="inline-block text-sm font-semibold tracking-[0.3em] uppercase mb-8 text-[var(--color-main)] border border-[var(--color-main)]/30 rounded-full px-5 py-2 bg-[var(--color-main)]/5 relative overflow-hidden group"
-                >
-                    <span className="relative z-10">Nueva Colección</span>
-                    <motion.div 
-                        initial={{ x: "-100%" }}
-                        animate={{ x: "200%" }}
-                        transition={{ repeat: Infinity, duration: 2, ease: "linear", repeatDelay: 3 }}
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent z-0"
-                    />
-                </motion.span>
-
-                <motion.h1
-                    variants={childVariants}
-                    className="text-5xl sm:text-7xl md:text-8xl lg:text-[10rem] font-black tracking-tighter mb-8 text-[var(--foreground)] leading-none"
-                >
-                    PF<span className="text-[var(--color-main)] relative inline-block">
-                        STUDIO
-                        <motion.span 
-                            initial={{ scaleX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ delay: 0.5, duration: 0.4, ease: "easeOut" }}
-                            className="absolute -bottom-2 md:-bottom-4 left-0 right-0 h-1 md:h-2 bg-[var(--color-main)] origin-left rounded-full"
-                        />
-                    </span>
-                </motion.h1>
-
-                <motion.p
-                    variants={childVariants}
-                    className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-600 dark:text-gray-400 mb-12 max-w-3xl mx-auto leading-relaxed font-light px-4"
-                >
-                    Oversize · Boxy Fit · Clásicas. Prendas diseñadas para ofrecer máxima comodidad sin sacrificar el estilo.
-                </motion.p>
+                <div className="flex flex-col items-center w-full">
+                    <motion.h2
+                        variants={childVariants}
+                        className="text-white font-black tracking-[0.4em] uppercase text-xs md:text-sm mb-4 bg-gradient-to-r from-[var(--color-main)] to-[#008f65] px-6 py-2 rounded-full shadow-[0_0_20px_rgba(0,168,122,0.4)] border border-white/20"
+                    >
+                        Bienvenidos a
+                    </motion.h2>
+                    <motion.h1
+                        variants={childVariants}
+                        className="font-black text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6rem] leading-[0.85] tracking-tighter mb-4 md:mb-6 text-[var(--foreground)]"
+                    >
+                        PFSTUDIO
+                    </motion.h1>
+                    <motion.p
+                        variants={childVariants}
+                        className="text-gray-400 max-w-3xl text-base md:text-lg lg:text-xl font-light leading-relaxed text-balance mx-auto px-4"
+                    >
+                        Oversize · Boxy Fit · Clásicas. Prendas diseñadas para ofrecer máxima comodidad sin sacrificar el estilo.
+                    </motion.p>
+                </div>
             </motion.div>
-        </section>
+        </header>
     );
 }

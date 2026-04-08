@@ -2,11 +2,12 @@
 
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import ProductGrid from "@/components/ProductGrid";
+import ProductGridWrapper from "@/components/ProductGrid";
 import Footer from "@/components/Footer";
 import Preloader from "@/components/Preloader";
 import CustomShirtModule from "@/components/CustomShirtModule";
 import PostPurchaseHandler from "@/components/PostPurchaseHandler";
+import AestheticBanner from "@/components/AestheticBanner";
 import { Suspense } from "react";
 
 export default function Home() {
@@ -20,8 +21,9 @@ export default function Home() {
 
       <main className="flex-1">
         <Hero />
-        <ProductGrid />
+        <ProductGridWrapper />
         <CustomShirtModule />
+        <AestheticBanner />
       </main>
 
       <Footer />
