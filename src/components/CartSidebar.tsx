@@ -1,0 +1,285 @@
+"use client";
+
+import { X, Minus, Plus, Trash2, ShoppingBag, ShieldCheck, Lock, RotateCcw } from "lucide-react";
+import { useCartStore } from "@/store/cart";
+import { useAuthStore } from "@/store/auth";
+import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { sileo } from "sileo";
+import Image from "next/image";
+
+export default function CartSidebar() {
+    const { items, removeItem, updateQuantity, getTotalPrice, isCartOpen, setCartOpen } = useCartStore();
+    const { user, setModalOpen } = useAuthStore();
+    const [removingId, setRemovingId] = useState<string | null>(null);
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'mp' | 'transfer'>('mp');
+
+    const handleCheckout = async () => {
+        if (!user) {
+            setCartOpen(false);
+            setModalOpen(true);
+            sileo.error({ title: "Debes iniciar sesión para comprar" });
+            return;
+        }
+
+        setIsCheckingOut(true);
+        const billingDetails = { 
+            name: user.user_metadata?.full_name || "", 
+            dni: user.user_metadata?.dni || "", 
+            phone: user.user_metadata?.phone || "", 
+            address: user.user_metadata?.address || "" 
+        };
+
+        try {
+            if (paymentMethod === 'transfer') {
+                const res = await fetch('/api/checkout/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items, user_email: user.email, billingDetails }),
+                });
+
+                if (!res.ok) {
+                    throw new Error(`La solicitud de transferencia falló con estado ${res.status}`);
+                }
+
+                const data = await res.json();
+                if (data.success && data.order_id) {
+                    window.location.href = `/transfer-success?orderId=${data.order_id}`;
+                } else {
+                    console.error("Transfer checkout error:", data);
+                    sileo.error({ title: "Hubo un error al generar tu pedido." });
+                    setIsCheckingOut(false);
+                }
+            } else {
+                const res = await fetch('/api/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items, user_email: user.email, billingDetails }),
+                });
+
+                if (!res.ok) {
+                    throw new Error(`La solicitud de Mercado Pago falló con estado ${res.status}`);
+                }
+
+                const data = await res.json();
+
+                if (data.init_point) {
+                    // Redirect user to MercadoPago
+                    window.location.href = data.init_point;
+                } else {
+                    console.error("Checkout validation error:", data);
+                    sileo.error({ title: "Hubo un error al generar el pago. Intenta de nuevo." });
+                    setIsCheckingOut(false);
+                }
+            }
+        } catch (error) {
+            console.error("Checkout connection error:", error);
+            sileo.error({ title: "Ocurrió un error inesperado al procesar el pago." });
+            setIsCheckingOut(false);
+        }
+    };
+
+    const handleRemove = (productId: string, size: string) => {
+        const idToRemove = `${productId}-${size}`;
+        setRemovingId(idToRemove);
+        // Small delay for the animation to finish
+        setTimeout(() => {
+            removeItem(productId, size);
+            setRemovingId(null);
+        }, 150);
+    };
+
+    return (
+        <>
+            {/* Overlay */}
+            <div
+                className={cn(
+                    "fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] transition-all duration-300",
+                    isCartOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                )}
+                onClick={() => setCartOpen(false)}
+            />
+
+            {/* Sidebar */}
+            <aside
+                className={cn(
+                    "fixed top-0 right-0 bottom-0 w-full max-w-md bg-[var(--background)]/85 backdrop-blur-2xl border-l border-white/10 dark:border-zinc-800/50 z-[70] shadow-2xl transition-transform duration-300 flex flex-col",
+                    isCartOpen ? "translate-x-0" : "translate-x-full"
+                )}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-zinc-800">
+                    <h2 className="text-xl font-bold tracking-tight text-[var(--foreground)] flex items-center gap-2">
+                        <ShoppingBag className="w-5 h-5" />
+                        Tu Bolsa
+                    </h2>
+                    <button
+                        onClick={() => setCartOpen(false)}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                {/* Cart Items */}
+                <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+                    {items.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
+                            <ShoppingBag className="w-12 h-12 opacity-20" />
+                            <p>Tu carrito está vacío</p>
+                            <button
+                                onClick={() => setCartOpen(false)}
+                                className="mt-4 px-6 py-2 border border-[var(--color-main)] text-[var(--color-main)] rounded hover:bg-[var(--color-main)] hover:text-white transition-colors"
+                            >
+                                Seguir Comprando
+                            </button>
+                        </div>
+                    ) : (
+                        items.map((item) => {
+                            const uniqueId = `${item.product.id}-${item.size}`;
+                            const isRemoving = removingId === uniqueId;
+
+                            return (
+                                <div
+                                    key={uniqueId}
+                                    className={cn(
+                                        "flex gap-4 p-4 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-lg transition-all duration-300",
+                                        isRemoving ? "opacity-0 translate-x-8" : "opacity-100 translate-x-0"
+                                    )}
+                                >
+                                    {/* Image */}
+                                    <div className="relative w-20 h-24 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                                        <Image
+                                            src={item.product.images[0]}
+                                            alt={item.product.name}
+                                            fill
+                                            sizes="80px"
+                                            className="object-cover"
+                                        />
+                                    </div>
+
+                                    {/* Details */}
+                                    <div className="flex flex-col flex-1 justify-between">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <h3 className="font-semibold text-[var(--foreground)] line-clamp-1">
+                                                    {item.product.name}
+                                                </h3>
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    Talle: <span className="font-bold text-[var(--foreground)]">{item.size}</span>
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleRemove(item.product.id, item.size)}
+                                                className="text-red-400 hover:text-red-500 p-1 transition-colors"
+                                                title="Eliminar"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+
+                                        <div className="flex justify-between items-center mt-4">
+                                            {/* Quantity Controls */}
+                                            <div className="flex items-center border border-gray-200 dark:border-zinc-700 rounded">
+                                                <button
+                                                    disabled={item.quantity <= 1}
+                                                    onClick={() => updateQuantity(item.product.id, item.size, item.quantity - 1)}
+                                                    className="p-1 px-2 hover:bg-gray-100 dark:hover:bg-zinc-800 disabled:opacity-50 transition-colors text-[var(--foreground)]"
+                                                >
+                                                    <Minus className="w-4 h-4" />
+                                                </button>
+                                                <span className="w-8 text-center text-sm font-medium">
+                                                    {item.quantity}
+                                                </span>
+                                                <button
+                                                    onClick={() => updateQuantity(item.product.id, item.size, item.quantity + 1)}
+                                                    className="p-1 px-2 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-[var(--foreground)]"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                            </div>
+
+                                            {/* Price */}
+                                            <p className="font-bold text-[var(--color-main)]">
+                                                ${(item.product.price * item.quantity).toLocaleString("es-AR")}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                {/* Footer / Checkout */}
+                {items.length > 0 && (
+                    <div className="p-6 border-t border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 flex flex-col gap-4">
+
+                        <div className="flex justify-between items-center text-lg font-bold">
+                            <span>Total</span>
+                            <span className="text-[var(--color-main)] text-2xl">
+                                ${getTotalPrice().toLocaleString("es-AR")}
+                            </span>
+                        </div>
+
+                        {/* Payment Method Selector */}
+                        <div className="flex flex-col gap-2 mt-2">
+                            <p className="text-sm font-semibold text-gray-500 uppercase tracking-widest text-center mb-1">Método de Pago</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => setPaymentMethod('mp')}
+                                    className={cn(
+                                        "py-2 px-3 border rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1",
+                                        paymentMethod === 'mp'
+                                            ? "border-[#009EE3] bg-[#009EE3]/10 text-[#009EE3]"
+                                            : "border-gray-200 dark:border-zinc-700 text-gray-500 hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                    )}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM9 15.5V11L13 13.5V17L9 15.5ZM17 11V14.5L13 12V8.5L17 11Z" fill="currentColor" />
+                                    </svg>
+                                    Mercado Pago
+                                </button>
+                                <button
+                                    onClick={() => setPaymentMethod('transfer')}
+                                    className={cn(
+                                        "py-2 px-3 border rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1",
+                                        paymentMethod === 'transfer'
+                                            ? "border-[var(--color-main)] bg-[var(--color-main)]/10 text-[var(--color-main)]"
+                                            : "border-gray-200 dark:border-zinc-700 text-gray-500 hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-800"
+                                    )}
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM11.5 17V15H10.5C9.67 15 9 14.33 9 13.5V11.5C9 10.67 9.67 10 10.5 10H12.5V8H9V6H11V5H13V7H14C14.83 7 15.5 7.67 15.5 8.5V10.5C15.5 11.33 14.83 12 14 12H12V14H15.5V16H13V17H11.5Z" fill="currentColor" />
+                                    </svg>
+                                    Transferencia
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleCheckout}
+                            disabled={isCheckingOut}
+                            className="w-full py-4 bg-[var(--foreground)] text-[var(--background)] rounded font-bold uppercase tracking-widest text-sm hover:bg-[var(--color-main)] hover:text-white transition-colors disabled:opacity-70 flex justify-center items-center"
+                        >
+                            {isCheckingOut ? (
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--background)]"></div>
+                            ) : (
+                                "Pagar y Finalizar"
+                            )}
+                        </button>
+
+                        {/* Trust Badges */}
+                        <div className="flex justify-center items-center gap-3 mt-2 text-[10px] text-gray-500 font-extrabold uppercase tracking-widest pt-2 border-t border-gray-100 dark:border-zinc-800">
+                            <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-emerald-500" /> Seguro</span>
+                            <span className="opacity-30">•</span>
+                            <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-sky-500" /> Oficial</span>
+                            <span className="opacity-30">•</span>
+                            <span className="flex items-center gap-1"><RotateCcw className="w-3 h-3 text-[var(--color-main)]" /> Garantía</span>
+                        </div>
+                    </div>
+                )}
+            </aside>
+        </>
+    );
+}
