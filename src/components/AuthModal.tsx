@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/auth";
 import { supabase } from "@/lib/supabase";
 import { sileo } from "sileo";
 import { cn } from "@/lib/utils";
+import ProcessingOverlay from "@/components/ProcessingOverlay";
 
 export default function AuthModal() {
     const isModalOpen = useAuthStore((state) => state.isModalOpen);
@@ -32,6 +33,7 @@ export default function AuthModal() {
         e.preventDefault();
         setIsLoading(true);
         setAuthError(null);
+        const startTime = Date.now();
 
         try {
             if (isForgotPassword) {
@@ -39,7 +41,11 @@ export default function AuthModal() {
                     redirectTo: `${window.location.origin}/update-password`,
                 });
                 if (error) throw error;
-                sileo.success({ title: "Enlace de recuperación enviado. Revisa tu correo." });
+                
+                const elapsed = Date.now() - startTime;
+                if (elapsed < 1500) await new Promise((res) => setTimeout(res, 1500 - elapsed));
+
+                sileo.success({ title: "Enlace de recuperación enviado", description: "Revisa tu casilla de correo electrónico" });
                 setIsForgotPassword(false);
             } else if (isLogin) {
                 const { error } = await supabase.auth.signInWithPassword({
@@ -47,7 +53,11 @@ export default function AuthModal() {
                     password,
                 });
                 if (error) throw error;
-                sileo.success({ title: 'Sesión iniciada correctamente' });
+
+                const elapsed = Date.now() - startTime;
+                if (elapsed < 1500) await new Promise((res) => setTimeout(res, 1500 - elapsed));
+
+                sileo.success({ title: 'Sesión iniciada correctamente', description: 'Bienvenido a PFSTUDIO' });
                 setModalOpen(false);
             } else {
                 const { error } = await supabase.auth.signUp({
@@ -72,10 +82,11 @@ export default function AuthModal() {
                         body: JSON.stringify({ type: 'welcome', email })
                     });
                 } catch (err) {
-                    // Evitamos usar console.error para no disparar el Error Overlay de Next.js
-                    // en caso de que un AdBlocker bloquee la petición (ej. Brave Shields)
-                    console.warn("No se pudo enviar email de bienvenida (posible extensión bloqueando requests)", err);
+                    console.warn("No se pudo enviar email de bienvenida", err);
                 }
+
+                const elapsed = Date.now() - startTime;
+                if (elapsed < 1500) await new Promise((res) => setTimeout(res, 1500 - elapsed));
 
                 setShowWelcome(true);
                 setTimeout(() => {
@@ -106,6 +117,7 @@ export default function AuthModal() {
     };
 
     const handleOAuth = async (provider: 'google' | 'facebook') => {
+        setIsLoading(true);
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider,
@@ -115,6 +127,7 @@ export default function AuthModal() {
             });
             if (error) throw error;
         } catch (error: any) {
+            setIsLoading(false);
             sileo.error({ title: error.message || `Error con ${provider}` });
         }
     };
@@ -149,7 +162,7 @@ export default function AuthModal() {
     return (
         <AnimatePresence>
             {isModalOpen && !showWelcome && (
-                <div key="modal-overlay" className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div key="modal-overlay" className="fixed inset-0 z-100 flex items-center justify-center p-4">
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -163,14 +176,14 @@ export default function AuthModal() {
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
                         transition={{ type: "spring", duration: 0.5 }}
-                        className="relative w-full max-w-md max-h-[95vh] flex flex-col bg-[var(--background)]/80 backdrop-blur-xl border border-white/10 dark:border-zinc-800/50 rounded-3xl shadow-2xl overflow-y-auto overflow-x-hidden"
+                        className="relative w-full max-w-md max-h-[95vh] flex flex-col bg-(--background)/80 backdrop-blur-xl border border-white/10 dark:border-zinc-800/50 rounded-3xl shadow-2xl overflow-y-auto overflow-x-hidden"
                     >
                         {/* Header Decoration */}
-                        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-[var(--color-main)]/20 to-transparent pointer-events-none" />
+                        <div className="absolute top-0 left-0 right-0 h-32 bg-linear-to-br from-main/20 to-transparent pointer-events-none" />
 
                         <button
                             onClick={() => setModalOpen(false)}
-                            className="absolute top-4 right-4 z-10 p-2 bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 backdrop-blur-sm rounded-full text-gray-500 hover:text-[var(--foreground)] transition-all"
+                            className="absolute top-4 right-4 z-10 p-2 bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 backdrop-blur-sm rounded-full text-gray-500 hover:text-(--foreground) transition-all"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -196,7 +209,7 @@ export default function AuthModal() {
                                             className="w-full absolute"
                                         >
                                             <div className="text-center mb-6">
-                                                <h2 className="text-3xl font-black tracking-tight mb-2 text-[var(--foreground)]">
+                                                <h2 className="text-3xl font-black tracking-tight mb-2 text-(--foreground)">
                                                     {isForgotPassword ? "Recuperar Clave" : isLogin ? "Bienvenido" : "Crea tu Cuenta"}
                                                 </h2>
                                                 <p className="text-gray-500 text-sm">
@@ -215,13 +228,13 @@ export default function AuthModal() {
                                                         <div className="space-y-1">
                                                             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Nombre Completo</label>
                                                             <div className="relative group">
-                                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[var(--color-main)] transition-colors" />
+                                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-main transition-colors" />
                                                                 <input
                                                                     type="text"
                                                                     required={!isLogin && !isForgotPassword}
                                                                     value={name}
                                                                     onChange={(e) => setName(e.target.value)}
-                                                                    className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
+                                                                    className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-main focus:ring-1 focus:ring-main transition-all shadow-inner"
                                                                     placeholder="Juan Pérez"
                                                                 />
                                                             </div>
@@ -236,7 +249,7 @@ export default function AuthModal() {
                                                                     required={!isLogin && !isForgotPassword}
                                                                     value={dni}
                                                                     onChange={(e) => setDni(e.target.value)}
-                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
+                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-main focus:ring-1 focus:ring-main transition-all shadow-inner"
                                                                     placeholder="Sin puntos"
                                                                 />
                                                             </div>
@@ -247,7 +260,7 @@ export default function AuthModal() {
                                                                     required={!isLogin && !isForgotPassword}
                                                                     value={phone}
                                                                     onChange={(e) => setPhone(e.target.value)}
-                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
+                                                                    className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-main focus:ring-1 focus:ring-main transition-all shadow-inner"
                                                                     placeholder="+54 11 ..."
                                                                 />
                                                             </div>
@@ -259,7 +272,7 @@ export default function AuthModal() {
                                                                 required={!isLogin && !isForgotPassword}
                                                                 value={address}
                                                                 onChange={(e) => setAddress(e.target.value)}
-                                                                className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
+                                                                className="w-full px-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-main focus:ring-1 focus:ring-main transition-all shadow-inner"
                                                                 placeholder="Av. Falsa 123"
                                                             />
                                                         </div>
@@ -269,7 +282,7 @@ export default function AuthModal() {
                                                 <div className="space-y-1">
                                                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Email</label>
                                                     <div className="relative group">
-                                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[var(--color-main)] transition-colors" />
+                                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-main transition-colors" />
                                                         <input
                                                             type="email"
                                                             required
@@ -278,7 +291,7 @@ export default function AuthModal() {
                                                             spellCheck="false"
                                                             value={email}
                                                             onChange={(e) => setEmail(e.target.value)}
-                                                            className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
+                                                            className="w-full pl-12 pr-4 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-main focus:ring-1 focus:ring-main transition-all shadow-inner"
                                                             placeholder="tu@email.com"
                                                         />
                                                     </div>
@@ -289,25 +302,25 @@ export default function AuthModal() {
                                                         <div className="flex justify-between items-center mb-1">
                                                             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">Contraseña</label>
                                                             {isLogin && (
-                                                                <button onClick={() => setIsForgotPassword(true)} type="button" className="text-xs font-bold text-[var(--color-main)] hover:underline transition-all">
+                                                                <button onClick={() => setIsForgotPassword(true)} type="button" className="text-xs font-bold text-main hover:underline transition-all">
                                                                     ¿Olvidaste tu contraseña?
                                                                 </button>
                                                             )}
                                                         </div>
                                                         <div className="relative group">
-                                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[var(--color-main)] transition-colors" />
+                                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-main transition-colors" />
                                                             <input
                                                                 type={showPassword ? "text" : "password"}
                                                                 required={!isForgotPassword}
                                                                 value={password}
                                                                 onChange={(e) => setPassword(e.target.value)}
-                                                                className="w-full pl-12 pr-12 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-[var(--color-main)] focus:ring-1 focus:ring-[var(--color-main)] transition-all shadow-inner"
+                                                                className="w-full pl-12 pr-12 py-3.5 text-gray-900 dark:text-white placeholder:text-gray-600 bg-white dark:bg-[#121214] border border-gray-200 dark:border-[#333846] rounded-xl focus:outline-none focus:border-main focus:ring-1 focus:ring-main transition-all shadow-inner"
                                                                 placeholder="••••••••"
                                                             />
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setShowPassword(!showPassword)}
-                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[var(--foreground)] transition-colors"
+                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-(--foreground) transition-colors"
                                                             >
                                                                 {showPassword ? (
                                                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m2 2 20 20" /><path d="M6.71 6.71a10 10 0 0 0-4.08 5.29 10 10 0 0 0 11.52 7.15" /><path d="M10.96 10.96a3 3 0 0 0 4.08 4.08" /><path d="M14.54 9.17A3 3 0 0 0 10.95 5.6" /><path d="M22 12a10 10 0 0 0-14.71-7.06" /></svg>
@@ -321,7 +334,7 @@ export default function AuthModal() {
 
                                                 {isForgotPassword && (
                                                     <div className="text-center pb-2">
-                                                        <button onClick={() => setIsForgotPassword(false)} type="button" className="text-xs font-medium text-gray-500 hover:text-[var(--foreground)] transition-all">
+                                                        <button onClick={() => setIsForgotPassword(false)} type="button" className="text-xs font-medium text-gray-500 hover:text-(--foreground) transition-all">
                                                             Volver a Iniciar Sesión
                                                         </button>
                                                     </div>
@@ -347,7 +360,7 @@ export default function AuthModal() {
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="w-full py-4 mt-auto bg-[var(--foreground)] text-[var(--background)] rounded-xl font-black flex items-center justify-center gap-2 hover:bg-[var(--color-main)] hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 uppercase tracking-[0.2em] text-[13px] relative overflow-hidden"
+                                    className="w-full py-4 mt-auto bg-(--foreground) text-(--background) rounded-xl font-black flex items-center justify-center gap-2 hover:bg-main hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 uppercase tracking-[0.2em] text-[13px] relative overflow-hidden"
                                 >
                                     <span className={cn("transition-opacity flex items-center gap-2", isLoading ? "opacity-0" : "opacity-100")}>
                                         {isForgotPassword ? "Enviar Enlace" : isLogin ? "Ingresar a mi cuenta" : "Crear mi Cuenta"}
@@ -366,7 +379,7 @@ export default function AuthModal() {
                                     <div className="absolute inset-0 flex items-center">
                                         <div className="w-full border-t border-gray-200 dark:border-zinc-800"></div>
                                     </div>
-                                    <span className="relative bg-[var(--background)] px-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                    <span className="relative bg-(--background) px-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">
                                         O INGRESA MÁS RÁPIDO
                                     </span>
                                 </div>
@@ -387,7 +400,7 @@ export default function AuthModal() {
                                 {isLogin ? "¿Nuevo en PFSTUDIO? " : "¿Ya eres miembro? "}
                                 <button
                                     onClick={() => toggleMode(!isLogin)}
-                                    className="font-black text-[var(--foreground)] hover:text-[var(--color-main)] transition-colors ml-1"
+                                    className="font-black text-(--foreground) hover:text-main transition-colors ml-1"
                                 >
                                     {isLogin ? "Regístrate ahora" : "Inicia Sesión"}
                                 </button>
@@ -398,19 +411,7 @@ export default function AuthModal() {
                 </div>
             )}
 
-            {/* Global Loading Overlay for Auth Actions */}
-            {isLoading && !showWelcome && (
-                <motion.div
-                    key="loading_overlay"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[200] bg-[var(--background)]/80 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-auto"
-                >
-                    <Loader2 className="w-12 h-12 animate-spin text-[var(--color-main)] mb-4" />
-                    <p className="text-sm font-bold tracking-widest uppercase">Autenticando...</p>
-                </motion.div>
-            )}
+
 
             {/* Welcome Animation Screen */}
             {showWelcome && (
@@ -419,7 +420,7 @@ export default function AuthModal() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.05 }}
-                    className="fixed inset-0 z-[300] flex flex-col items-center justify-center p-4 bg-[var(--background)] backdrop-blur-3xl"
+                    className="fixed inset-0 z-300 flex flex-col items-center justify-center p-4 bg-(--background) backdrop-blur-3xl"
                 >
                     {/* Confetti / Decorative background elements */}
                     <div className="absolute inset-0 overflow-hidden pointer-events-none flex justify-center items-center opacity-30">
@@ -427,7 +428,7 @@ export default function AuthModal() {
                             initial={{ scale: 0, rotate: 0 }}
                             animate={{ scale: 1.5, rotate: 180 }}
                             transition={{ duration: 3, ease: "easeOut" }}
-                            className="w-[80vw] h-[80vw] max-w-2xl max-h-2xl rounded-full bg-gradient-to-tr from-[var(--color-main)] to-transparent blur-3xl opacity-20"
+                            className="w-[80vw] h-[80vw] max-w-2xl max-h-2xl rounded-full bg-linear-to-tr from-main to-transparent blur-3xl opacity-20"
                         />
                     </div>
 
@@ -461,6 +462,26 @@ export default function AuthModal() {
                     </motion.p>
                 </motion.div>
             )}
+
+            {/* Branded Processing Screen Overlay */}
+            <ProcessingOverlay
+                isOpen={isLoading}
+                type="auth"
+                title={
+                    isForgotPassword
+                        ? "Enviando enlace..."
+                        : isLogin
+                        ? "Iniciando Sesión..."
+                        : "Creando tu Cuenta..."
+                }
+                subtitle={
+                    isForgotPassword
+                        ? "Enviando instrucciones a tu casilla de correo electrónico."
+                        : isLogin
+                        ? "Verificando tus datos en PFSTUDIO de forma segura."
+                        : "Configurando tu perfil y preferencias en PFSTUDIO."
+                }
+            />
         </AnimatePresence>
     );
 }

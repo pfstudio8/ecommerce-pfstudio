@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { CheckCircle, Copy, MessageCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { sileo } from 'sileo';
+import styles from '@/app/success/TransactionAnimation.module.css';
 
 function TransferSuccessContent() {
     const searchParams = useSearchParams();
@@ -55,7 +56,7 @@ function TransferSuccessContent() {
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
                 <p className="text-xl font-medium mb-4">No se encontró el número de orden.</p>
-                <Link href="/" className="text-[var(--color-main)] hover:underline flex items-center gap-2">
+                <Link href="/" className="text-main hover:underline flex items-center gap-2">
                     Volver al inicio <ArrowRight className="w-4 h-4" />
                 </Link>
             </div>
@@ -72,30 +73,30 @@ function TransferSuccessContent() {
                 <div className="text-center space-y-4">
                     {/* Custom Transaction Micro-animation */}
                     <div className="flex justify-center mb-4 relative z-10">
-                        <div className="tx-container">
-                            <div className="tx-left-side">
-                                <div className="tx-card">
-                                    <div className="tx-card-line"></div>
-                                    <div className="tx-buttons"></div>
+                        <div className={styles.txContainer}>
+                            <div className={styles.txLeftSide}>
+                                <div className={styles.txCard}>
+                                    <div className={styles.txCardLine}></div>
+                                    <div className={styles.txButtons}></div>
                                 </div>
-                                <div className="tx-post">
-                                    <div className="tx-post-line"></div>
-                                    <div className="tx-screen">
-                                        <div className="tx-dollar">$</div>
+                                <div className={styles.txPost}>
+                                    <div className={styles.txPostLine}></div>
+                                    <div className={styles.txScreen}>
+                                        <div className={styles.txDollar}>$</div>
                                     </div>
-                                    <div className="tx-numbers"></div>
-                                    <div className="tx-numbers-line2"></div>
+                                    <div className={styles.txNumbers}></div>
+                                    <div className={styles.txNumbersLine2}></div>
                                 </div>
                             </div>
-                            <div className="tx-right-side">
-                                <div className="tx-new">Orden Creada</div>
-                                <svg className="tx-arrow" xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 451.846 451.847">
+                            <div className={styles.txRightSide}>
+                                <div className={styles.txNew}>Orden Creada</div>
+                                <svg className={styles.txArrow} xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 451.846 451.847">
                                     <path d="M345.441 248.292L151.154 442.573c-12.359 12.365-32.397 12.365-44.75 0-12.354-12.354-12.354-32.391 0-44.744L278.318 225.92 106.409 54.017c-12.354-12.359-12.354-32.394 0-44.748 12.354-12.359 32.391-12.359 44.75 0l194.287 194.284c6.177 6.18 9.262 14.271 9.262 22.366 0 8.099-3.091 16.196-9.267 22.373z" fill="#00a87a" />
                                 </svg>
                             </div>
                         </div>
                     </div>
-                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[var(--foreground)]">
+                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-(--foreground)">
                         ¡Tu pedido fue registrado!
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 text-lg">
@@ -109,18 +110,18 @@ function TransferSuccessContent() {
                         <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
                             Número de Orden
                         </p>
-                        <p className="text-2xl font-mono font-bold text-[var(--foreground)]">
+                        <p className="text-2xl font-mono font-bold text-(--foreground)">
                             #{orderId.split('-')[0].toUpperCase()}
                         </p>
                     </div>
-                    <div className="text-[var(--color-main)] font-medium bg-[var(--color-main)]/10 px-4 py-2 rounded-full">
+                    <div className="text-main font-medium bg-main/10 px-4 py-2 rounded-full">
                         Pendiente de Pago
                     </div>
                 </div>
 
                 {/* Bank Details Card */}
                 <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-sm">
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-[var(--foreground)]">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-(--foreground)">
                         Datos para la Transferencia
                     </h2>
 
@@ -200,7 +201,7 @@ function TransferSuccessContent() {
 
                         <Link
                             href="/"
-                            className="flex-1 flex items-center justify-center gap-2 py-4 bg-white dark:bg-zinc-900 text-[var(--foreground)] border border-gray-200 dark:border-zinc-800 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                            className="flex-1 flex items-center justify-center gap-2 py-4 bg-white dark:bg-zinc-900 text-(--foreground) border border-gray-200 dark:border-zinc-800 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                         >
                             Volver al Inicio
                         </Link>
@@ -211,12 +212,17 @@ function TransferSuccessContent() {
     );
 }
 
+import ProcessingOverlay from '@/components/ProcessingOverlay';
+
 export default function TransferSuccessPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[var(--color-main)]" />
-            </div>
+            <ProcessingOverlay
+                isOpen={true}
+                type="transfer"
+                title="Cargando tu orden..."
+                subtitle="Obteniendo la información bancaria e instrucciones de pago."
+            />
         }>
             <TransferSuccessContent />
         </Suspense>

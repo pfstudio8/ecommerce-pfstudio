@@ -122,14 +122,14 @@ export default function AdminDashboard() {
                 <div className="flex flex-wrap items-center gap-3">
                     <Link 
                         href="/admin/products/create" 
-                        className="px-4 py-2 bg-main text-black rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-emerald-400 shadow-[0_0_15px_rgba(0,168,122,0.2)] active:scale-95 flex items-center gap-1.5"
+                        className="px-4 py-2 bg-main text-black rounded-xl font-bold text-xs uppercase tracking-wider transition-all hover:bg-orange-400 shadow-[0_0_15px_rgba(0,168,122,0.2)] active:scale-95 flex items-center gap-1.5"
                     >
                         Nuevo Producto
                         <ArrowUpRight className="w-3.5 h-3.5" />
                     </Link>
                     <Link 
                         href="/admin/categories" 
-                        className="px-4 py-2 bg-[#1c1d18] text-gray-300 hover:text-white rounded-xl font-bold text-xs uppercase tracking-wider transition-all border border-[#2d2e26] hover:border-main/30 active:scale-95"
+                        className="px-4 py-2 bg-[#1c1d18] text-gray-300 hover:text-orange-400 rounded-xl font-bold text-xs uppercase tracking-wider transition-all border border-[#2d2e26] hover:border-main/30 active:scale-95"
                     >
                         Categorías
                     </Link>

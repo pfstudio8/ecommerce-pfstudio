@@ -84,12 +84,25 @@ export async function POST(request: Request) {
                     .from('order_items')
                     .insert(orderItemsToInsert);
                     
-                if (itemsError) {
-                    console.error("Error insertando order_items:", itemsError);
+                    if (itemsError) {
+                        console.error("Error insertando order_items:", itemsError);
+                    }
                 }
-            }
-
-            // 3.2 Enviar el correo electrónico
+    
+                // 3.1.5 Registrar historial de la orden inicial
+                const { error: historyError } = await supabase
+                    .from('order_history')
+                    .insert({
+                        order_id: newOrderId,
+                        status: 'paid',
+                        notes: 'Pago procesado exitosamente vía MercadoPago'
+                    });
+                
+                if (historyError) {
+                    console.error("Error insertando order_history:", historyError);
+                }
+    
+                // 3.2 Enviar el correo electrónico
             if (userEmail && userEmail !== 'invitado@mercadopago.com') {
                 const itemsForEmail = itemsToProcess.map((item: any) => ({
                     name: item.name || `Prenda Talle ${item.size}`,

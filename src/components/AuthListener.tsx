@@ -23,7 +23,7 @@ export default function AuthListener() {
                     setAdmin(false);
                 }
             } catch (err) {
-                console.error("Failed to check admin status:", err);
+                console.warn("Failed to check admin status:", err);
                 setAdmin(false);
             }
         };
@@ -39,7 +39,7 @@ export default function AuthListener() {
                 sessionStorage.setItem(sessionNotifyKey, 'true');
 
                 if (isGoogle) {
-                    sileo.success({ title: '¡Sesión iniciada con Google correctamente! 🎉' });
+                    sileo.success({ title: 'Sesión iniciada correctamente', description: 'Bienvenido a PFSTUDIO' });
                 }
 
                 // Send welcome email for first time users
@@ -64,15 +64,20 @@ export default function AuthListener() {
         };
 
         const checkSession = async () => {
-            const { data } = await supabase.auth.getSession();
-            const session = data.session;
-            const user = session?.user || null;
-            setUser(user);
-            await checkAdmin(user?.email);
-            setInitialized(true);
+            try {
+                const { data } = await supabase.auth.getSession();
+                const session = data.session;
+                const user = session?.user || null;
+                setUser(user);
+                checkAdmin(user?.email);
 
-            if (user && session?.access_token) {
-                handleAuthNotificationAndEmail(user, session.access_token);
+                if (user && session?.access_token) {
+                    await handleAuthNotificationAndEmail(user, session.access_token);
+                }
+            } catch (err) {
+                console.warn("Error checking session:", err);
+            } finally {
+                setInitialized(true);
             }
         };
 
@@ -81,12 +86,16 @@ export default function AuthListener() {
         // Listen for future auth changes (login, logout)
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                const user = session?.user || null;
-                setUser(user);
-                await checkAdmin(user?.email);
+                try {
+                    const user = session?.user || null;
+                    setUser(user);
+                    checkAdmin(user?.email);
 
-                if (user && session?.access_token) {
-                    handleAuthNotificationAndEmail(user, session.access_token);
+                    if (user && session?.access_token) {
+                        await handleAuthNotificationAndEmail(user, session.access_token);
+                    }
+                } catch (err) {
+                    console.warn("Auth state change handler error:", err);
                 }
             }
         );

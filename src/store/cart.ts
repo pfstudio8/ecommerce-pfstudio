@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { sileo } from 'sileo';
 import { Product } from '@/components/ProductCard';
 
 export interface CartItem {
@@ -47,7 +48,7 @@ export const useCartStore = create<CartStore>()(
                         const newItems = [...state.items];
                         const newQty = newItems[existingItemIndex].quantity + 1;
                         if (newQty > maxStock) {
-                            alert(`Solo hay ${maxStock} unidades disponibles en talla ${size}.`);
+                            sileo.error({ title: "Sin Stock Suficiente", description: `Solo hay ${maxStock} unidades disponibles en talla ${size}.` });
                             return { items: state.items };
                         }
                         newItems[existingItemIndex].quantity = newQty;
@@ -55,7 +56,7 @@ export const useCartStore = create<CartStore>()(
                     } else {
                         // Add new item if within limit
                         if (maxStock < 1) {
-                            alert(`No hay stock disponible para talla ${size}.`);
+                            sileo.error({ title: "Agotado", description: `No hay stock disponible para talla ${size}.` });
                             return { items: state.items };
                         }
                         return { items: [...state.items, { product, size, quantity: 1 }] };
@@ -87,7 +88,7 @@ export const useCartStore = create<CartStore>()(
                     })();
 
                     if (quantity > maxStock) {
-                        alert(`Solo hay ${maxStock} unidades disponibles en talla ${size}.`);
+                        sileo.error({ title: "Límite Alcanzado", description: `Solo hay ${maxStock} unidades disponibles en talla ${size}.` });
                         return { items: state.items };
                     }
 

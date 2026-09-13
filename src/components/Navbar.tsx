@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, ShoppingBag, Menu, X, LogOut, User, LayoutDashboard, Heart, Shirt, Trophy, Briefcase, Sparkles, Compass, ChevronDown, ChevronRight, Home, Phone, Gift } from "lucide-react";
+import { Search, ShoppingBag, Menu, X, LogOut, User, LayoutDashboard, Heart, Shirt, Trophy, Briefcase, Sparkles, Compass, ChevronDown, ChevronRight, Home, Phone, Gift, Package } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCartStore } from "@/store/cart";
 import { useRouter } from "next/navigation";
@@ -36,7 +36,7 @@ export default function Navbar() {
         setIsLoggingOut(true);
         try {
             await supabase.auth.signOut();
-            sileo.error({ title: "Has cerrado sesión" });
+            sileo.info({ title: "Sesión cerrada correctamente" });
             setIsMobileMenuOpen(false);
         } finally {
             setIsLoggingOut(false);
@@ -104,15 +104,15 @@ export default function Navbar() {
             <header
                 className={cn(
                     "fixed top-0 left-0 right-0 z-40 transition-all duration-300",
-                    isScrolled ? "bg-[var(--background)] shadow-[0_24px_24px_0_rgba(0,168,122,0.06)] h-20" : "bg-transparent h-24"
+                    isScrolled ? "bg-background shadow-[0_24px_24px_0_rgba(0,168,122,0.06)] h-20" : "bg-transparent h-24"
                 )}
             >
-                <div className="flex justify-between items-center px-4 md:px-8 h-full w-full max-w-[1400px] mx-auto relative px-safe">
+                <div className="flex justify-between items-center px-4 md:px-8 h-full w-full max-w-350 mx-auto relative px-safe">
 
                     {/* Left Section (Menu Button) */}
                     <div className="flex-1 flex items-center justify-start z-50">
                         <button
-                            className="text-[var(--foreground)] active:scale-95 transition-transform p-2 hover:bg-white/5 dark:hover:bg-white/5 rounded-full duration-200"
+                            className="text-foreground active:scale-95 transition-transform p-2 hover:bg-white/5 dark:hover:bg-white/5 rounded-full duration-200"
                             onClick={() => setIsMobileMenuOpen(true)}
                             title="Abrir menú"
                         >
@@ -127,7 +127,7 @@ export default function Navbar() {
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                                 router.push('/');
                             }}
-                            className="text-[24px] md:text-[28px] font-extrabold tracking-tight text-[var(--foreground)] hover:text-[var(--color-main)] transition-colors duration-200 whitespace-nowrap outline-none"
+                            className="text-[24px] md:text-[28px] font-extrabold tracking-tight text-foreground hover:text-main transition-colors duration-200 whitespace-nowrap outline-none"
                             title="Ir al inicio"
                         >
                             PFSTUDIO
@@ -136,7 +136,7 @@ export default function Navbar() {
 
                     {/* Icons */}
                     <div className="flex-1 flex items-center justify-end space-x-4 sm:space-x-6 z-50">
-                        <div className="relative flex items-center hidden sm:flex">
+                        <div className="relative hidden sm:flex items-center">
                             {isSearchOpen && (
                                 <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
                                     <input
@@ -151,12 +151,12 @@ export default function Navbar() {
                                             }
                                         }}
                                         placeholder="Buscar..."
-                                        className="w-48 px-3 py-1 bg-white/10 dark:bg-black/85 border border-gray-200/20 dark:border-gray-800 rounded-full text-sm focus:outline-none focus:border-[var(--color-main)] animate-slideInRight text-white"
+                                        className="w-48 px-3 py-1 bg-white/10 dark:bg-black/85 border border-gray-200/20 dark:border-gray-800 rounded-full text-sm focus:outline-none focus:border-main animate-slideInRight text-white"
                                         autoFocus
                                     />
                                     
                                     {searchQuery.trim().length >= 2 && (
-                                        <div className="absolute top-full mt-4 right-0 w-64 bg-zinc-950/95 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl overflow-hidden p-2 flex flex-col gap-1 z-[100] text-white">
+                                        <div className="absolute top-full mt-4 right-0 w-64 bg-zinc-950/95 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl overflow-hidden p-2 flex flex-col gap-1 z-100 text-white">
                                             {isSearching ? (
                                                 <div className="text-xs text-gray-500 p-3 text-center">Buscando...</div>
                                             ) : searchResults.length === 0 ? (
@@ -172,7 +172,7 @@ export default function Navbar() {
                                                         }}
                                                         className="w-full flex items-center gap-3 p-2 hover:bg-white/5 rounded-lg text-left transition-colors outline-none"
                                                     >
-                                                        <div className="relative w-10 h-10 rounded overflow-hidden bg-white/10 flex-shrink-0">
+                                                        <div className="relative w-10 h-10 rounded overflow-hidden bg-white/10 shrink-0">
                                                             <Image
                                                                 src={prod.images[0]}
                                                                 alt={prod.name}
@@ -183,7 +183,7 @@ export default function Navbar() {
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <h4 className="text-xs font-bold truncate text-white">{prod.name}</h4>
-                                                            <p className="text-[10px] text-[var(--color-main)] font-bold">${prod.price.toLocaleString("es-AR")}</p>
+                                                            <p className="text-[10px] text-main font-bold">${prod.price.toLocaleString("es-AR")}</p>
                                                         </div>
                                                     </button>
                                                 ))
@@ -194,7 +194,7 @@ export default function Navbar() {
                             )}
                             <button
                                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                                className="active:scale-95 transition-transform text-gray-400 hover:text-[var(--foreground)]"
+                                className="active:scale-95 transition-transform text-gray-400 hover:text-foreground"
                             >
                                 <Search className="w-5 h-5" />
                             </button>
@@ -207,12 +207,19 @@ export default function Navbar() {
                                 {isAdmin && (
                                     <Link
                                         href="/admin"
-                                        className="active:scale-95 transition-transform text-gray-400 hover:text-[var(--color-main)] p-1 hover:bg-white/5 rounded-full"
+                                        className="active:scale-95 transition-transform text-gray-400 hover:text-main p-1 hover:bg-white/5 rounded-full"
                                         title="Panel de Administración"
                                     >
-                                        <LayoutDashboard className="w-5 h-5 text-[var(--color-main)]" />
+                                        <LayoutDashboard className="w-5 h-5 text-main" />
                                     </Link>
                                 )}
+                                <Link
+                                    href="/perfil"
+                                    className="active:scale-95 transition-transform text-gray-400 hover:text-main p-1 hover:bg-white/5 rounded-full"
+                                    title="Mi Perfil"
+                                >
+                                    <User className="w-5 h-5" />
+                                </Link>
                                 <button
                                     onClick={() => setFavoritesOpen(true)}
                                     className="relative active:scale-95 transition-transform text-gray-400 hover:text-red-500 p-1 hover:bg-white/5 rounded-full"
@@ -229,7 +236,7 @@ export default function Navbar() {
                         ) : (
                             <button
                                 onClick={() => setModalOpen(true)}
-                                className="active:scale-95 transition-transform text-gray-400 hover:text-[var(--foreground)] p-1 hover:bg-white/5 rounded-full"
+                                className="active:scale-95 transition-transform text-gray-400 hover:text-foreground p-1 hover:bg-white/5 rounded-full"
                                 title="Iniciar Sesión"
                             >
                                 <User className="w-5 h-5" />
@@ -238,7 +245,7 @@ export default function Navbar() {
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={() => setCartOpen(true)}
-                            className="active:scale-95 transition-transform text-gray-400 hover:text-[var(--foreground)] relative flex items-center justify-center"
+                            className="active:scale-95 transition-transform text-gray-400 hover:text-foreground relative flex items-center justify-center"
                         >
                             <motion.div
                                 key={`cart-icon-${totalItems}`}
@@ -256,7 +263,7 @@ export default function Navbar() {
                                         initial={{ scale: 0, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
                                         exit={{ scale: 0, opacity: 0 }}
-                                        className="absolute -top-2 -right-2 bg-[var(--color-main)] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-md shadow-[var(--color-main)]/30"
+                                        className="absolute -top-2 -right-2 bg-main text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-md shadow-main/30"
                                     >
                                         {totalItems}
                                     </motion.span>
@@ -292,7 +299,7 @@ export default function Navbar() {
                     >
                         {/* Header */}
                         <div className="p-6 flex justify-between items-center border-b border-white/5">
-                            <h2 className="text-2xl font-black tracking-[0.1em] text-[var(--color-main)]">PFSTUDIO</h2>
+                            <h2 className="text-2xl font-black tracking-widest text-main">PFSTUDIO</h2>
                             <button 
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className="p-2 hover:bg-white/5 rounded-full transition-colors duration-200"
@@ -314,7 +321,7 @@ export default function Navbar() {
                                     <Link 
                                         href="/?dept=Todas&cat=Todas#productos" 
                                         onClick={() => setIsMobileMenuOpen(false)} 
-                                        className="py-2.5 px-4 rounded-xl flex items-center justify-between text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-base"
+                                        className="py-2.5 px-4 rounded-xl flex items-center justify-between text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-sm"
                                     >
                                         <span>Todos los productos</span>
                                         <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400" />
@@ -324,7 +331,7 @@ export default function Navbar() {
                                             key={dept}
                                             href={`/?dept=${dept}#productos`} 
                                             onClick={() => setIsMobileMenuOpen(false)} 
-                                            className="py-2.5 px-4 rounded-xl flex items-center justify-between text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-base"
+                                            className="py-2.5 px-4 rounded-xl flex items-center justify-between text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-sm"
                                         >
                                             <span>{dept}</span>
                                             <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400" />
@@ -343,10 +350,10 @@ export default function Navbar() {
                                     <div>
                                         <button
                                             onClick={() => setIsRemerasExpanded(!isRemerasExpanded)}
-                                            className="w-full py-2.5 px-4 rounded-xl flex items-center justify-between text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-base outline-none"
+                                            className="w-full py-2.5 px-4 rounded-xl flex items-center justify-between text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-sm outline-none"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <Shirt className="w-5 h-5 text-[var(--color-main)]" />
+                                                <Shirt className="w-5 h-5 text-main" />
                                                 <span>Remeras</span>
                                             </div>
                                             <ChevronDown className={cn("w-4 h-4 text-gray-500 transition-transform duration-200", isRemerasExpanded ? "rotate-180" : "")} />
@@ -382,9 +389,9 @@ export default function Navbar() {
                                     <Link 
                                         href="/?cat=Camisetas#productos" 
                                         onClick={() => setIsMobileMenuOpen(false)} 
-                                        className="py-2.5 px-4 rounded-xl flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-base"
+                                        className="py-2.5 px-4 rounded-xl flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-sm"
                                     >
-                                        <Trophy className="w-5 h-5 text-[var(--color-main)]" />
+                                        <Trophy className="w-5 h-5 text-main" />
                                         <span>Camisetas de Fútbol</span>
                                     </Link>
 
@@ -392,9 +399,9 @@ export default function Navbar() {
                                     <Link 
                                         href="/?cat=Gorras#productos" 
                                         onClick={() => setIsMobileMenuOpen(false)} 
-                                        className="py-2.5 px-4 rounded-xl flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-base"
+                                        className="py-2.5 px-4 rounded-xl flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-sm"
                                     >
-                                        <Sparkles className="w-5 h-5 text-[var(--color-main)]" />
+                                        <Sparkles className="w-5 h-5 text-main" />
                                         <span>Gorras Exclusivas</span>
                                     </Link>
 
@@ -402,9 +409,9 @@ export default function Navbar() {
                                     <Link 
                                         href="/?cat=Botineros#productos" 
                                         onClick={() => setIsMobileMenuOpen(false)} 
-                                        className="py-2.5 px-4 rounded-xl flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-base"
+                                        className="py-2.5 px-4 rounded-xl flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-sm"
                                     >
-                                        <Briefcase className="w-5 h-5 text-[var(--color-main)]" />
+                                        <Briefcase className="w-5 h-5 text-main" />
                                         <span>Botineros Deportivos</span>
                                     </Link>
 
@@ -412,9 +419,9 @@ export default function Navbar() {
                                     <Link 
                                         href="/?cat=Accesorios#productos" 
                                         onClick={() => setIsMobileMenuOpen(false)} 
-                                        className="py-2.5 px-4 rounded-xl flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-base"
+                                        className="py-2.5 px-4 rounded-xl flex items-center gap-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors font-medium text-sm"
                                     >
-                                        <Gift className="w-5 h-5 text-[var(--color-main)]" />
+                                        <Gift className="w-5 h-5 text-main" />
                                         <span>Accesorios & Regalos</span>
                                     </Link>
                                 </div>
@@ -450,7 +457,7 @@ export default function Navbar() {
                                             onClick={() => setIsMobileMenuOpen(false)}
                                             className="w-full py-2.5 border border-white/10 text-white hover:bg-white/5 transition-colors rounded-xl text-xs font-bold tracking-wider flex items-center justify-center gap-2 uppercase"
                                         >
-                                            <LayoutDashboard className="w-4 h-4 text-[var(--color-main)]" />
+                                            <LayoutDashboard className="w-4 h-4 text-main" />
                                             Panel Admin
                                         </Link>
                                     ) : (
@@ -459,7 +466,7 @@ export default function Navbar() {
                                             onClick={() => setIsMobileMenuOpen(false)}
                                             className="w-full py-2.5 border border-white/10 text-white hover:bg-white/5 transition-colors rounded-xl text-xs font-bold tracking-wider flex items-center justify-center gap-2 uppercase"
                                         >
-                                            <User className="w-4 h-4 text-[var(--color-main)]" />
+                                            <User className="w-4 h-4 text-main" />
                                             Mi Perfil
                                         </Link>
                                     )}
@@ -477,7 +484,7 @@ export default function Navbar() {
                                         setIsMobileMenuOpen(false);
                                         setModalOpen(true);
                                     }}
-                                    className="w-full py-3 bg-[var(--color-main)] hover:bg-[var(--color-main)]/90 text-white transition-colors rounded-xl text-sm font-bold tracking-wide uppercase"
+                                    className="w-full py-3 bg-main hover:bg-main/90 text-white transition-colors rounded-xl text-sm font-bold tracking-wide uppercase"
                                 >
                                     Iniciar Sesión
                                 </button>
@@ -498,7 +505,7 @@ export default function Navbar() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[200] bg-[var(--background)]/80 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-auto"
+                        className="fixed inset-0 z-200 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center pointer-events-auto"
                     >
                         <Loader2 className="w-12 h-12 animate-spin text-red-500 mb-4" />
                         <p className="text-sm font-bold tracking-widest uppercase text-red-500">Cerrando Sesión...</p>

@@ -96,7 +96,7 @@ export default function AdminProducts() {
                 </div>
                 <Link
                     href="/admin/products/create"
-                    className="flex items-center gap-2 bg-main text-black px-6 py-3 rounded-xl font-bold shadow-[0_0_15px_rgba(0,168,122,0.2)] hover:bg-emerald-400 transition-all scale-100 hover:scale-[1.02] active:scale-95 text-sm uppercase tracking-wider"
+                    className="flex items-center gap-2 bg-main text-black px-6 py-3 rounded-xl font-bold shadow-lg shadow-main/20 hover:bg-orange-400 transition-all scale-100 hover:scale-[1.02] active:scale-95 text-sm uppercase tracking-wider"
                 >
                     <Plus className="w-5 h-5" />
                     Nuevo Producto
@@ -122,14 +122,14 @@ export default function AdminProducts() {
                 {/* In Stock Ratio */}
                 <div className="bg-[#1c1d18]/60 backdrop-blur-md border border-[#2d2e26] p-6 rounded-2xl relative overflow-hidden group hover:border-main/40 transition-all duration-300 shadow-lg">
                     <div className="relative z-10">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/25 flex items-center justify-center text-orange-400 mb-4">
                             <CheckCircle className="w-5 h-5" />
                         </div>
                         <span className="text-gray-400 text-xs font-bold tracking-widest uppercase mb-1 block">Ratio de Disponibilidad</span>
                         <div className="text-3xl font-black text-white font-sans">{stats.inStockRatio.toFixed(1)}%</div>
                     </div>
                     <div className="absolute -right-4 -bottom-4 opacity-[0.02] group-hover:scale-110 transition-transform duration-500 pointer-events-none">
-                        <CheckCircle className="w-32 h-32 text-emerald-400" />
+                        <CheckCircle className="w-32 h-32 text-orange-400" />
                     </div>
                 </div>
 
@@ -186,8 +186,8 @@ export default function AdminProducts() {
                                 className={cn(
                                     "px-4 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-colors border",
                                     filterOption === 'in_stock' 
-                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" 
-                                        : "bg-[#252620] text-emerald-500/70 border-transparent hover:bg-emerald-500/5"
+                                        ? "bg-orange-500/10 text-orange-400 border-orange-500/20" 
+                                        : "bg-[#252620] text-orange-500/70 border-transparent hover:bg-orange-500/5"
                                 )}
                             >
                                 En Stock

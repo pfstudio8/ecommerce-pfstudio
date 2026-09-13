@@ -12,7 +12,7 @@ export async function GET() {
             return NextResponse.json({ isAdmin: false }, { status: 200 });
         }
 
-        const adminEmailsEnv = process.env.NEXT_PUBLIC_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "";
+        const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
         const adminEmails = adminEmailsEnv.split(',').map(e => e.trim());
         const isAdmin = adminEmails.includes(user.email);
 

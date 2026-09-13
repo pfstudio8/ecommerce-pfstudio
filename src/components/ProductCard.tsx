@@ -52,7 +52,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
         e.stopPropagation();
 
         if (!user) {
-            sileo.info({ title: "Debes iniciar sesión para agregar a favoritos" });
+            sileo.info({ title: "Inicia sesión para guardar en favoritos" });
             setAuthModalOpen(true);
             return;
         }
@@ -98,7 +98,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            className="group relative flex flex-col bg-white/5 dark:bg-white/5 border border-white/5 rounded-xl overflow-hidden shadow-2xl transition-all duration-300"
+            className="group relative flex flex-col bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden shadow-2xl transition-all duration-300"
         >
 
             {/* Quick View Button */}
@@ -108,7 +108,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                     e.stopPropagation();
                     onQuickView(product);
                 }}
-                className="absolute top-4 right-4 z-20 bg-black/60 backdrop-blur-md p-2 rounded-full shadow-md opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 hover:bg-[var(--color-main)] text-white hover:scale-110"
+                className="absolute top-4 right-4 z-20 bg-black/60 backdrop-blur-md p-2 rounded-full shadow-md opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 hover:bg-main text-white hover:scale-110"
                 title="Vista Rápida"
             >
                 <Eye className="w-5 h-5" />
@@ -131,7 +131,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
             </button>
 
             {/* Product Image Slider */}
-            <div className="relative aspect-[3/4] overflow-hidden bg-black/40">
+            <div className="relative aspect-3/4 overflow-hidden bg-black/40">
                 {/* Product Tags overlay */}
                 {(() => {
                     let sizeStock = 0;
@@ -153,7 +153,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                     } else if (product.isNew) {
                         return (
                             <div className="absolute top-4 left-4 z-20">
-                                <span className="bg-[var(--color-main)]/80 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase border border-[var(--color-main)]">
+                                <span className="bg-main/90 backdrop-blur-sm text-white text-[10px] font-bold px-3 py-1 rounded-full tracking-widest uppercase border border-main">
                                     NUEVO
                                 </span>
                             </div>
@@ -168,7 +168,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                         style={{ transform: `scale(${isHovered ? 1.05 : 1}) translateX(-${(isHovered && product.images.length > 1 ? 1 : currentImageIndex) * 100}%)` }}
                     >
                         {product.images.map((img, idx) => (
-                            <div key={idx} className="relative w-full h-full flex-shrink-0">
+                            <div key={idx} className="relative w-full h-full shrink-0">
                                 <Image
                                     src={img}
                                     alt={`${product.name} - Vista ${idx + 1}`}
@@ -185,13 +185,13 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                     <>
                         <button
                             onClick={handlePrevImage}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-[var(--color-main)] hover:scale-110 shadow-lg"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-main hover:scale-110 shadow-lg"
                         >
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
                         </button>
                         <button
                             onClick={handleNextImage}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-[var(--color-main)] hover:scale-110 shadow-lg"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-all hover:bg-main hover:scale-110 shadow-lg"
                         >
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
                         </button>
@@ -200,17 +200,17 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
             </div>
 
             {/* Product Info Bento Block */}
-            <div className="p-6 flex flex-col flex-grow">
+            <div className="p-6 flex flex-col grow">
                 <div className="flex justify-between items-start mb-4 gap-4">
                     <div>
                         <Link href={`/producto/${product.id}`} className="w-fit hover:opacity-80 transition-opacity">
-                            <h3 className="text-xl font-bold tracking-tight text-[var(--foreground)] mb-1 leading-tight">
+                            <h3 className="text-xl font-bold tracking-tight text-foreground mb-1 leading-tight">
                                 {product.name.toUpperCase()}
                             </h3>
                         </Link>
                         <p className="text-gray-400 text-sm font-medium">{product.category}</p>
                     </div>
-                    <span className="font-black text-xl text-[var(--color-main)] shrink-0">
+                    <span className="font-black text-xl text-main shrink-0">
                         ${product.price.toLocaleString("es-AR")}
                     </span>
                 </div>
@@ -238,11 +238,11 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                                     if (!isOutOfStock) setSelectedSize(size);
                                 }}
                                 title={isOutOfStock ? "Agotado" : "Disponible"}
-                                className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold transition-all relative overflow-hidden ${selectedSize === size
-                                    ? "bg-[var(--color-main)] text-white shadow-[0_4px_12px_rgba(0,168,122,0.4)] scale-105"
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold transition-all relative overflow-hidden ${selectedSize === size
+                                    ? "bg-main text-white shadow-lg shadow-main/40 scale-105"
                                     : isOutOfStock
                                         ? "bg-white/5 border border-white/5 text-gray-600 opacity-50 cursor-not-allowed"
-                                        : "bg-white/5 border border-white/10 text-gray-300 hover:bg-[var(--color-main)]/20 hover:border-[var(--color-main)]/50 active:scale-95"
+                                        : "bg-white/5 border border-white/10 text-gray-300 hover:bg-main/20 hover:border-main/50 active:scale-95"
                                     }`}
                             >
                                 {size}
@@ -261,9 +261,9 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                     <motion.button
                         whileTap={{ scale: 0.95 }}
                         onClick={handleAddToCart}
-                        className={`flex-grow py-3 rounded-lg flex items-center justify-center transition-all font-extrabold text-sm tracking-wider shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${isAdded
-                            ? "bg-green-500 text-white shadow-green-500/20"
-                            : "bg-gradient-to-r from-[var(--color-main)] to-[#008f65] text-white hover:opacity-90 shadow-[var(--color-main)]/20"
+                        className={`grow py-3.5 rounded-xl flex items-center justify-center transition-all font-extrabold text-sm tracking-wider shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${isAdded
+                            ? "bg-emerald-500 text-white shadow-emerald-500/20"
+                            : "bg-linear-to-r from-main to-[#008f65] text-white hover:opacity-90 shadow-main/20"
                             }`}
                         disabled={!selectedSize && !isAdded}
                     >
@@ -285,7 +285,7 @@ export default function ProductCard({ product, onQuickView, onAddToCart }: Produ
                     <button
                         onClick={handleWhatsAppOrder}
                         disabled={!selectedSize}
-                        className="px-4 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#006c49]/20 text-[#69f6b8] border border-[#006c49]/40 hover:bg-[#69f6b8] hover:text-[#00452d]"
+                        className="px-4 rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#006c49]/20 text-[#69f6b8] border border-[#006c49]/40 hover:bg-[#69f6b8] hover:text-[#00452d] cursor-pointer"
                         title={selectedSize ? "Pedir por WhatsApp" : "Selecciona talla primero"}
                     >
                         <FaWhatsapp className="w-5 h-5 shrink-0" />

@@ -244,7 +244,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         )}
                                     </div>
                                     <div className="p-3 text-center border-t border-[#2d2e26] bg-[#12130f]">
-                                        <Link href="/admin/orders" onClick={() => setShowNotifications(false)} className="text-xs text-main hover:text-emerald-400 font-bold uppercase tracking-wider">
+                                        <Link href="/admin/orders" onClick={() => setShowNotifications(false)} className="text-xs text-main hover:text-orange-400 font-bold uppercase tracking-wider">
                                             Ver todas las actividades
                                         </Link>
                                     </div>

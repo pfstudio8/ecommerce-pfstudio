@@ -292,7 +292,7 @@ export default function CreateProduct() {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="bg-main text-black px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-400 transition-all shadow-[0_0_15px_rgba(0,168,122,0.2)] active:scale-95 disabled:opacity-50 text-sm uppercase tracking-wider"
+                        className="bg-main text-black px-8 py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-orange-400 transition-all shadow-lg shadow-main/20 active:scale-95 disabled:opacity-50 text-sm uppercase tracking-wider"
                     >
                         {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
                         {isLoading ? "Guardando..." : "Guardar Producto"}

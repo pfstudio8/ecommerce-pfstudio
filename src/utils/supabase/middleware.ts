@@ -53,7 +53,7 @@ export async function updateSession(request: NextRequest) {
             return NextResponse.redirect(new URL('/', request.url))
         }
 
-        const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',').map(e => e.trim()) || []
+        const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim()) || []
         console.log("Admin Emails list from ENV:", adminEmails);
 
         if (!user.email || !adminEmails.includes(user.email)) {

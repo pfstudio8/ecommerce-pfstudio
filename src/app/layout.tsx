@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import { Toaster } from "sileo";
-import AuthModal from "@/components/AuthModal";
 import AuthListener from "@/components/AuthListener";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 import { Analytics } from "@vercel/analytics/react";
@@ -41,6 +40,13 @@ export const metadata: Metadata = {
   }
 };
 
+import { Suspense } from "react";
+import PageTransitionBar from "@/components/PageTransitionBar";
+import dynamic from "next/dynamic";
+
+const PFChatbot = dynamic(() => import("@/components/PFChatbot"));
+const AuthModal = dynamic(() => import("@/components/AuthModal"));
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,9 +56,15 @@ export default function RootLayout({
     <html lang="es" className="dark scroll-smooth bg-(--background) text-(--foreground)">
       <body className={`${montserrat.variable} antialiased min-h-screen bg-(--background) text-(--foreground)`}>
         <Toaster position="top-center" />
+        <Suspense fallback={null}>
+          <PageTransitionBar />
+        </Suspense>
         <AuthListener />
         <AuthModal />
         {children}
+
+        {/* Interactive Chatbot Assistant (Paula & Facundo) */}
+        <PFChatbot />
 
         {/* Floating WhatsApp Button */}
         <FloatingWhatsApp />

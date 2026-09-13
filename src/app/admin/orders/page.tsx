@@ -19,10 +19,10 @@ interface Order {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-    'pending': 'bg-[#006c49]/30 text-[#69f6b8] border-[#69f6b8]/20',
-    'paid': 'bg-[#85adff]/20 text-[#85adff] border-[#85adff]/20',
-    'shipped': 'bg-[#ac8aff]/20 text-[#ac8aff] border-[#ac8aff]/20',
-    'cancelled': 'bg-[#9f0519]/30 text-[#ff716c] border-[#ff716c]/20',
+    'pending': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    'paid': 'bg-main/10 text-main border-main/20',
+    'shipped': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    'cancelled': 'bg-red-500/10 text-red-400 border-red-500/20',
 };
 
 const STATUS_OPTIONS = ['pending', 'paid', 'shipped', 'cancelled'];
@@ -164,67 +164,73 @@ export default function AdminOrdersPage() {
     if (isLoading) {
         return (
             <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-[#85adff]" />
+                <Loader2 className="w-8 h-8 animate-spin text-main" />
             </div>
         );
     }
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+        <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 font-sans">
             
+            {/* Header Section */}
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#242520] pb-6">
+                <div>
+                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground font-sans">Gestión de Pedidos</h2>
+                    <p className="text-gray-400 mt-1 text-sm font-medium">Seguimiento y administración de todas las compras realizadas en la tienda.</p>
+                </div>
+            </header>
+
             {/* Dashboard Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <div className="bg-gradient-to-br from-[#85adff] to-[#699cff] p-6 rounded-xl shadow-[0_24px_48px_-12px_rgba(133,173,255,0.2)]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-[#1c1d18]/60 backdrop-blur-md border border-[#2d2e26] p-6 rounded-2xl relative overflow-hidden group hover:border-main/40 transition-all duration-300 shadow-lg">
                     <div className="flex justify-between items-start mb-4">
-                        <div className="w-12 h-12 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center">
-                            <DollarSign className="text-[#002c66] w-6 h-6" />
+                        <div className="w-12 h-12 rounded-xl bg-main/10 border border-main/20 flex items-center justify-center text-main">
+                            <DollarSign className="w-5 h-5" />
                         </div>
-                        <span className="text-[10px] font-bold bg-white/20 px-2 py-1 rounded-full text-[#002c66]">+12.5%</span>
+                        <span className="text-[10px] font-black tracking-wider text-main bg-main/10 border border-main/20 px-2.5 py-1 rounded-full uppercase">+12.5%</span>
                     </div>
-                    <p className="font-['Inter'] text-sm font-medium text-[#002c66]">Ingresos Totales</p>
-                    <h2 className="font-sans text-3xl font-extrabold text-[#000000] mt-1">
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Ingresos Totales</p>
+                    <h2 className="text-3xl font-black text-white mt-1 font-sans">
                         ${orders.reduce((acc, order) => acc + (order.total_amount || 0), 0).toLocaleString('es-AR')}
                     </h2>
                 </div>
 
-                <div className="bg-[#19191c] p-6 rounded-xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#69f6b8]/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
-                    <div className="flex justify-between items-start mb-4 relative z-10">
-                        <div className="w-12 h-12 bg-[#262528] rounded-full flex items-center justify-center">
-                            <ShoppingBag className="text-[#69f6b8] w-6 h-6" />
+                <div className="bg-[#1c1d18]/60 backdrop-blur-md border border-[#2d2e26] p-6 rounded-2xl relative overflow-hidden group hover:border-main/40 transition-all duration-300 shadow-lg">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-main/10 border border-main/20 flex items-center justify-center text-main">
+                            <ShoppingBag className="w-5 h-5" />
                         </div>
                     </div>
-                    <p className="font-['Inter'] text-sm font-medium text-[#adaaad] relative z-10">Pedidos Activos</p>
-                    <h2 className="font-sans text-3xl font-extrabold text-[#f9f5f8] mt-1 relative z-10">{orders.length}</h2>
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Pedidos Activos</p>
+                    <h2 className="text-3xl font-black text-white mt-1 font-sans">{orders.length}</h2>
                 </div>
 
-                <div className="bg-[#19191c] p-6 rounded-xl relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#ac8aff]/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
-                    <div className="flex justify-between items-start mb-4 relative z-10">
-                        <div className="w-12 h-12 bg-[#262528] rounded-full flex items-center justify-center">
-                            <TrendingUp className="text-[#ac8aff] w-6 h-6" />
+                <div className="bg-[#1c1d18]/60 backdrop-blur-md border border-[#2d2e26] p-6 rounded-2xl relative overflow-hidden group hover:border-main/40 transition-all duration-300 shadow-lg">
+                    <div className="flex justify-between items-start mb-4">
+                        <div className="w-12 h-12 rounded-xl bg-main/10 border border-main/20 flex items-center justify-center text-main">
+                            <TrendingUp className="w-5 h-5" />
                         </div>
                     </div>
-                    <p className="font-['Inter'] text-sm font-medium text-[#adaaad] relative z-10">Promedio por Pedido</p>
-                    <h2 className="font-sans text-3xl font-extrabold text-[#f9f5f8] mt-1 relative z-10">
+                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Promedio por Pedido</p>
+                    <h2 className="text-3xl font-black text-white mt-1 font-sans">
                         ${orders.length > 0 ? Math.round(orders.reduce((acc, order) => acc + (order.total_amount || 0), 0) / orders.length).toLocaleString('es-AR') : '0'}
                     </h2>
                 </div>
             </div>
 
             {/* Orders Table Section */}
-            <div className="bg-[#19191c] rounded-xl overflow-hidden shadow-2xl border border-[#48474a]/10">
-                <div className="px-8 py-6 flex flex-col md:flex-row md:justify-between md:items-center border-b border-[#48474a]/20 gap-4">
+            <div className="bg-[#1c1d18]/60 backdrop-blur-md rounded-2xl overflow-hidden border border-[#2d2e26] shadow-lg">
+                <div className="px-6 py-5 flex flex-col md:flex-row md:justify-between md:items-center border-b border-[#2d2e26] gap-4">
                     <div>
-                        <h3 className="font-sans text-xl font-bold text-[#f9f5f8]">Gestión de Pedidos</h3>
-                        <p className="text-sm text-[#adaaad]">Seguimiento y administración de todas las compras.</p>
+                        <h3 className="text-lg font-bold text-foreground font-sans">Listado de Pedidos</h3>
+                        <p className="text-xs text-gray-400">Detalle general de órdenes recibidas.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button className="bg-[#262528] px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[#2c2c2f] transition-colors text-[#f9f5f8]">
-                            <Filter className="w-4 h-4" /> Filtrar
+                        <button className="px-3.5 py-2 bg-[#12130f] border border-[#2d2e26] rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:border-main/30 transition-all flex items-center gap-2">
+                            <Filter className="w-4 h-4 text-main" /> Filtrar
                         </button>
-                        <button className="bg-[#262528] px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-[#2c2c2f] transition-colors text-[#f9f5f8]">
-                            <Download className="w-4 h-4" /> Exportar
+                        <button className="px-3.5 py-2 bg-[#12130f] border border-[#2d2e26] rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:border-main/30 transition-all flex items-center gap-2">
+                            <Download className="w-4 h-4 text-main" /> Exportar
                         </button>
                     </div>
                 </div>
@@ -232,49 +238,47 @@ export default function AdminOrdersPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-[#131315]/50 border-b border-[#48474a]/10">
-                                <th className="px-8 py-4 font-sans text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad]">ID de Pedido</th>
-                                <th className="px-8 py-4 font-sans text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad]">Fecha</th>
-                                <th className="px-8 py-4 font-sans text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad]">Cliente</th>
-                                <th className="px-8 py-4 font-sans text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad]">Monto</th>
-                                <th className="px-8 py-4 font-sans text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad]">Estado</th>
-                                <th className="px-8 py-4 font-sans text-[11px] font-extrabold uppercase tracking-widest text-[#adaaad] text-right">Acciones</th>
+                            <tr className="bg-[#12130f]/60 border-b border-[#2d2e26]">
+                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">ID de Pedido</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Fecha</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Cliente</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Monto</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Estado</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#48474a]/10">
+                        <tbody className="divide-y divide-[#2d2e26]">
                             {orders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="text-center py-12 text-[#adaaad]">
-                                        No hay pedidos registrados
+                                    <td colSpan={6} className="text-center py-16 text-gray-500 text-sm font-medium">
+                                        No hay pedidos registrados aún.
                                     </td>
                                 </tr>
                             ) : (
                                 orders.map((order) => (
-                                    <tr key={order.id} className="hover:bg-[#1f1f22] transition-colors group">
-                                        <td className="px-8 py-6">
-                                            <span className="font-mono text-sm font-bold text-[#85adff]">#{order.id.split('-')[0].toUpperCase()}</span>
+                                    <tr key={order.id} className="hover:bg-[#252620]/30 transition-colors group">
+                                        <td className="px-6 py-5 font-mono text-xs text-main font-bold">
+                                            #{order.id.split('-')[0].toUpperCase()}
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <span className="text-sm text-[#adaaad]">
-                                                {new Date(order.created_at).toLocaleDateString('es-AR', {
-                                                    month: 'short', day: '2-digit', year: 'numeric'
-                                                })}
-                                            </span>
+                                        <td className="px-6 py-5 text-sm text-gray-400">
+                                            {new Date(order.created_at).toLocaleDateString('es-AR', {
+                                                month: 'short', day: '2-digit', year: 'numeric'
+                                            })}
                                         </td>
-                                        <td className="px-8 py-6">
+                                        <td className="px-6 py-5">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-[#262528] overflow-hidden border border-[#48474a]/20 flex items-center justify-center text-[#85adff] font-bold text-xs uppercase cursor-pointer" onClick={() => setSelectedOrder(order)} title="Ver Detalles">
+                                                <div className="w-8 h-8 rounded-full bg-[#12130f] border border-[#2d2e26] flex items-center justify-center text-main font-bold text-xs uppercase cursor-pointer" onClick={() => setSelectedOrder(order)} title="Ver Detalles">
                                                     {order.customer_email.split('@')[0].substring(0, 2)}
                                                 </div>
-                                                <span className="text-sm font-medium text-[#f9f5f8] truncate max-w-[150px] cursor-pointer hover:underline" onClick={() => setSelectedOrder(order)} title={order.customer_email}>
+                                                <span className="text-sm font-bold text-foreground hover:text-main truncate max-w-37.5 cursor-pointer transition-colors" onClick={() => setSelectedOrder(order)} title={order.customer_email}>
                                                     {order.customer_email.split('@')[0]}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <span className="text-sm font-bold text-[#f9f5f8]">${(order.total_amount || 0).toLocaleString("es-AR")}</span>
+                                        <td className="px-6 py-5 text-sm font-bold text-white">
+                                            ${(order.total_amount || 0).toLocaleString("es-AR")}
                                         </td>
-                                        <td className="px-8 py-6">
+                                        <td className="px-6 py-5">
                                             <div className="flex items-center gap-2">
                                                 <select
                                                     disabled={updatingId === order.id}
@@ -283,19 +287,19 @@ export default function AdminOrdersPage() {
                                                     className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors outline-none cursor-pointer appearance-none ${STATUS_COLORS[order.status] || STATUS_COLORS['pending']}`}
                                                 >
                                                     {STATUS_OPTIONS.map(status => (
-                                                        <option key={status} value={status} className="bg-[#1f1f22] text-[#f9f5f8]">
+                                                        <option key={status} value={status} className="bg-[#1c1d18] text-white">
                                                             {STATUS_LABELS[status]}
                                                         </option>
                                                     ))}
                                                 </select>
-                                                {updatingId === order.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#adaaad]" />}
+                                                {updatingId === order.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-main" />}
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6 text-right">
+                                        <td className="px-6 py-5 text-right">
                                             <button 
                                                 onClick={() => handleDeleteOrder(order.id)}
                                                 disabled={deletingId === order.id}
-                                                className="p-2 hover:bg-[#2c2c2f] rounded-full text-red-500/80 hover:text-red-500 transition-all disabled:opacity-50"
+                                                className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg border border-transparent hover:border-red-500/20 transition-all disabled:opacity-50"
                                                 title="Eliminar pedido"
                                             >
                                                 {deletingId === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -309,172 +313,135 @@ export default function AdminOrdersPage() {
                 </div>
 
                 {/* Pagination */}
-                <div className="px-8 py-6 bg-[#131315]/30 border-t border-[#48474a]/10 flex items-center justify-between">
-                    <p className="text-xs text-[#adaaad] font-medium">Mostrando <span className="text-[#f9f5f8]">{orders.length > 0 ? 1 : 0}-{orders.length}</span> de <span className="text-[#f9f5f8]">{orders.length}</span> pedidos</p>
+                <div className="px-6 py-4 bg-[#12130f]/60 border-t border-[#2d2e26] flex items-center justify-between">
+                    <p className="text-xs text-gray-400 font-medium">Mostrando <span className="text-white font-bold">{orders.length > 0 ? 1 : 0}-{orders.length}</span> de <span className="text-white font-bold">{orders.length}</span> pedidos</p>
                     <div className="flex gap-2">
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#262528] text-[#f9f5f8] hover:bg-[#2c2c2f] transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#85adff] text-[#000000] font-bold text-xs">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#262528] text-[#f9f5f8] hover:bg-[#2c2c2f] transition-colors"><ChevronRight className="w-4 h-4" /></button>
+                        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#1c1d18] border border-[#2d2e26] text-gray-400 hover:text-white transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+                        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-main text-black font-bold text-xs">1</button>
+                        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#1c1d18] border border-[#2d2e26] text-gray-400 hover:text-white transition-colors"><ChevronRight className="w-4 h-4" /></button>
                     </div>
                 </div>
             </div>
 
-            {/* Summary Analysis (Asymmetric/Bento Style) */}
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-12 gap-6 h-auto md:h-[400px]">
+            {/* Summary Analysis */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 {/* Performance Graph Area */}
-                <div className="md:col-span-8 bg-[#19191c] rounded-xl p-8 flex flex-col border border-[#48474a]/5">
+                <div className="md:col-span-8 bg-[#1c1d18]/60 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-[#2d2e26] shadow-lg flex flex-col justify-between">
                     <div className="flex justify-between items-center mb-8">
                         <div>
-                            <h4 className="font-sans text-lg font-bold text-[#f9f5f8]">Velocidad de Ventas</h4>
-                            <p className="text-xs text-[#adaaad]">Flujo en tiempo real de pedidos y envíos.</p>
+                            <h4 className="text-lg font-bold text-foreground font-sans">Velocidad de Ventas</h4>
+                            <p className="text-xs text-gray-400 mt-0.5">Flujo reciente de volumen por pedidos.</p>
                         </div>
                         <div className="flex gap-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-[#85adff]"></div>
-                                <span className="text-[10px] text-[#adaaad] font-bold uppercase tracking-widest">Activos</span>
+                                <div className="w-2 h-2 rounded-full bg-main"></div>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Activos</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-[#69f6b8]"></div>
-                                <span className="text-[10px] text-[#adaaad] font-bold uppercase tracking-widest">Completados</span>
+                                <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Completados</span>
                             </div>
                         </div>
                     </div>
-                    <div className="flex-1 w-full relative group h-48 md:h-auto">
-                        {/* Real Data Graph: Last 7 Orders */}
+                    <div className="w-full relative group h-48 md:h-56">
                         <div className="absolute inset-0 flex items-end justify-between gap-4 px-4 pb-4">
                             {velocityData.length > 0 ? velocityData.map((data, index) => (
                                 <div 
                                     key={data.id + index}
                                     title={`$${data.amount?.toLocaleString('es-AR')}`}
-                                    className={`w-full rounded-t-lg transition-all duration-1000 ease-out opacity-80 hover:opacity-100 ${data.isActive ? 'bg-[#85adff]' : 'bg-[#69f6b8]'}`} 
+                                    className={`w-full rounded-t-lg transition-all duration-700 ease-out opacity-80 hover:opacity-100 ${data.isActive ? 'bg-main shadow-[0_0_12px_rgba(0,168,122,0.3)]' : 'bg-blue-400'}`} 
                                     style={{ height: data.heightClass }}
                                 ></div>
                             )) : (
-                                <div className="w-full text-center text-[#adaaad] text-sm self-center">No hay órdenes suficientes</div>
+                                <div className="w-full text-center text-gray-500 text-sm self-center">No hay datos de ventas suficientes</div>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* Real Data Status Breakdown */}
-                <div className="md:col-span-4 bg-[#19191c] rounded-xl p-8 flex flex-col justify-between overflow-hidden relative border border-[#48474a]/5">
-                    <div className="z-10">
-                        <h4 className="font-sans text-lg font-bold text-[#f9f5f8]">Status Distribution</h4>
-                        <p className="text-xs text-[#adaaad] mb-6">Distribución por estado actual</p>
+                {/* Status Breakdown */}
+                <div className="md:col-span-4 bg-[#1c1d18]/60 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-[#2d2e26] shadow-lg flex flex-col justify-between relative overflow-hidden">
+                    <div>
+                        <h4 className="text-lg font-bold text-foreground font-sans">Distribución de Estados</h4>
+                        <p className="text-xs text-gray-400 mb-6">Porcentaje del catálogo por estado actual.</p>
                     </div>
                     <div className="space-y-4 z-10 w-full">
                         <div className="group">
-                            <div className="flex justify-between text-xs font-bold mb-1 text-[#f9f5f8] group-hover:text-[#85adff] transition-colors">
-                                <span>Activos (Pendientes/Pagados)</span>
+                            <div className="flex justify-between text-xs font-bold mb-1 text-gray-300 group-hover:text-main transition-colors">
+                                <span>Activos (Pendientes / Pagados)</span>
                                 <span>{statusDist.pendingPct}%</span>
                             </div>
-                            <div className="w-full h-1.5 bg-[#262528] rounded-full overflow-hidden">
-                                <div className="h-full bg-[#85adff] transition-all duration-1000 ease-out" style={{ width: `${statusDist.pendingPct}%` }}></div>
+                            <div className="w-full h-2 bg-[#12130f] rounded-full overflow-hidden border border-[#2d2e26]">
+                                <div className="h-full bg-main transition-all duration-1000 ease-out" style={{ width: `${statusDist.pendingPct}%` }}></div>
                             </div>
                         </div>
                         <div className="group">
-                            <div className="flex justify-between text-xs font-bold mb-1 text-[#f9f5f8] group-hover:text-[#69f6b8] transition-colors">
+                            <div className="flex justify-between text-xs font-bold mb-1 text-gray-300 group-hover:text-blue-400 transition-colors">
                                 <span>Completados (Enviados)</span>
                                 <span>{statusDist.shippedPct}%</span>
                             </div>
-                            <div className="w-full h-1.5 bg-[#262528] rounded-full overflow-hidden">
-                                <div className="h-full bg-[#69f6b8] transition-all duration-1000 ease-out" style={{ width: `${statusDist.shippedPct}%` }}></div>
+                            <div className="w-full h-2 bg-[#12130f] rounded-full overflow-hidden border border-[#2d2e26]">
+                                <div className="h-full bg-blue-400 transition-all duration-1000 ease-out" style={{ width: `${statusDist.shippedPct}%` }}></div>
                             </div>
                         </div>
                         <div className="group">
-                            <div className="flex justify-between text-xs font-bold mb-1 text-[#f9f5f8] group-hover:text-[#ff716c] transition-colors">
+                            <div className="flex justify-between text-xs font-bold mb-1 text-gray-300 group-hover:text-red-400 transition-colors">
                                 <span>Cancelados</span>
                                 <span>{statusDist.cancelledPct}%</span>
                             </div>
-                            <div className="w-full h-1.5 bg-[#262528] rounded-full overflow-hidden">
-                                <div className="h-full bg-[#ff716c] transition-all duration-1000 ease-out" style={{ width: `${statusDist.cancelledPct}%` }}></div>
+                            <div className="w-full h-2 bg-[#12130f] rounded-full overflow-hidden border border-[#2d2e26]">
+                                <div className="h-full bg-red-400 transition-all duration-1000 ease-out" style={{ width: `${statusDist.cancelledPct}%` }}></div>
                             </div>
                         </div>
                     </div>
                     <div className="mt-8 flex justify-center z-10">
-                        <button className="text-xs font-bold text-[#85adff] hover:text-[#f9f5f8] transition-colors underline underline-offset-4">Configurar Estados</button>
+                        <button className="text-xs font-bold text-main hover:text-emerald-400 transition-colors uppercase tracking-wider">
+                            Gestión Activa de Estados
+                        </button>
                     </div>
-                    {/* Background aesthetic flare */}
-                    <div className="absolute bottom-0 right-0 w-48 h-48 bg-[#85adff]/5 blur-[80px] rounded-full -mb-24 -mr-24 pointer-events-none"></div>
                 </div>
             </div>
 
             {/* Modal de Artículos */}
             {selectedOrder && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-[#19191c] border border-[#48474a]/20 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-4 border-b border-[#48474a]/20 flex items-center justify-between">
-                            <h3 className="font-bold text-lg text-[#f9f5f8] flex items-center gap-2">
-                                <Package className="w-5 h-5 text-[#85adff]" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
+                    <div className="bg-[#1c1d18] border border-[#2d2e26] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-[#2d2e26] flex items-center justify-between">
+                            <h3 className="font-bold text-lg text-white flex items-center gap-2 font-sans">
+                                <Package className="w-5 h-5 text-main" />
                                 Artículos del Pedido
                             </h3>
                             <button
                                 onClick={() => setSelectedOrder(null)}
-                                className="text-[#adaaad] hover:text-white transition-colors"
+                                className="text-gray-400 hover:text-white transition-colors"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                             </button>
                         </div>
-                        <div className="p-4 max-h-[60vh] overflow-y-auto space-y-4 custom-scrollbar">
+                        <div className="p-5 max-h-[60vh] overflow-y-auto space-y-4">
                             {selectedOrder.order_items && selectedOrder.order_items.length > 0 ? (
                                 selectedOrder.order_items.map((item, idx) => (
-                                    <div key={idx} className="flex gap-4 p-3 rounded-xl bg-[#131315] border border-[#48474a]/10">
+                                    <div key={idx} className="flex gap-4 p-4 rounded-xl bg-[#12130f] border border-[#2d2e26]">
                                         {item.products?.images && item.products.images.length > 0 ? (
-                                            <img src={item.products.images[0]} alt={item.products.name} className="w-16 h-16 object-cover rounded-lg bg-[#262528]" />
+                                            <img src={item.products.images[0]} alt={item.products.name} className="w-16 h-16 object-cover rounded-lg bg-[#1c1d18]" />
                                         ) : (
-                                            <div className="w-16 h-16 rounded-lg bg-[#262528] flex items-center justify-center text-[#adaaad]">
+                                            <div className="w-16 h-16 rounded-lg bg-[#1c1d18] flex items-center justify-center text-gray-500">
                                                 <Package className="w-6 h-6" />
                                             </div>
                                         )}
                                         <div className="flex-1">
-                                            <h4 className="font-semibold text-[#f9f5f8] line-clamp-1">{item.products?.name || `Producto no disponible`}</h4>
-                                            <div className="text-sm text-[#adaaad] mt-1 space-y-0.5">
-                                                <p>Talla: <span className="font-medium text-[#f9f5f8]">{item.size}</span></p>
-                                                <p>Cantidad: <span className="font-medium text-[#f9f5f8]">{item.quantity}</span></p>
-                                                <p>Precio histórico: <span className="font-medium text-[#f9f5f8]">${(item.price_at_purchase || 0).toLocaleString("es-AR")}</span></p>
+                                            <h4 className="font-bold text-white text-sm line-clamp-1">{item.products?.name || `Producto no disponible`}</h4>
+                                            <div className="text-xs text-gray-400 mt-1 space-y-0.5 font-medium">
+                                                <p>Talla: <span className="font-bold text-main">{item.size}</span></p>
+                                                <p>Cantidad: <span className="font-bold text-white">{item.quantity}</span></p>
+                                                <p>Precio histórico: <span className="font-bold text-white">${(item.price_at_purchase || 0).toLocaleString("es-AR")}</span></p>
                                             </div>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-center text-[#adaaad] py-4">No hay artículos detallados para este pedido.</p>
+                                <p className="text-center text-gray-400 py-6 text-sm">No hay artículos detallados para este pedido.</p>
                             )}
-                        </div>
-                        
-                        {/* Tracking Section */}
-                        <div className="p-6 border-t border-[#48474a]/20 bg-[#131315]/50">
-                            <h4 className="font-semibold text-sm text-[#f9f5f8] mb-4 flex items-center gap-2">
-                                <Truck className="w-4 h-4 text-[#69f6b8]" /> Seguimiento de Envío
-                            </h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                                <div>
-                                    <label className="block text-xs text-[#adaaad] mb-1">Correo (ej. Andreani)</label>
-                                    <input 
-                                        type="text" 
-                                        value={carrier}
-                                        onChange={(e) => setCarrier(e.target.value)}
-                                        className="w-full text-sm px-3 py-2 border border-[#48474a]/20 rounded-md bg-[#1f1f22] text-[#f9f5f8] focus:outline-none focus:ring-1 focus:ring-[#85adff] placeholder:text-[#adaaad]/50" 
-                                        placeholder="Empresa de correo"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs text-[#adaaad] mb-1">Código de Seguimiento</label>
-                                    <input 
-                                        type="text" 
-                                        value={trackingNumber}
-                                        onChange={(e) => setTrackingNumber(e.target.value)}
-                                        className="w-full text-sm px-3 py-2 border border-[#48474a]/20 rounded-md bg-[#1f1f22] text-[#f9f5f8] focus:outline-none focus:ring-1 focus:ring-[#85adff] placeholder:text-[#adaaad]/50" 
-                                        placeholder="Ej. AB123456789AR"
-                                    />
-                                </div>
-                            </div>
-                            <button
-                                onClick={handleSaveTracking}
-                                disabled={isSavingTracking}
-                                className="w-full py-2 bg-[#85adff] hover:bg-[#699cff] text-[#000000] rounded-md text-sm font-bold transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
-                            >
-                                {isSavingTracking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Guardar Seguimiento"}
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -482,3 +449,4 @@ export default function AdminOrdersPage() {
         </div>
     );
 }
+

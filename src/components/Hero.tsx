@@ -28,9 +28,9 @@ export default function Hero() {
     };
 
     return (
-        <header className="relative pt-28 md:pt-36 pb-12 px-4 md:px-8 max-w-[1400px] mx-auto w-full overflow-hidden">
+        <header className="relative pt-28 md:pt-36 pb-12 px-4 md:px-8 max-w-350 mx-auto w-full overflow-hidden">
             {/* Ambient Lighting & Glow FX */}
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] md:w-[700px] md:h-[400px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-75 md:w-175 md:h-100 bg-emerald-500/15 blur-[120px] rounded-full pointer-events-none -z-10" />
 
             <motion.div 
                 variants={textVariants}
@@ -38,29 +38,18 @@ export default function Hero() {
                 animate="visible"
                 className="flex flex-col items-center text-center mt-2 md:mt-6 gap-8 relative z-10"
             >
-                {/* Status Badge */}
-                <motion.div variants={childVariants} className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-lg">
-                    <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--color-main)] opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--color-main)]"></span>
-                    </span>
-                    <span className="text-xs font-bold uppercase tracking-widest text-emerald-300">
-                        PFSTUDIO INDUMENTARIA
-                    </span>
-                </motion.div>
-
                 {/* Hero Headline */}
                 <div className="flex flex-col items-center max-w-4xl">
                     <motion.h1
                         variants={childVariants}
-                        className="font-black text-6xl sm:text-7xl md:text-8xl lg:text-[7rem] tracking-tight leading-[0.85] text-[var(--foreground)] uppercase mb-6"
+                        className="font-black text-6xl sm:text-7xl md:text-8xl lg:text-[7rem] tracking-tight leading-[0.85] text-foreground uppercase mb-6"
                     >
                         PFSTUDIO
                     </motion.h1>
 
                     <motion.p
                         variants={childVariants}
-                        className="text-gray-300 max-w-2xl text-base sm:text-lg md:text-xl font-normal leading-relaxed text-balance mx-auto px-2"
+                        className="text-gray-300 max-w-2xl sm:text-lg md:text-xl font-normal leading-relaxed text-balance mx-auto px-2"
                     >
                         Sublimación integral en todo tipo de insumos: Remeras, Gorras, Chopps, Tazas, Llaveros, Vasos y más. Personalizá tus productos en tiempo real con la mejor calidad y diseños únicos.
                     </motion.p>
@@ -73,7 +62,7 @@ export default function Hero() {
                 >
                     <button
                         onClick={() => scrollToSection("productos")}
-                        className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-[var(--color-main)] to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-[var(--color-main)]/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 group cursor-pointer"
+                        className="w-full sm:w-auto px-8 py-4 rounded-xl bg-linear-to-r from-main to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm uppercase tracking-wider shadow-lg shadow-main/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 flex items-center justify-center gap-2 group cursor-pointer"
                     >
                         <ShoppingBag className="w-4 h-4" />
                         Ver Catálogo
@@ -86,7 +75,7 @@ export default function Hero() {
                     >
                         <Palette className="w-4 h-4 text-emerald-400 group-hover:rotate-12 transition-transform" />
                         Personalizá tu Insumo
-                        <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
                     </button>
                 </motion.div>
             </motion.div>

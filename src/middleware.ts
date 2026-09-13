@@ -1,7 +1,20 @@
-import { type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/utils/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+    // CSRF Protection for mutating methods
+    if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) {
+        const origin = request.headers.get('origin')
+        const host = request.headers.get('host')
+        
+        if (origin && host) {
+            const originUrl = new URL(origin)
+            if (originUrl.host !== host) {
+                return new NextResponse("CSRF Protection: Invalid Origin", { status: 403 })
+            }
+        }
+    }
+
     return await updateSession(request)
 }
 

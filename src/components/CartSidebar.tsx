@@ -3,10 +3,12 @@
 import { X, Minus, Plus, Trash2, ShoppingBag, ShieldCheck, Lock, RotateCcw } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useAuthStore } from "@/store/auth";
+import { useAddressStore } from "@/store/addresses";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { sileo } from "sileo";
 import Image from "next/image";
+import ProcessingOverlay from "@/components/ProcessingOverlay";
 
 export default function CartSidebar() {
     const { items, removeItem, updateQuantity, getTotalPrice, isCartOpen, setCartOpen } = useCartStore();
@@ -14,21 +16,31 @@ export default function CartSidebar() {
     const [removingId, setRemovingId] = useState<string | null>(null);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'mp' | 'transfer'>('mp');
+    
+    const { addresses, fetchAddresses } = useAddressStore();
+    const defaultAddress = addresses.find(a => a.is_default);
+
+    useEffect(() => {
+        if (isCartOpen && user) {
+            fetchAddresses();
+        }
+    }, [isCartOpen, user, fetchAddresses]);
 
     const handleCheckout = async () => {
         if (!user) {
             setCartOpen(false);
             setModalOpen(true);
-            sileo.error({ title: "Debes iniciar sesión para comprar" });
+            sileo.info({ title: "Inicia sesión para realizar la compra" });
             return;
         }
 
         setIsCheckingOut(true);
+        const startTime = Date.now();
         const billingDetails = { 
             name: user.user_metadata?.full_name || "", 
             dni: user.user_metadata?.dni || "", 
             phone: user.user_metadata?.phone || "", 
-            address: user.user_metadata?.address || "" 
+            address: defaultAddress ? `${defaultAddress.street}, ${defaultAddress.city}, ${defaultAddress.state} (${defaultAddress.zip_code})` : user.user_metadata?.address || "" 
         };
 
         try {
@@ -44,6 +56,10 @@ export default function CartSidebar() {
                 }
 
                 const data = await res.json();
+
+                const elapsed = Date.now() - startTime;
+                if (elapsed < 1500) await new Promise((res) => setTimeout(res, 1500 - elapsed));
+
                 if (data.success && data.order_id) {
                     window.location.href = `/transfer-success?orderId=${data.order_id}`;
                 } else {
@@ -63,6 +79,9 @@ export default function CartSidebar() {
                 }
 
                 const data = await res.json();
+
+                const elapsed = Date.now() - startTime;
+                if (elapsed < 1500) await new Promise((res) => setTimeout(res, 1500 - elapsed));
 
                 if (data.init_point) {
                     // Redirect user to MercadoPago
@@ -95,7 +114,7 @@ export default function CartSidebar() {
             {/* Overlay */}
             <div
                 className={cn(
-                    "fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] transition-all duration-300",
+                    "fixed inset-0 bg-black/40 backdrop-blur-sm z-60 transition-all duration-300",
                     isCartOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 )}
                 onClick={() => setCartOpen(false)}
@@ -104,13 +123,13 @@ export default function CartSidebar() {
             {/* Sidebar */}
             <aside
                 className={cn(
-                    "fixed top-0 right-0 bottom-0 w-full max-w-md bg-[var(--background)]/85 backdrop-blur-2xl border-l border-white/10 dark:border-zinc-800/50 z-[70] shadow-2xl transition-transform duration-300 flex flex-col",
+                    "fixed top-0 right-0 bottom-0 w-full max-w-md bg-(--background)/85 backdrop-blur-2xl border-l border-white/10 dark:border-zinc-800/50 z-70 shadow-2xl transition-transform duration-300 flex flex-col",
                     isCartOpen ? "translate-x-0" : "translate-x-full"
                 )}
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-zinc-800">
-                    <h2 className="text-xl font-bold tracking-tight text-[var(--foreground)] flex items-center gap-2">
+                    <h2 className="text-xl font-bold tracking-tight text-(--foreground) flex items-center gap-2">
                         <ShoppingBag className="w-5 h-5" />
                         Tu Bolsa
                     </h2>
@@ -129,7 +148,7 @@ export default function CartSidebar() {
                             <p>Tu carrito está vacío</p>
                             <button
                                 onClick={() => setCartOpen(false)}
-                                className="mt-4 px-6 py-2 border border-[var(--color-main)] text-[var(--color-main)] rounded hover:bg-[var(--color-main)] hover:text-white transition-colors"
+                                className="mt-4 px-6 py-2 border border-main text-main rounded hover:bg-main hover:text-white transition-colors"
                             >
                                 Seguir Comprando
                             </button>
@@ -148,7 +167,7 @@ export default function CartSidebar() {
                                     )}
                                 >
                                     {/* Image */}
-                                    <div className="relative w-20 h-24 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                                    <div className="relative w-20 h-24 bg-gray-100 rounded overflow-hidden shrink-0">
                                         <Image
                                             src={item.product.images[0]}
                                             alt={item.product.name}
@@ -162,11 +181,11 @@ export default function CartSidebar() {
                                     <div className="flex flex-col flex-1 justify-between">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h3 className="font-semibold text-[var(--foreground)] line-clamp-1">
+                                                <h3 className="font-semibold text-(--foreground) line-clamp-1">
                                                     {item.product.name}
                                                 </h3>
                                                 <p className="text-sm text-gray-500 mt-1">
-                                                    Talle: <span className="font-bold text-[var(--foreground)]">{item.size}</span>
+                                                    Talle: <span className="font-bold text-(--foreground)">{item.size}</span>
                                                 </p>
                                             </div>
                                             <button
@@ -184,7 +203,7 @@ export default function CartSidebar() {
                                                 <button
                                                     disabled={item.quantity <= 1}
                                                     onClick={() => updateQuantity(item.product.id, item.size, item.quantity - 1)}
-                                                    className="p-1 px-2 hover:bg-gray-100 dark:hover:bg-zinc-800 disabled:opacity-50 transition-colors text-[var(--foreground)]"
+                                                    className="p-1 px-2 hover:bg-gray-100 dark:hover:bg-zinc-800 disabled:opacity-50 transition-colors text-(--foreground)"
                                                 >
                                                     <Minus className="w-4 h-4" />
                                                 </button>
@@ -193,14 +212,14 @@ export default function CartSidebar() {
                                                 </span>
                                                 <button
                                                     onClick={() => updateQuantity(item.product.id, item.size, item.quantity + 1)}
-                                                    className="p-1 px-2 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-[var(--foreground)]"
+                                                    className="p-1 px-2 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors text-(--foreground)"
                                                 >
                                                     <Plus className="w-4 h-4" />
                                                 </button>
                                             </div>
 
                                             {/* Price */}
-                                            <p className="font-bold text-[var(--color-main)]">
+                                            <p className="font-bold text-main">
                                                 ${(item.product.price * item.quantity).toLocaleString("es-AR")}
                                             </p>
                                         </div>
@@ -217,10 +236,25 @@ export default function CartSidebar() {
 
                         <div className="flex justify-between items-center text-lg font-bold">
                             <span>Total</span>
-                            <span className="text-[var(--color-main)] text-2xl">
+                            <span className="text-main text-2xl">
                                 ${getTotalPrice().toLocaleString("es-AR")}
                             </span>
                         </div>
+
+                        {/* Delivery Address Summary */}
+                        {user && (
+                            <div className="bg-gray-50 dark:bg-zinc-800/50 p-3 rounded-lg border border-gray-100 dark:border-zinc-700 flex justify-between items-center text-sm">
+                                <div>
+                                    <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-0.5">Envío a</p>
+                                    <p className="font-semibold text-(--foreground) line-clamp-1">
+                                        {defaultAddress ? defaultAddress.street : (user.user_metadata?.address || "Dirección no configurada")}
+                                    </p>
+                                </div>
+                                <a href="/perfil" onClick={() => setCartOpen(false)} className="text-main font-bold text-xs whitespace-nowrap hover:underline">
+                                    Cambiar
+                                </a>
+                            </div>
+                        )}
 
                         {/* Payment Method Selector */}
                         <div className="flex flex-col gap-2 mt-2">
@@ -245,7 +279,7 @@ export default function CartSidebar() {
                                     className={cn(
                                         "py-2 px-3 border rounded-lg text-sm font-medium transition-all duration-200 flex flex-col items-center justify-center gap-1",
                                         paymentMethod === 'transfer'
-                                            ? "border-[var(--color-main)] bg-[var(--color-main)]/10 text-[var(--color-main)]"
+                                            ? "border-main bg-main/10 text-main"
                                             : "border-gray-200 dark:border-zinc-700 text-gray-500 hover:border-gray-300 dark:hover:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-800"
                                     )}
                                 >
@@ -260,10 +294,10 @@ export default function CartSidebar() {
                         <button
                             onClick={handleCheckout}
                             disabled={isCheckingOut}
-                            className="w-full py-4 bg-[var(--foreground)] text-[var(--background)] rounded font-bold uppercase tracking-widest text-sm hover:bg-[var(--color-main)] hover:text-white transition-colors disabled:opacity-70 flex justify-center items-center"
+                            className="w-full py-4 bg-(--foreground) text-(--background) rounded font-bold uppercase tracking-widest text-sm hover:bg-main hover:text-white transition-colors disabled:opacity-70 flex justify-center items-center"
                         >
                             {isCheckingOut ? (
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-[var(--background)]"></div>
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-(--background)"></div>
                             ) : (
                                 "Pagar y Finalizar"
                             )}
@@ -275,11 +309,27 @@ export default function CartSidebar() {
                             <span className="opacity-30">•</span>
                             <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-sky-500" /> Oficial</span>
                             <span className="opacity-30">•</span>
-                            <span className="flex items-center gap-1"><RotateCcw className="w-3 h-3 text-[var(--color-main)]" /> Garantía</span>
+                            <span className="flex items-center gap-1"><RotateCcw className="w-3 h-3 text-main" /> Garantía</span>
                         </div>
                     </div>
                 )}
             </aside>
+
+            {/* Branded Payment Processing Screen Overlay */}
+            <ProcessingOverlay
+                isOpen={isCheckingOut}
+                type={paymentMethod === 'mp' ? 'mercadopago' : 'transfer'}
+                title={
+                    paymentMethod === 'mp'
+                        ? "Conectando con Mercado Pago..."
+                        : "Generando Orden de Compra..."
+                }
+                subtitle={
+                    paymentMethod === 'mp'
+                        ? "Te estamos redirigiendo a la pasarela oficial de pago seguro."
+                        : "Preparando tus datos bancarios y registrando tu pedido."
+                }
+            />
         </>
     );
 }

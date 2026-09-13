@@ -1,5 +1,24 @@
 import { NextResponse } from 'next/server';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { z } from 'zod';
+
+const checkoutItemSchema = z.object({
+    product: z.object({
+        id: z.string(),
+        name: z.string(),
+        price: z.number().or(z.string().transform(Number)),
+        images: z.array(z.string()).optional().default([]),
+        category: z.string().optional()
+    }),
+    size: z.string(),
+    quantity: z.number().min(1)
+});
+
+const checkoutSchema = z.object({
+    items: z.array(checkoutItemSchema).min(1, 'Cart cannot be empty'),
+    billingDetails: z.any().optional(),
+    user_email: z.string().email().optional().nullable()
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -9,11 +28,12 @@ const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCE
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { items, billingDetails } = body;
-
-        if (!items || items.length === 0) {
-            return NextResponse.json({ error: "No items provided" }, { status: 400 });
+        const parseResult = checkoutSchema.safeParse(body);
+        if (!parseResult.success) {
+            return NextResponse.json({ error: 'Invalid checkout payload', issues: parseResult.error.format() }, { status: 400 });
         }
+        
+        const { items, billingDetails, user_email } = parseResult.data;
 
         const preference = new Preference(client);
 
@@ -41,7 +61,7 @@ export async function POST(request: Request) {
         const bodyPayload: any = {
             items: mpItems,
             metadata: {
-                user_email: body.user_email || null,
+                user_email: user_email || null,
                 billing_details: billingDetails,
                 cart_items: items.map((item: any) => ({
                     id: item.product.id,
