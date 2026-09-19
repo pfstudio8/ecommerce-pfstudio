@@ -180,9 +180,7 @@ export async function POST(request: Request) {
         }
         console.error("===================================================");
         return NextResponse.json({
-            error: "Failed to create preference",
-            details: error.message || error,
-            validation_errors: error.cause || error.response
+            error: "Error al procesar el pago. Intentá nuevamente."
         }, { status: 500 });
     }
 }

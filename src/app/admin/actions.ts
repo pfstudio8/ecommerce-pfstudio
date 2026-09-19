@@ -1,11 +1,26 @@
 "use server";
 
+import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 
 export async function getDashboardStats() {
-    const supabase = createAdminClient();
-
     try {
+        const supabaseAuth = await createClient();
+        const supabase = createAdminClient();
+
+        // Ensure user is admin before returning data
+        const { data: { user } } = await supabaseAuth.auth.getUser();
+        if (!user || !user.email) {
+            throw new Error("No autenticado");
+        }
+        
+        const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
+        const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+        
+        if (!adminEmails.includes(user.email.toLowerCase())) {
+            throw new Error("No autorizado");
+        }
+
         // Fetch minimal data for orders aggregation
         const { data: orders, error: ordersError } = await supabase
             .from('orders')

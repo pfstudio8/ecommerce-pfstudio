@@ -51,10 +51,6 @@ export default function Footer() {
                             <span className="material-symbols-outlined text-[18px]">mail</span>
                             <a href="mailto:hola@pfstudio.com.ar" className="hover:text-primary transition-colors">hola@pfstudio.com.ar</a>
                         </li>
-                        <li className="flex items-center gap-2 text-body-sm font-body-sm text-on-surface-variant">
-                            <span className="material-symbols-outlined text-[18px]">phone</span>
-                            <a href="https://wa.me/541100000000" className="hover:text-primary transition-colors">+54 11 0000-0000</a>
-                        </li>
                     </ul>
                 </div>
             </div>

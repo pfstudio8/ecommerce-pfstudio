@@ -120,8 +120,7 @@ export async function POST(request: Request) {
         console.error("====== Error processing transfer checkout ======");
         console.error("Error Message:", error.message);
         return NextResponse.json({
-            error: "An unexpected error occurred",
-            details: error.message || error,
+            error: "Error al procesar el pago. Intentá nuevamente."
         }, { status: 500 });
     }
 }

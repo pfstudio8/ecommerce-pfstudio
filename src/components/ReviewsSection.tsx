@@ -151,6 +151,7 @@ export default function ReviewsSection({ productId }: { productId: string }) {
                                         value={newComment}
                                         onChange={(e) => setNewComment(e.target.value)}
                                         rows={4}
+                                        maxLength={500}
                                         className="w-full px-4 py-3 rounded-lg border border-yellow-400/20 bg-zinc-900 text-yellow-100 placeholder:text-yellow-100/40 focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all outline-none resize-none"
                                         placeholder="¿Qué te pareció el producto?"
                                     />

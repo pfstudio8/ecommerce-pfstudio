@@ -21,7 +21,7 @@ BEGIN
         WHERE email = coalesce(auth.jwt() ->> 'email', '')
     );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 3. Tabla de Pedidos (Orders) con payment_id UNIQUE
 CREATE TABLE IF NOT EXISTS public.orders (
@@ -98,7 +98,7 @@ BEGIN
         RAISE EXCEPTION 'INSUFFICIENT_STOCK: No hay suficiente stock total para el producto %', p_id;
     END IF;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 10. Vista Consolidada para Directorio de Clientes (Evita procesamiento N+1 en memoria)
 CREATE OR REPLACE VIEW public.customer_profiles AS

@@ -6,9 +6,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
     // 1. Verify Cron Secret for security
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET || 'dev_cron_secret';
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+        return NextResponse.json({ error: 'CRON_SECRET is not configured' }, { status: 500 });
+    }
     
+    const authHeader = request.headers.get('authorization');
     if (authHeader !== `Bearer ${cronSecret}` && request.headers.get('x-cron-secret') !== cronSecret) {
         // Permit alternative header for standard cron jobs
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
