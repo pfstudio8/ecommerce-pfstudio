@@ -144,11 +144,11 @@ export async function POST(request: Request) {
                 user_email: user_email || null,
                 billing_details: billingDetails,
                 cart_items: items.map((item: CheckoutItemType) => {
-                    const dbProduct = productMap.get(item.product.id)!;
+                    const dbProduct = productMap.get(item.product.id);
                     return {
                         id: item.product.id,
-                        name: dbProduct.name,
-                        price: Number(dbProduct.price),
+                        name: dbProduct ? dbProduct.name : item.product.name,
+                        price: dbProduct ? Number(dbProduct.price) : Number(item.product.price),
                         quantity: item.quantity,
                         size: item.size
                     };

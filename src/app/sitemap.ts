@@ -6,7 +6,7 @@ const URL = 'https://pfstudio.com.ar';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Base routes
-    const routes = [
+    const routes: MetadataRoute.Sitemap = [
         {
             url: `${URL}`,
             lastModified: new Date(),
