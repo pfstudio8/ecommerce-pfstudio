@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { contactLimiter } from '@/utils/rateLimit';
+import { z } from 'zod';
+
+const contactSchema = z.object({
+    user_name: z.string().min(2).max(100),
+    user_email: z.string().email(),
+    content: z.string().min(10).max(1000)
+});
 
 export async function POST(request: Request) {
     try {
@@ -10,11 +17,13 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { user_name, user_email, content } = body;
+        const parseResult = contactSchema.safeParse(body);
 
-        if (!user_name || !user_email || !content) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        if (!parseResult.success) {
+            return NextResponse.json({ error: 'Validation failed', issues: parseResult.error.format() }, { status: 400 });
         }
+
+        const { user_name, user_email, content } = parseResult.data;
 
         const supabase = createAdminClient();
 

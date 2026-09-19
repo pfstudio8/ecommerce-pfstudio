@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+
 import { MoveRight, Loader2, Mail, MessageSquare, User } from "lucide-react";
 import { toast } from "sonner";
 
