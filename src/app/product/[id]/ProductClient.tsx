@@ -1,0 +1,353 @@
+"use client";
+
+import { useAuthStore } from "@/features/auth/store/auth";
+import { useCartStore } from "@/features/orders/store/cart";
+import { Product } from "@/types/product";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { ShoppingCart, ArrowLeft, ShieldCheck, Truck, RotateCcw, X, MessageCircle } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
+import { toast } from "sonner";
+
+interface ProductClientProps {
+    product: Product;
+    relatedProducts: Product[];
+}
+
+export default function ProductClient({ product, relatedProducts }: ProductClientProps) {
+    const addToCart = useCartStore((state) => state.addItem);
+    const setCartOpen = useCartStore((state) => state.setCartOpen);
+    const [selectedSize, setSelectedSize] = useState<string | null>(null);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
+
+    const sizes = ["S", "M", "L", "XL", "XXL"]; // Extended sizes for the product page
+
+    const handleAddToCart = () => {
+        if (!selectedSize) {
+            toast.error("Por favor selecciona una talla");
+            return;
+        }
+        addToCart(product, selectedSize);
+        setCartOpen(true);
+    };
+
+    const [whatsapp, setWhatsapp] = useState("5493704245651");
+
+    useEffect(() => {
+        const fetchNumber = async () => {
+            try {
+                const { data } = await supabase
+                    .from('settings')
+                    .select('value')
+                    .eq('key', 'store_info')
+                    .single();
+                
+                if (data?.value?.whatsapp) {
+                    setWhatsapp(data.value.whatsapp);
+                }
+            } catch (err) {
+                // Silently ignore
+            }
+        };
+        fetchNumber();
+    }, []);
+
+    const handleWhatsAppOrder = () => {
+        if (!selectedSize) {
+            toast.error("Por favor selecciona una talla para pedir por WhatsApp");
+            return;
+        }
+        const mensaje = encodeURIComponent(`Hola PFSTUDIO! Me interesa el producto: ${product.name} en talle ${selectedSize}`);
+        window.open(`https://wa.me/${whatsapp}?text=${mensaje}`, '_blank');
+    };
+
+    return (
+        <div className="min-h-screen bg-(--background) pt-32 pb-24 font-sans text-(--foreground) animate-in fade-in duration-500">
+            <div className="container mx-auto px-4 max-w-7xl">
+
+                <Link href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-(--foreground) mb-8 transition-colors font-medium">
+                    <ArrowLeft className="w-4 h-4" />
+                    Volver a la tienda
+                </Link>
+
+                <div className="flex flex-col lg:flex-row gap-12 lg:gap-20">
+
+                    {/* Left Column: Image Gallery */}
+                    <div className="w-full lg:w-1/2 flex flex-col gap-4">
+                        <div className="relative aspect-3/4 w-full bg-gray-100 dark:bg-zinc-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-zinc-800">
+                            {product.is_new && (
+                                <span className="absolute top-6 left-6 z-10 bg-main text-white text-sm font-bold px-4 py-1.5 uppercase tracking-widest rounded-md shadow-lg">
+                                    Nuevo
+                                </span>
+                            )}
+                            <Image
+                                src={product.images?.length ? product.images[currentImageIndex] : product.image_url}
+                                alt={product.name}
+                                fill
+                                sizes="(max-width: 1024px) 100vw, 50vw"
+                                priority
+                                className="object-cover"
+                            />
+                        </div>
+
+                        {/* Thumbnail Grid */}
+                        {product.images && product.images.length > 1 && (
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                                {product.images.map((img: string, idx: number) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setCurrentImageIndex(idx)}
+                                        className={`relative aspect-3/4 rounded-lg overflow-hidden border-2 transition-all ${currentImageIndex === idx ? 'border-main opacity-100' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                                    >
+                                        <Image src={img} alt={`${product.name} thumb`} fill sizes="10vw" className="object-cover" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right Column: Product Details */}
+                    <div className="w-full lg:w-1/2 flex flex-col">
+
+                        <div className="mb-4">
+                            <span className="text-sm font-bold uppercase tracking-[0.2em] text-gray-500">
+                                {product.category}
+                            </span>
+                        </div>
+
+                        <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4 leading-tight">
+                            {product.name}
+                        </h1>
+
+                        <p className="text-3xl sm:text-4xl font-light text-main mb-8">
+                            ${product.price.toLocaleString("es-AR")}
+                        </p>
+
+                        <div className="prose dark:prose-invert text-gray-600 dark:text-gray-400 mb-10 leading-relaxed">
+                            <p>
+                                Prenda confeccionada con los mejores materiales. 100% Algodón Premium de alta densidad
+                                (Heavyweight Cotton). Diseñada para un uso diario asegurando máxima comodidad, caída
+                                estructurada y un calce perfecto duradero. Estampados de alta resistencia al lavado.
+                            </p>
+                        </div>
+
+                        {/* Size Selector */}
+                        <div className="mb-10">
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-sm font-semibold uppercase tracking-widest text-(--foreground)">Selecciona tu talla</span>
+                                <button
+                                    onClick={() => setIsSizeGuideOpen(true)}
+                                    className="text-sm text-gray-500 underline cursor-pointer hover:text-(--foreground) transition-colors"
+                                >
+                                    Guía de tallas
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                {sizes.map((size) => (
+                                    <button
+                                        key={size}
+                                        onClick={() => setSelectedSize(size)}
+                                        className={`w-12 h-12 flex items-center justify-center rounded-xl border-2 text-sm font-bold transition-all ${selectedSize === size
+                                            ? "border-primary bg-primary text-on-primary shadow-md shadow-primary/20 transform -translate-y-1"
+                                            : "border-outline-variant bg-surface-container-lowest text-on-surface hover:border-primary/50"
+                                            }`}
+                                    >
+                                        {size}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex flex-col gap-4 mb-10 border-b border-gray-100 dark:border-zinc-800 pb-10">
+                            <button
+                                onClick={handleAddToCart}
+                                disabled={!selectedSize}
+                                className="w-full py-5 sm:py-6 bg-(--foreground) text-(--background) rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-main hover:text-white transition-all transform hover:-translate-y-1 hover:shadow-xl hover:shadow-main/30 uppercase tracking-widest text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                            >
+                                <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
+                                {selectedSize ? "Agregar a la Bolsa" : "Selecciona Talla"}
+                            </button>
+
+                            <button
+                                onClick={handleWhatsAppOrder}
+                                disabled={!selectedSize}
+                                className="w-full py-4 border-2 border-[#25D366] text-[#25D366] bg-[#25D366]/5 dark:bg-[#25D366]/10 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-[#25D366] hover:text-white transition-all uppercase tracking-widest text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-transparent"
+                            >
+                                <MessageCircle className="w-5 h-5" />
+                                Consultar stock o pedir por WhatsApp
+                            </button>
+                        </div>
+
+                        {/* Features List */}
+                        <ul className="space-y-4 text-sm text-gray-600 dark:text-gray-400 font-medium">
+                            <li className="flex items-center gap-3"><ShieldCheck className="w-5 h-5 text-gray-400" /> Compra 100% segura y protegida</li>
+                            <li className="flex items-center gap-3"><Truck className="w-5 h-5 text-gray-400" /> Entregas y retiros coordinados</li>
+                        </ul>
+
+                    </div>
+                </div>
+
+                {/* Cross Selling Section */}
+                {relatedProducts.length > 0 && (
+                    <div className="mt-24 pt-16 border-t border-gray-100 dark:border-zinc-800">
+                        <h3 className="text-2xl font-black uppercase tracking-tight mb-10 text-(--foreground) text-center">Completa el look</h3>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+                            {relatedProducts.map(rp => (
+                                <Link
+                                    href={`/product/${rp.id}`}
+                                    key={rp.id}
+                                    className="group flex flex-col bg-transparent hover:bg-gray-50 dark:hover:bg-zinc-900/50 p-3 sm:p-4 rounded-2xl transition-all"
+                                >
+                                    <div className="relative w-full aspect-3/4 overflow-hidden bg-gray-100 dark:bg-zinc-800 rounded-xl mb-4 border border-gray-100 dark:border-zinc-800">
+                                        <Image src={rp.images?.length ? rp.images[0] : rp.image_url} alt={rp.name} fill sizes="(max-width: 1024px) 50vw, 25vw" className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out" />
+                                    </div>
+                                    <h4 className="font-bold text-sm sm:text-base text-(--foreground) mb-1 group-hover:text-main transition-colors">{rp.name}</h4>
+                                    <span className="text-sm font-semibold text-gray-500">${rp.price.toLocaleString("es-AR")}</span>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Sizing Guide Modal */}
+            <AnimatePresence>
+                {isSizeGuideOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsSizeGuideOpen(false)}
+                            className="fixed inset-0 bg-black/70 backdrop-blur-sm"
+                        />
+                        
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl relative z-10 text-left overflow-y-auto max-h-[90vh]"
+                        >
+                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-zinc-800 pb-4">
+                                <h3 className="text-xl font-black uppercase tracking-wider text-(--foreground)">
+                                    Guía de Talles
+                                </h3>
+                                <button
+                                    onClick={() => setIsSizeGuideOpen(false)}
+                                    className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-gray-400 hover:text-(--foreground)"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* size chart table */}
+                            <div className="space-y-6">
+                                <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-2xl border border-gray-100 dark:border-zinc-800">
+                                    <h4 className="font-bold text-sm text-main mb-1 uppercase tracking-widest">
+                                        Remeras Oversize & Regular
+                                    </h4>
+                                    <p className="text-xs text-zinc-500 mb-3">Medidas aproximadas tomadas sobre superficie plana (en cm).</p>
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-gray-200 dark:border-zinc-800 text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
+                                                <th className="py-2 text-left">Talle</th>
+                                                <th className="py-2 text-center">Ancho (Pecho)</th>
+                                                <th className="py-2 text-center">Largo Total</th>
+                                                <th className="py-2 text-center">Manga</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-(--foreground)">
+                                            <tr>
+                                                <td className="py-2 font-bold">S</td>
+                                                <td className="py-2 text-center">56 cm</td>
+                                                <td className="py-2 text-center">72 cm</td>
+                                                <td className="py-2 text-center">23 cm</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 font-bold">M</td>
+                                                <td className="py-2 text-center">58 cm</td>
+                                                <td className="py-2 text-center">74 cm</td>
+                                                <td className="py-2 text-center">24 cm</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 font-bold">L</td>
+                                                <td className="py-2 text-center">60 cm</td>
+                                                <td className="py-2 text-center">76 cm</td>
+                                                <td className="py-2 text-center">25 cm</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 font-bold">XL</td>
+                                                <td className="py-2 text-center">62 cm</td>
+                                                <td className="py-2 text-center">78 cm</td>
+                                                <td className="py-2 text-center">26 cm</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 font-bold">XXL</td>
+                                                <td className="py-2 text-center">64 cm</td>
+                                                <td className="py-2 text-center">80 cm</td>
+                                                <td className="py-2 text-center">27 cm</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-2xl border border-gray-100 dark:border-zinc-800">
+                                    <h4 className="font-bold text-sm text-main mb-1 uppercase tracking-widest">
+                                        Camisetas de Fútbol
+                                    </h4>
+                                    <p className="text-xs text-zinc-500 mb-3">Medidas corporales estimadas para un calce clásico y deportivo.</p>
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                            <tr className="border-b border-gray-200 dark:border-zinc-800 text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
+                                                <th className="py-2 text-left">Talle</th>
+                                                <th className="py-2 text-center">Ancho (Pecho)</th>
+                                                <th className="py-2 text-center">Largo Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-(--foreground)">
+                                            <tr>
+                                                <td className="py-2 font-bold">S</td>
+                                                <td className="py-2 text-center">50 cm</td>
+                                                <td className="py-2 text-center">70 cm</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 font-bold">M</td>
+                                                <td className="py-2 text-center">52 cm</td>
+                                                <td className="py-2 text-center">72 cm</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 font-bold">L</td>
+                                                <td className="py-2 text-center">54 cm</td>
+                                                <td className="py-2 text-center">74 cm</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 font-bold">XL</td>
+                                                <td className="py-2 text-center">56 cm</td>
+                                                <td className="py-2 text-center">76 cm</td>
+                                            </tr>
+                                            <tr>
+                                                <td className="py-2 font-bold">XXL</td>
+                                                <td className="py-2 text-center">58 cm</td>
+                                                <td className="py-2 text-center">78 cm</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div className="text-xs text-zinc-500 leading-relaxed border-t border-gray-100 dark:border-zinc-800 pt-4 flex flex-col gap-1.5">
+                                    <p className="font-semibold text-zinc-400 uppercase tracking-widest text-[10px]">¿Cómo tomar las medidas?</p>
+                                    <p>📐 <strong>Ancho:</strong> Medí de axila a axila de una prenda que te quede bien, a lo ancho sobre una mesa.</p>
+                                    <p>📏 <strong>Largo:</strong> Medí desde la costura más alta del hombro (junto al cuello) en línea recta hasta el borde inferior.</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}

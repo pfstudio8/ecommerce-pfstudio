@@ -2,8 +2,9 @@
 
 import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { sileo } from "sileo";
-import { useCartStore } from "@/store/cart";
+import { toast } from "sonner";
+import { useCartStore } from "@/features/orders/store/cart";
+import { useAuthStore } from "@/features/auth/store/auth";
 
 export default function PostPurchaseHandler() {
     const searchParams = useSearchParams();
@@ -15,10 +16,7 @@ export default function PostPurchaseHandler() {
 
         if (status === 'success') {
             // Show success toast
-            sileo.success({
-                title: "¡Pago exitoso!",
-                description: "Gracias por tu compra. En breve recibirás un correo de confirmación."
-            });
+            toast.success("¡Pago exitoso!", { description: "Gracias por tu compra. En breve recibirás un correo de confirmación." });
             // Clear the cart
             clearCart();
 
@@ -31,21 +29,25 @@ export default function PostPurchaseHandler() {
             url.searchParams.delete('redirect_status');
             window.history.replaceState({}, '', url.pathname + url.search);
         } else if (status === 'failure') {
-            sileo.error({
-                title: "El pago fue rechazado",
-                description: "Por favor, intenta de nuevo o usa otro método de pago."
-            });
+            toast.error("El pago fue rechazado", { description: "Por favor, intenta de nuevo o usa otro método de pago." });
             const url = new URL(window.location.href);
             url.searchParams.delete('status');
             window.history.replaceState({}, '', url.pathname + url.search);
         } else if (status === 'pending') {
-            sileo.success({
-                title: "Pago pendiente",
-                description: "Tu pago está siendo procesado. Te avisaremos cuando se apruebe."
-            });
+            toast.success("Pago pendiente", { description: "Tu pago está siendo procesado. Te avisaremos cuando se apruebe." });
             clearCart();
             const url = new URL(window.location.href);
             url.searchParams.delete('status');
+            window.history.replaceState({}, '', url.pathname + url.search);
+        }
+
+        const login = searchParams.get('login');
+        if (login === 'true') {
+            toast.info("Debés iniciar sesión para acceder a tu perfil.");
+            const { setModalOpen } = useAuthStore.getState();
+            setModalOpen(true);
+            const url = new URL(window.location.href);
+            url.searchParams.delete('login');
             window.history.replaceState({}, '', url.pathname + url.search);
         }
 

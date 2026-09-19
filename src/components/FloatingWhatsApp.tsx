@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useChatStore } from "@/store/chat";
+import { useChatStore } from "@/features/shared/store/chat";
+import { useCartStore } from "@/features/orders/store/cart";
 
 export default function FloatingWhatsApp() {
     const [whatsapp, setWhatsapp] = useState("5493704724837");
     const { isOpen } = useChatStore();
+    const { isCartOpen } = useCartStore();
 
     useEffect(() => {
         const fetchNumber = async () => {
@@ -27,8 +29,8 @@ export default function FloatingWhatsApp() {
         fetchNumber();
     }, []);
 
-    // Ocultar botón flotante de WhatsApp cuando el drawer de Coco está abierto
-    if (isOpen) return null;
+    // Ocultar botón flotante de WhatsApp cuando el drawer de Coco está abierto o el carrito
+    if (isOpen || isCartOpen) return null;
 
     return (
         <a

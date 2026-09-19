@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { Star, MessageCircle, Send, User as UserIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useAuthStore } from "@/store/auth";
-import { sileo } from "sileo";
+import { useAuthStore } from "@/features/auth/store/auth";
+import { toast } from "sonner";
 
 interface Review {
     id: string;
@@ -56,35 +56,40 @@ export default function ReviewsSection({ productId }: { productId: string }) {
         e.preventDefault();
         
         if (!user?.email) {
-            sileo.info({ title: "Inicia sesión para dejar una reseña" });
+            toast.info("Inicia sesión para dejar una reseña");
             setModalOpen(true);
             return;
         }
 
         if (newRating < 1 || newRating > 5) {
-            sileo.error({ title: "La calificación debe ser entre 1 y 5 estrellas" });
+            toast.error("La calificación debe ser entre 1 y 5 estrellas");
             return;
         }
 
         setIsSubmitting(true);
         try {
-            const { error } = await supabase.from("reviews").insert({
-                product_id: productId,
-                user_id: user.id,
-                user_email: user.email, // Kept for backwards compatibility just in case
-                rating: newRating,
-                comment: newComment.trim()
+            const res = await fetch('/api/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId,
+                    rating: newRating,
+                    comment: newComment
+                })
             });
 
-            if (error) throw error;
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Error al enviar la reseña');
+            }
 
-            sileo.success({ title: "¡Gracias por tu opinión!" });
+            toast.success("¡Gracias por tu opinión!");
             setNewComment("");
             setNewRating(5);
             await fetchReviews();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error submitting review:", error);
-            sileo.error({ title: "Error al enviar la reseña. Intenta de nuevo." });
+            toast.error(error.message || "Error al enviar la reseña. Intenta de nuevo.");
         } finally {
             setIsSubmitting(false);
         }

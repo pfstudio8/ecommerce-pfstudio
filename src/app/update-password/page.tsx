@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { sileo } from "sileo";
+import { toast } from "sonner";
 
 export default function UpdatePasswordPage() {
     const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
@@ -32,8 +33,13 @@ export default function UpdatePasswordPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (password.length < 6) {
-            sileo.error({ title: "La contraseña debe tener al menos 6 caracteres." });
+        if (password.length < 8) {
+            toast.error("La contraseña debe tener al menos 8 caracteres.");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            toast.error("Las contraseñas no coinciden.");
             return;
         }
 
@@ -48,7 +54,7 @@ export default function UpdatePasswordPage() {
                 throw error;
             }
 
-            sileo.success({ title: "Contraseña actualizada correctamente. Redirigiendo..." });
+            toast.success("Contraseña actualizada correctamente. Redirigiendo...");
             
             // Redirect to home after a short delay
             setTimeout(() => {
@@ -56,7 +62,7 @@ export default function UpdatePasswordPage() {
             }, 2000);
 
         } catch (error: any) {
-            sileo.error({ title: error.message || "Error al actualizar la contraseña." });
+            toast.error(error.message || "Error al actualizar la contraseña.");
         } finally {
             setIsLoading(false);
         }
@@ -86,6 +92,23 @@ export default function UpdatePasswordPage() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-main/50 focus:border-main transition-all"
+                                placeholder="••••••••"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider ml-1">
+                            Confirmar Contraseña
+                        </label>
+                        <div className="relative group">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-main transition-colors" />
+                            <input
+                                type="password"
+                                required
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
                                 className="w-full pl-12 pr-4 py-3 text-gray-900 dark:text-white placeholder:text-gray-500 bg-gray-50 dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-main/50 focus:border-main transition-all"
                                 placeholder="••••••••"
                             />

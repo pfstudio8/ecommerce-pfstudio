@@ -1,81 +1,54 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
   
   // URL to redirect to after sign in process completes
-  // If next is set in the URL (e.g. ?next=/profile), we redirect there. Otherwise, redirect to root.
-  const next = requestUrl.searchParams.get('next') || '/'
+  let next = searchParams.get('next') || '/'
+  
+  // Protect against Open Redirect Vulnerability: ensure 'next' is a relative path
+  if (!next.startsWith('/') || next.startsWith('//')) {
+    next = '/'
+  }
   
   if (code) {
+    const cookieStore = await cookies()
+    
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           getAll() {
-            // Need to get cookies from request since this is an API route
-            // For route handlers, we parse the cookie header manually
-            const cookieHeader = request.headers.get('cookie')
-            if (!cookieHeader) return []
-            
-            return cookieHeader.split(';').map(cookie => {
-              const [name, ...rest] = cookie.split('=')
-              return { name: name.trim(), value: rest.join('=').trim() }
-            })
+            return cookieStore.getAll()
           },
-          setAll() {
-            // We don't strictly need setAll here if we use NextResponse.redirect
-            // and set cookies on the response object directly, but for standard SSR:
-            // This will be handled below.
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                cookieStore.set(name, value, options)
+              })
+            } catch (error) {
+              // The `set` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing user sessions.
+            }
           },
         },
       }
     )
 
-    // Actually exchange the code for a session
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    // Exchange the code for a session, which will automatically trigger setAll to save the tokens
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
     
-    if (!error && data.session) {
-      // Create redirect response
-      const response = NextResponse.redirect(new URL(next, requestUrl.origin))
-      
-      // Setting cookies is best done directly on the response to ensure they stick
-      // Supabase sets multiple cookies (access-token, refresh-token, etc)
-      // Since exchangeCodeForSession implicitly uses the setAll method, and we left it empty above,
-      // it's safer to re-instantiate the client with response.cookies or just let Supabase handle it 
-      // with a properly configured cookie handler.
-      
-      // A cleaner way for Next.js App Router Route Handlers:
-      const supabaseServerClient = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            getAll() {
-              return request.headers.get('cookie')?.split(';').map(c => {
-                const [n, ...v] = c.split('=')
-                return { name: n.trim(), value: v.join('=').trim() }
-              }) || []
-            },
-            setAll(cookiesToSet) {
-              cookiesToSet.forEach(({ name, value, options }) => {
-                response.cookies.set({ name, value, ...options })
-              })
-            },
-          },
-        }
-      )
-      
-      // Calling getUser() or getSession() triggers the cookie refresh/set logic
-      await supabaseServerClient.auth.getUser()
-      
-      return response
+    if (!error) {
+      return NextResponse.redirect(new URL(next, origin))
+    } else {
+      console.error('Supabase Auth Error in Callback:', error)
     }
   }
 
   // return the user to an error page with some instructions if login failed
-  return NextResponse.redirect(new URL('/?error=auth', request.url))
+  return NextResponse.redirect(new URL('/?error=auth', origin))
 }

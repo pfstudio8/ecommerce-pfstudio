@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Sparkles, ExternalLink, Bot } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { useChatStore } from "@/store/chat";
+import { useChatStore } from "@/features/shared/store/chat";
+import { useCartStore } from "@/features/orders/store/cart";
 import dynamic from "next/dynamic";
 import { BotPose } from "./PFBotAvatar3D";
 
@@ -22,6 +23,7 @@ interface Message {
 export default function PFChatbot() {
     const pathname = usePathname();
     const { isOpen, setIsOpen } = useChatStore();
+    const { isCartOpen } = useCartStore();
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
     const [unreadBadge, setUnreadBadge] = useState(true);
@@ -35,7 +37,7 @@ export default function PFChatbot() {
         return parts.map((part, index) => {
             if (part.startsWith('**') && part.endsWith('**')) {
                 return (
-                    <strong key={index} className="font-extrabold text-emerald-300">
+                    <strong key={index} className="font-extrabold text-primary">
                         {part.slice(2, -2)}
                     </strong>
                 );
@@ -191,7 +193,7 @@ export default function PFChatbot() {
                         id: (Date.now() + 1).toString(),
                         sender: 'bot',
                         text: "🔍 **Estado de tu Pedido**:\n\nPodés consultar el estado exacto de fabricación y pago de tu compra ingresando a **Mi Perfil > Mis Pedidos**.",
-                        link: { url: "/mis-pedidos", label: "Ir a Mis Pedidos" },
+                        link: { url: "/my-orders", label: "Ir a Mis Pedidos" },
                         options: [
                             { label: "Contactar a un Asesor", action: "humano" }
                         ]
@@ -330,7 +332,7 @@ export default function PFChatbot() {
             if (isSeguimiento) {
                 targetPose = 'envios';
                 responseText = "📦 **Estado de tu Pedido**:\nPodés verificar el estado de producción, empaque y pago de tu compra ingresando a **Mis Pedidos**.";
-                externalLink = { url: "/mis-pedidos", label: "Ir a Mis Pedidos" };
+                externalLink = { url: "/my-orders", label: "Ir a Mis Pedidos" };
                 actionOptions = [{ label: "Consulta por WhatsApp", action: "humano" }];
             } else if (isTalles) {
                 targetPose = 'talles';
@@ -413,19 +415,19 @@ export default function PFChatbot() {
 
     return (
         <>
-            {/* FLOATING STATIC ROBOT BUTTON (Positioned above WhatsApp; hidden when drawer is open) */}
-            {!isOpen && (
+            {/* FLOATING STATIC ROBOT BUTTON (Positioned above WhatsApp; hidden when drawer or cart is open) */}
+            {!isOpen && !isCartOpen && (
                 <div className="fixed bottom-24 right-6 z-50 flex items-center justify-end select-none">
                     <button
                         type="button"
                         onClick={() => setIsOpen(true)}
-                        className="relative w-14 h-14 bg-zinc-900 border border-emerald-500/50 hover:border-emerald-400 shadow-xl shadow-emerald-500/20 backdrop-blur-xl rounded-full transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer flex items-center justify-center overflow-visible group"
+                        className="relative w-14 h-14 bg-surface-container border border-primary/50 hover:border-primary shadow-xl shadow-primary/20 backdrop-blur-xl rounded-full transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer flex items-center justify-center overflow-visible group"
                         title="ASISTENTE COCO"
                     >
                         <div className="relative flex items-center justify-center w-full h-full">
                             <PFBotAvatar3D pose="idle" size="xs" />
-                            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-zinc-950 animate-ping" />
-                            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-zinc-950" />
+                            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full border-2 border-surface-container-lowest animate-ping" />
+                            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-primary rounded-full border-2 border-surface-container-lowest" />
                         </div>
                     </button>
 
@@ -434,10 +436,10 @@ export default function PFChatbot() {
                         <motion.div
                             initial={{ opacity: 0, x: 10, scale: 0.9 }}
                             animate={{ opacity: 1, x: 0, scale: 1 }}
-                            className="hidden md:flex items-center gap-2 bg-zinc-900 border border-emerald-500/40 text-white px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xl backdrop-blur-md cursor-pointer absolute right-16 top-1/2 -translate-y-1/2 whitespace-nowrap hover:bg-zinc-850 transition-colors"
+                            className="hidden md:flex items-center gap-2 bg-surface-container-high border border-primary/40 text-on-surface px-3.5 py-1.5 rounded-full text-xs font-bold shadow-xl backdrop-blur-md cursor-pointer absolute right-16 top-1/2 -translate-y-1/2 whitespace-nowrap hover:bg-surface-container transition-colors"
                             onClick={() => setIsOpen(true)}
                         >
-                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                             <span>ASISTENTE COCO</span>
                         </motion.div>
                     )}
@@ -463,30 +465,30 @@ export default function PFChatbot() {
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
                             transition={{ type: "spring", damping: 25, stiffness: 220 }}
-                            className="fixed top-0 right-0 bottom-0 w-full sm:w-96 md:w-105 bg-zinc-950 border-l border-zinc-800 shadow-2xl z-50 flex flex-col overflow-hidden text-white"
+                            className="fixed top-0 right-0 bottom-0 w-full sm:w-96 md:w-105 bg-surface-container-lowest border-l border-outline-variant shadow-2xl z-50 flex flex-col overflow-hidden text-on-surface"
                         >
                             {/* ULTRA HIGH CONTRAST & LUXURY HEADER */}
-                            <div className="p-5 bg-zinc-900/95 border-b border-emerald-500/30 flex items-center justify-between relative overflow-hidden shadow-lg">
+                            <div className="p-5 bg-surface-container/95 border-b border-primary/30 flex items-center justify-between relative overflow-hidden shadow-lg">
                                 {/* Ambient Emerald Glow */}
-                                <div className="absolute top-0 left-0 w-32 h-32 bg-emerald-500/15 blur-2xl pointer-events-none" />
+                                <div className="absolute top-0 left-0 w-32 h-32 bg-primary/15 blur-2xl pointer-events-none" />
 
                                 <div className="flex items-center gap-3.5 relative z-10">
                                     {/* Futuristic 3D Mascot Avatar Frame */}
-                                    <div className="relative w-13 h-13 rounded-2xl bg-zinc-950 border border-emerald-500/50 shadow-md shadow-emerald-500/20 flex items-center justify-center p-1 overflow-hidden shrink-0">
+                                    <div className="relative w-13 h-13 rounded-2xl bg-surface-container-highest border border-primary/50 shadow-md shadow-primary/20 flex items-center justify-center p-1 overflow-hidden shrink-0">
                                         <PFBotAvatar3D pose={botPose} size="sm" />
                                     </div>
 
                                     <div className="flex flex-col">
                                         <div className="flex items-center gap-2">
-                                            <h3 className="font-black text-white text-sm sm:text-base tracking-wide">
+                                            <h3 className="font-black text-on-surface text-sm sm:text-base tracking-wide">
                                                 ASISTENTE COCO
                                             </h3>
-                                            <span className="text-[10px] font-mono font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full shadow-sm shadow-emerald-500/20">
+                                            <span className="text-[10px] font-mono font-extrabold bg-primary/20 text-primary border border-primary/40 px-2 py-0.5 rounded-full shadow-sm shadow-primary/20">
                                                 IA
                                             </span>
                                         </div>
-                                        <p className="text-xs text-emerald-400/90 font-medium flex items-center gap-1.5 mt-0.5">
-                                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400" />
+                                        <p className="text-xs text-primary/90 font-medium flex items-center gap-1.5 mt-0.5">
+                                            <span className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-sm shadow-primary" />
                                             <span>En línea • Virtual PFSTUDIO</span>
                                         </p>
                                     </div>
@@ -495,7 +497,7 @@ export default function PFChatbot() {
                                 <button
                                     type="button"
                                     onClick={() => setIsOpen(false)}
-                                    className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer border border-white/10 active:scale-95 z-10"
+                                    className="p-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all cursor-pointer border border-outline-variant active:scale-95 z-10"
                                     title="Cerrar Asistente"
                                 >
                                     <X className="w-5 h-5" />
@@ -503,7 +505,7 @@ export default function PFChatbot() {
                             </div>
 
                             {/* MESSAGES CONTAINER */}
-                            <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4 custom-scrollbar bg-zinc-950/80">
+                            <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4 custom-scrollbar bg-surface-container-lowest">
                                 {messages.map((msg) => (
                                     <motion.div
                                         key={msg.id}
@@ -514,8 +516,8 @@ export default function PFChatbot() {
                                         <div
                                             className={`max-w-[88%] rounded-2xl p-4 text-xs sm:text-sm leading-relaxed ${
                                                 msg.sender === 'user'
-                                                    ? 'bg-linear-to-r from-emerald-600 to-emerald-500 text-white rounded-br-none shadow-md font-semibold'
-                                                    : 'bg-zinc-900/95 border border-zinc-800 text-zinc-100 rounded-bl-none shadow-xl'
+                                                    ? 'bg-primary text-on-primary rounded-br-none shadow-md font-semibold'
+                                                    : 'bg-surface-container border border-outline-variant text-on-surface rounded-bl-none shadow-xl'
                                             }`}
                                         >
                                             <div className="whitespace-pre-line">
@@ -531,7 +533,7 @@ export default function PFChatbot() {
                                                     onClick={() => {
                                                         if (!msg.link?.url.startsWith("http")) setIsOpen(false);
                                                     }}
-                                                    className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500 text-zinc-950 font-black text-xs hover:bg-emerald-400 transition-all shadow-md w-full justify-center active:scale-95"
+                                                    className="mt-3 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-secondary text-on-secondary font-black text-xs hover:opacity-90 transition-all shadow-md w-full justify-center active:scale-95"
                                                 >
                                                     <span>{msg.link.label}</span>
                                                     <ExternalLink className="w-4 h-4" />
@@ -547,9 +549,9 @@ export default function PFChatbot() {
                                                         key={opt.action}
                                                         type="button"
                                                         onClick={() => handleQuickAction(opt.action, opt.label)}
-                                                        className="px-3.5 py-2 bg-zinc-900 hover:bg-emerald-500/20 text-zinc-300 hover:text-white border border-zinc-700/80 hover:border-emerald-500/60 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm text-left flex items-center gap-2 transform hover:scale-[1.02] active:scale-95"
+                                                        className="px-3.5 py-2 bg-surface-container hover:bg-primary/10 text-on-surface-variant hover:text-primary border border-outline-variant hover:border-primary/50 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm text-left flex items-center gap-2 transform hover:scale-[1.02] active:scale-95"
                                                     >
-                                                        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                                                        <Sparkles className="w-3.5 h-3.5 text-primary" />
                                                         <span>{opt.label}</span>
                                                     </button>
                                                 ))}
@@ -563,11 +565,11 @@ export default function PFChatbot() {
                                     <motion.div
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
-                                        className="flex items-center gap-2 p-3.5 rounded-2xl bg-zinc-900 border border-zinc-800 w-fit"
+                                        className="flex items-center gap-2 p-3.5 rounded-2xl bg-surface-container border border-outline-variant w-fit"
                                     >
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "0ms" }} />
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "150ms" }} />
-                                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                                        <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                                        <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                                        <span className="w-2 h-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
                                     </motion.div>
                                 )}
 
@@ -575,18 +577,18 @@ export default function PFChatbot() {
                             </div>
 
                             {/* INPUT FOOTER */}
-                            <form onSubmit={handleSend} className="p-4 bg-zinc-900 border-t border-zinc-800 flex items-center gap-2.5">
+                            <form onSubmit={handleSend} className="p-4 bg-surface-container border-t border-outline-variant flex items-center gap-2.5">
                                 <input
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     placeholder="Escribí tu duda (talles, envíos, pagos...)"
-                                    className="flex-1 px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 text-white placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500 text-xs sm:text-sm font-medium"
+                                    className="flex-1 px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary text-xs sm:text-sm font-medium"
                                 />
                                 <button
                                     type="submit"
                                     disabled={!input.trim()}
-                                    className="p-3 bg-emerald-500 text-zinc-950 font-black rounded-xl hover:bg-emerald-400 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-md active:scale-95"
+                                    className="p-3 bg-primary text-on-primary font-black rounded-xl hover:opacity-90 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-md active:scale-95"
                                     title="Enviar mensaje"
                                 >
                                     <Send className="w-4.5 h-4.5" />

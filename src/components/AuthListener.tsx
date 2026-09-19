@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { useAuthStore } from "@/store/auth";
-import { sileo } from "sileo";
+import { useAuthStore } from "@/features/auth/store/auth";
+import { toast } from "sonner";
 
 export default function AuthListener() {
     const { setUser, setInitialized, setAdmin } = useAuthStore();
@@ -39,26 +39,23 @@ export default function AuthListener() {
                 sessionStorage.setItem(sessionNotifyKey, 'true');
 
                 if (isGoogle) {
-                    sileo.success({ title: 'Sesión iniciada correctamente', description: 'Bienvenido a PFSTUDIO' });
+                    const userName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || '';
+                    toast.success('Sesión iniciada correctamente', { description: `Bienvenido${userName ? ` ${userName}` : ' a PFSTUDIO'}` });
                 }
 
-                // Send welcome email for first time users
-                const welcomeSentKey = `welcome_email_sent_${user.id}`;
-                if (!localStorage.getItem(welcomeSentKey)) {
-                    localStorage.setItem(welcomeSentKey, 'true');
-                    try {
-                        await fetch('/api/notify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                type: 'welcome',
-                                email: user.email,
-                                name: user.user_metadata?.full_name || user.user_metadata?.name || ''
-                            })
-                        });
-                    } catch (err) {
-                        console.warn("No se pudo enviar el correo de bienvenida:", err);
-                    }
+                // Call backend to send welcome email. Backend will check if already sent.
+                try {
+                    await fetch('/api/notify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            type: 'welcome',
+                            email: user.email,
+                            name: user.user_metadata?.full_name || user.user_metadata?.name || ''
+                        })
+                    });
+                } catch (err) {
+                    console.warn("No se pudo enviar el correo de bienvenida:", err);
                 }
             }
         };

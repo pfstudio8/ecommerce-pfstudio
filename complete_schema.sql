@@ -55,18 +55,18 @@ ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 
 -- 6. Políticas para admin_users
-CREATE POLICY "Allow public read admin_users" ON public.admin_users FOR SELECT USING (true);
+CREATE POLICY "Allow admin read admin_users" ON public.admin_users FOR SELECT USING (public.is_admin());
 CREATE POLICY "Allow admin edit admin_users" ON public.admin_users USING (public.is_admin());
 
 -- 7. Políticas para Pedidos (Orders)
-CREATE POLICY "Enable insert for all users" ON public.orders FOR INSERT WITH CHECK (true);
+-- Nota: La inserción se realiza exclusivamente por el servidor usando service_role
 CREATE POLICY "Enable read for owners or admins" ON public.orders FOR SELECT 
 USING (coalesce(auth.jwt() ->> 'email', '') = customer_email OR public.is_admin());
 CREATE POLICY "Enable update for admins" ON public.orders FOR UPDATE USING (public.is_admin());
 CREATE POLICY "Enable delete for admins" ON public.orders FOR DELETE USING (public.is_admin());
 
 -- 8. Políticas para Artículos (Order Items)
-CREATE POLICY "Enable insert for all users" ON public.order_items FOR INSERT WITH CHECK (true);
+-- Nota: La inserción se realiza exclusivamente por el servidor usando service_role
 CREATE POLICY "Enable read for owners or admins" ON public.order_items FOR SELECT 
 USING (
     EXISTS (
@@ -85,10 +85,18 @@ BEGIN
     SET stock_quantity = stock_quantity - p_qty
     WHERE product_id = p_id AND size = p_size AND stock_quantity >= p_qty;
 
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'INSUFFICIENT_STOCK: No hay suficiente stock para el producto % talle %', p_id, p_size;
+    END IF;
+
     -- 2. Descontar del stock consolidado heredado (products)
     UPDATE public.products
     SET stock = stock - p_qty
     WHERE id = p_id AND stock >= p_qty;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'INSUFFICIENT_STOCK: No hay suficiente stock total para el producto %', p_id;
+    END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -115,4 +123,4 @@ FROM public.profiles p
 FULL OUTER JOIN order_stats o ON p.email = o.customer_email;
 
 -- Permisos para la vista en Supabase
-GRANT SELECT ON public.customer_profiles TO authenticated, anon, service_role;
+GRANT SELECT ON public.customer_profiles TO service_role;

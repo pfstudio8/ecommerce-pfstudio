@@ -1,10 +1,12 @@
 "use client";
+import { FourSquare } from "react-loading-indicators";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { DollarSign, ShoppingBag, TrendingUp, Filter, Download, Package, Truck, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import { useAuthStore } from "@/store/auth";
-import { sileo } from "sileo";
+import { useAuthStore } from "@/features/auth/store/auth";
+import { toast } from "sonner";
+import Image from "next/image";
 
 interface Order {
     id: string;
@@ -20,9 +22,9 @@ interface Order {
 
 const STATUS_COLORS: Record<string, string> = {
     'pending': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    'paid': 'bg-main/10 text-main border-main/20',
+    'paid': 'bg-primary-container text-on-primary-container border-primary',
     'shipped': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    'cancelled': 'bg-red-500/10 text-red-400 border-red-500/20',
+    'cancelled': 'bg-red-500/10 text-red-400 border-error/20',
 };
 
 const STATUS_OPTIONS = ['pending', 'paid', 'shipped', 'cancelled'];
@@ -61,7 +63,8 @@ export default function AdminOrdersPage() {
                 const { data, error } = await supabase
                     .from('orders')
                     .select('*, order_items(*, products(name, images))')
-                    .order('created_at', { ascending: false });
+                    .order('created_at', { ascending: false })
+                    .limit(20);
 
                 if (error) {
                     console.error("Error fetching admin orders. Table might not exist or missing RLS.", error);
@@ -91,7 +94,7 @@ export default function AdminOrdersPage() {
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
         } catch (err) {
             console.error("Error updating order status", err);
-            alert("No se pudo actualizar el estado.");
+            toast.error("No se pudo actualizar el estado.");
         } finally {
             setUpdatingId(null);
         }
@@ -110,10 +113,10 @@ export default function AdminOrdersPage() {
             if (error) throw error;
 
             setOrders(orders.filter(o => o.id !== orderId));
-            sileo.success({ title: "Pedido eliminado correctamente." });
+            toast.success("Pedido eliminado correctamente.");
         } catch (err) {
             console.error("Error deleting order", err);
-            sileo.error({ title: "No se pudo eliminar el pedido. Revisa los permisos." });
+            toast.error("No se pudo eliminar el pedido. Revisa los permisos.");
         } finally {
             setDeletingId(null);
         }
@@ -130,14 +133,14 @@ export default function AdminOrdersPage() {
 
             if (error) throw error;
 
-            sileo.success({ title: "Datos de envío guardados" });
+            toast.success("Datos de envío guardados");
             
             setOrders(orders.map(o => o.id === selectedOrder.id ? { ...o, tracking_number: trackingNumber, carrier: carrier } : o));
             setSelectedOrder({ ...selectedOrder, tracking_number: trackingNumber, carrier: carrier });
             
         } catch (err) {
             console.error("Error updating tracking", err);
-            sileo.error({ title: "No se pudo guardar la información de envío" });
+            toast.error("No se pudo guardar la información de envío");
         } finally {
             setIsSavingTracking(false);
         }
@@ -161,76 +164,69 @@ export default function AdminOrdersPage() {
         cancelledPct: Math.round((cancelledCount / totalCount) * 100)
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex h-[60vh] items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-main" />
-            </div>
-        );
-    }
 
     return (
         <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12 font-sans">
             
             {/* Header Section */}
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#242520] pb-6">
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant pb-6">
                 <div>
-                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground font-sans">Gestión de Pedidos</h2>
-                    <p className="text-gray-400 mt-1 text-sm font-medium">Seguimiento y administración de todas las compras realizadas en la tienda.</p>
+                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface font-sans">Gestión de Pedidos</h2>
+                    <p className="text-outline mt-1 text-sm font-medium">Seguimiento y administración de todas las compras realizadas en la tienda.</p>
                 </div>
             </header>
 
             {/* Dashboard Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-[#1c1d18]/60 backdrop-blur-md border border-[#2d2e26] p-6 rounded-2xl relative overflow-hidden group hover:border-main/40 transition-all duration-300 shadow-lg">
+                <div className="bg-surface-container-low backdrop-blur-md border border-outline-variant p-6 rounded-2xl relative overflow-hidden group hover:border-primary transition-all duration-300 shadow-lg">
                     <div className="flex justify-between items-start mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-main/10 border border-main/20 flex items-center justify-center text-main">
+                        <div className="w-12 h-12 rounded-xl bg-primary-container border border-primary flex items-center justify-center text-on-primary-container">
                             <DollarSign className="w-5 h-5" />
                         </div>
-                        <span className="text-[10px] font-black tracking-wider text-main bg-main/10 border border-main/20 px-2.5 py-1 rounded-full uppercase">+12.5%</span>
+                        <span className="text-[10px] font-black tracking-wider text-on-primary-container bg-primary-container border border-primary px-2.5 py-1 rounded-full uppercase">+12.5%</span>
                     </div>
-                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Ingresos Totales</p>
-                    <h2 className="text-3xl font-black text-white mt-1 font-sans">
+                    <p className="text-outline text-xs font-bold uppercase tracking-widest">Ingresos Totales</p>
+                    <h2 className="text-3xl font-black text-on-surface mt-1 font-sans">
                         ${orders.reduce((acc, order) => acc + (order.total_amount || 0), 0).toLocaleString('es-AR')}
                     </h2>
                 </div>
 
-                <div className="bg-[#1c1d18]/60 backdrop-blur-md border border-[#2d2e26] p-6 rounded-2xl relative overflow-hidden group hover:border-main/40 transition-all duration-300 shadow-lg">
+                <div className="bg-surface-container-low backdrop-blur-md border border-outline-variant p-6 rounded-2xl relative overflow-hidden group hover:border-primary transition-all duration-300 shadow-lg">
                     <div className="flex justify-between items-start mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-main/10 border border-main/20 flex items-center justify-center text-main">
+                        <div className="w-12 h-12 rounded-xl bg-primary-container border border-primary flex items-center justify-center text-on-primary-container">
                             <ShoppingBag className="w-5 h-5" />
                         </div>
                     </div>
-                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Pedidos Activos</p>
-                    <h2 className="text-3xl font-black text-white mt-1 font-sans">{orders.length}</h2>
+                    <p className="text-outline text-xs font-bold uppercase tracking-widest">Pedidos Activos</p>
+                    <h2 className="text-3xl font-black text-on-surface mt-1 font-sans">{orders.length}</h2>
                 </div>
 
-                <div className="bg-[#1c1d18]/60 backdrop-blur-md border border-[#2d2e26] p-6 rounded-2xl relative overflow-hidden group hover:border-main/40 transition-all duration-300 shadow-lg">
+                <div className="bg-surface-container-low backdrop-blur-md border border-outline-variant p-6 rounded-2xl relative overflow-hidden group hover:border-primary transition-all duration-300 shadow-lg">
                     <div className="flex justify-between items-start mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-main/10 border border-main/20 flex items-center justify-center text-main">
+                        <div className="w-12 h-12 rounded-xl bg-primary-container border border-primary flex items-center justify-center text-on-primary-container">
                             <TrendingUp className="w-5 h-5" />
                         </div>
                     </div>
-                    <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Promedio por Pedido</p>
-                    <h2 className="text-3xl font-black text-white mt-1 font-sans">
+                    <p className="text-outline text-xs font-bold uppercase tracking-widest">Promedio por Pedido</p>
+                    <h2 className="text-3xl font-black text-on-surface mt-1 font-sans">
                         ${orders.length > 0 ? Math.round(orders.reduce((acc, order) => acc + (order.total_amount || 0), 0) / orders.length).toLocaleString('es-AR') : '0'}
                     </h2>
                 </div>
             </div>
 
             {/* Orders Table Section */}
-            <div className="bg-[#1c1d18]/60 backdrop-blur-md rounded-2xl overflow-hidden border border-[#2d2e26] shadow-lg">
-                <div className="px-6 py-5 flex flex-col md:flex-row md:justify-between md:items-center border-b border-[#2d2e26] gap-4">
+            <div className="bg-surface-container-low backdrop-blur-md rounded-2xl overflow-hidden border border-outline-variant shadow-lg">
+                <div className="px-6 py-5 flex flex-col md:flex-row md:justify-between md:items-center border-b border-outline-variant gap-4">
                     <div>
-                        <h3 className="text-lg font-bold text-foreground font-sans">Listado de Pedidos</h3>
-                        <p className="text-xs text-gray-400">Detalle general de órdenes recibidas.</p>
+                        <h3 className="text-lg font-bold text-on-surface font-sans">Listado de Pedidos</h3>
+                        <p className="text-xs text-outline">Detalle general de órdenes recibidas.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button className="px-3.5 py-2 bg-[#12130f] border border-[#2d2e26] rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:border-main/30 transition-all flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-main" /> Filtrar
+                        <button className="px-3.5 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-bold text-on-surface-variant hover:text-on-surface hover:border-primary transition-all flex items-center gap-2">
+                            <Filter className="w-4 h-4 text-primary" /> Filtrar
                         </button>
-                        <button className="px-3.5 py-2 bg-[#12130f] border border-[#2d2e26] rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:border-main/30 transition-all flex items-center gap-2">
-                            <Download className="w-4 h-4 text-main" /> Exportar
+                        <button className="px-3.5 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-bold text-on-surface-variant hover:text-on-surface hover:border-primary transition-all flex items-center gap-2">
+                            <Download className="w-4 h-4 text-primary" /> Exportar
                         </button>
                     </div>
                 </div>
@@ -238,44 +234,44 @@ export default function AdminOrdersPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="bg-[#12130f]/60 border-b border-[#2d2e26]">
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">ID de Pedido</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Fecha</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Cliente</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Monto</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Estado</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">Acciones</th>
+                            <tr className="bg-surface border-b border-outline-variant">
+                                <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-widest">ID de Pedido</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-widest hidden md:table-cell">Fecha</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-widest hidden md:table-cell">Cliente</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-widest">Monto</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-widest">Estado</th>
+                                <th className="px-6 py-4 text-[10px] font-black text-outline uppercase tracking-widest text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#2d2e26]">
                             {orders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="text-center py-16 text-gray-500 text-sm font-medium">
+                                    <td colSpan={6} className="text-center py-16 text-outline text-sm font-medium">
                                         No hay pedidos registrados aún.
                                     </td>
                                 </tr>
                             ) : (
                                 orders.map((order) => (
-                                    <tr key={order.id} className="hover:bg-[#252620]/30 transition-colors group">
-                                        <td className="px-6 py-5 font-mono text-xs text-main font-bold">
+                                    <tr key={order.id} className="hover:bg-surface-container-highest/30 transition-colors group">
+                                        <td className="px-6 py-5 font-mono text-xs text-primary font-bold">
                                             #{order.id.split('-')[0].toUpperCase()}
                                         </td>
-                                        <td className="px-6 py-5 text-sm text-gray-400">
+                                        <td className="px-6 py-5 text-sm text-outline hidden md:table-cell">
                                             {new Date(order.created_at).toLocaleDateString('es-AR', {
                                                 month: 'short', day: '2-digit', year: 'numeric'
                                             })}
                                         </td>
-                                        <td className="px-6 py-5">
+                                        <td className="px-6 py-5 hidden md:table-cell">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-[#12130f] border border-[#2d2e26] flex items-center justify-center text-main font-bold text-xs uppercase cursor-pointer" onClick={() => setSelectedOrder(order)} title="Ver Detalles">
+                                                <div className="w-8 h-8 rounded-full bg-surface border border-outline-variant flex items-center justify-center text-primary font-bold text-xs uppercase cursor-pointer" onClick={() => setSelectedOrder(order)} title="Ver Detalles">
                                                     {order.customer_email.split('@')[0].substring(0, 2)}
                                                 </div>
-                                                <span className="text-sm font-bold text-foreground hover:text-main truncate max-w-37.5 cursor-pointer transition-colors" onClick={() => setSelectedOrder(order)} title={order.customer_email}>
+                                                <span className="text-sm font-bold text-on-surface hover:text-primary truncate max-w-37.5 cursor-pointer transition-colors" onClick={() => setSelectedOrder(order)} title={order.customer_email}>
                                                     {order.customer_email.split('@')[0]}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-5 text-sm font-bold text-white">
+                                        <td className="px-6 py-5 text-sm font-bold text-on-surface">
                                             ${(order.total_amount || 0).toLocaleString("es-AR")}
                                         </td>
                                         <td className="px-6 py-5">
@@ -287,19 +283,19 @@ export default function AdminOrdersPage() {
                                                     className={`px-3 py-1 rounded-full text-[11px] font-bold border transition-colors outline-none cursor-pointer appearance-none ${STATUS_COLORS[order.status] || STATUS_COLORS['pending']}`}
                                                 >
                                                     {STATUS_OPTIONS.map(status => (
-                                                        <option key={status} value={status} className="bg-[#1c1d18] text-white">
+                                                        <option key={status} value={status} className="bg-surface-container-low text-on-surface">
                                                             {STATUS_LABELS[status]}
                                                         </option>
                                                     ))}
                                                 </select>
-                                                {updatingId === order.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-main" />}
+                                                {updatingId === order.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-right">
                                             <button 
                                                 onClick={() => handleDeleteOrder(order.id)}
                                                 disabled={deletingId === order.id}
-                                                className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg border border-transparent hover:border-red-500/20 transition-all disabled:opacity-50"
+                                                className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg border border-transparent hover:border-error/20 transition-all disabled:opacity-50"
                                                 title="Eliminar pedido"
                                             >
                                                 {deletingId === order.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -313,12 +309,12 @@ export default function AdminOrdersPage() {
                 </div>
 
                 {/* Pagination */}
-                <div className="px-6 py-4 bg-[#12130f]/60 border-t border-[#2d2e26] flex items-center justify-between">
-                    <p className="text-xs text-gray-400 font-medium">Mostrando <span className="text-white font-bold">{orders.length > 0 ? 1 : 0}-{orders.length}</span> de <span className="text-white font-bold">{orders.length}</span> pedidos</p>
+                <div className="px-6 py-4 bg-surface border-t border-outline-variant flex items-center justify-between">
+                    <p className="text-xs text-outline font-medium">Mostrando <span className="text-on-surface font-bold">{orders.length > 0 ? 1 : 0}-{orders.length}</span> de <span className="text-on-surface font-bold">{orders.length}</span> pedidos</p>
                     <div className="flex gap-2">
-                        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#1c1d18] border border-[#2d2e26] text-gray-400 hover:text-white transition-colors"><ChevronLeft className="w-4 h-4" /></button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-main text-black font-bold text-xs">1</button>
-                        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-[#1c1d18] border border-[#2d2e26] text-gray-400 hover:text-white transition-colors"><ChevronRight className="w-4 h-4" /></button>
+                        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container-low border border-outline-variant text-outline hover:text-on-surface transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+                        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-tertiary-container text-on-tertiary-container font-bold text-xs">1</button>
+                        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container-low border border-outline-variant text-outline hover:text-on-surface transition-colors"><ChevronRight className="w-4 h-4" /></button>
                     </div>
                 </div>
             </div>
@@ -326,20 +322,20 @@ export default function AdminOrdersPage() {
             {/* Summary Analysis */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                 {/* Performance Graph Area */}
-                <div className="md:col-span-8 bg-[#1c1d18]/60 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-[#2d2e26] shadow-lg flex flex-col justify-between">
+                <div className="md:col-span-8 bg-surface-container-low backdrop-blur-md rounded-2xl p-6 md:p-8 border border-outline-variant shadow-lg flex flex-col justify-between">
                     <div className="flex justify-between items-center mb-8">
                         <div>
-                            <h4 className="text-lg font-bold text-foreground font-sans">Velocidad de Ventas</h4>
-                            <p className="text-xs text-gray-400 mt-0.5">Flujo reciente de volumen por pedidos.</p>
+                            <h4 className="text-lg font-bold text-on-surface font-sans">Velocidad de Ventas</h4>
+                            <p className="text-xs text-outline mt-0.5">Flujo reciente de volumen por pedidos.</p>
                         </div>
                         <div className="flex gap-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-main"></div>
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Activos</span>
+                                <div className="w-2 h-2 rounded-full bg-tertiary-container"></div>
+                                <span className="text-[10px] text-outline font-bold uppercase tracking-widest">Activos</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Completados</span>
+                                <span className="text-[10px] text-outline font-bold uppercase tracking-widest">Completados</span>
                             </div>
                         </div>
                     </div>
@@ -349,53 +345,53 @@ export default function AdminOrdersPage() {
                                 <div 
                                     key={data.id + index}
                                     title={`$${data.amount?.toLocaleString('es-AR')}`}
-                                    className={`w-full rounded-t-lg transition-all duration-700 ease-out opacity-80 hover:opacity-100 ${data.isActive ? 'bg-main shadow-[0_0_12px_rgba(0,168,122,0.3)]' : 'bg-blue-400'}`} 
+                                    className={`w-full rounded-t-lg transition-all duration-700 ease-out opacity-80 hover:opacity-100 ${data.isActive ? 'bg-tertiary-container shadow-[0_0_12px_rgba(0,168,122,0.3)]' : 'bg-blue-400'}`} 
                                     style={{ height: data.heightClass }}
                                 ></div>
                             )) : (
-                                <div className="w-full text-center text-gray-500 text-sm self-center">No hay datos de ventas suficientes</div>
+                                <div className="w-full text-center text-outline text-sm self-center">No hay datos de ventas suficientes</div>
                             )}
                         </div>
                     </div>
                 </div>
 
                 {/* Status Breakdown */}
-                <div className="md:col-span-4 bg-[#1c1d18]/60 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-[#2d2e26] shadow-lg flex flex-col justify-between relative overflow-hidden">
+                <div className="md:col-span-4 bg-surface-container-low backdrop-blur-md rounded-2xl p-6 md:p-8 border border-outline-variant shadow-lg flex flex-col justify-between relative overflow-hidden">
                     <div>
-                        <h4 className="text-lg font-bold text-foreground font-sans">Distribución de Estados</h4>
-                        <p className="text-xs text-gray-400 mb-6">Porcentaje del catálogo por estado actual.</p>
+                        <h4 className="text-lg font-bold text-on-surface font-sans">Distribución de Estados</h4>
+                        <p className="text-xs text-outline mb-6">Porcentaje del catálogo por estado actual.</p>
                     </div>
                     <div className="space-y-4 z-10 w-full">
                         <div className="group">
-                            <div className="flex justify-between text-xs font-bold mb-1 text-gray-300 group-hover:text-main transition-colors">
+                            <div className="flex justify-between text-xs font-bold mb-1 text-on-surface-variant group-hover:text-primary transition-colors">
                                 <span>Activos (Pendientes / Pagados)</span>
                                 <span>{statusDist.pendingPct}%</span>
                             </div>
-                            <div className="w-full h-2 bg-[#12130f] rounded-full overflow-hidden border border-[#2d2e26]">
-                                <div className="h-full bg-main transition-all duration-1000 ease-out" style={{ width: `${statusDist.pendingPct}%` }}></div>
+                            <div className="w-full h-2 bg-surface rounded-full overflow-hidden border border-outline-variant">
+                                <div className="h-full bg-tertiary-container transition-all duration-1000 ease-out" style={{ width: `${statusDist.pendingPct}%` }}></div>
                             </div>
                         </div>
                         <div className="group">
-                            <div className="flex justify-between text-xs font-bold mb-1 text-gray-300 group-hover:text-blue-400 transition-colors">
+                            <div className="flex justify-between text-xs font-bold mb-1 text-on-surface-variant group-hover:text-blue-400 transition-colors">
                                 <span>Completados (Enviados)</span>
                                 <span>{statusDist.shippedPct}%</span>
                             </div>
-                            <div className="w-full h-2 bg-[#12130f] rounded-full overflow-hidden border border-[#2d2e26]">
+                            <div className="w-full h-2 bg-surface rounded-full overflow-hidden border border-outline-variant">
                                 <div className="h-full bg-blue-400 transition-all duration-1000 ease-out" style={{ width: `${statusDist.shippedPct}%` }}></div>
                             </div>
                         </div>
                         <div className="group">
-                            <div className="flex justify-between text-xs font-bold mb-1 text-gray-300 group-hover:text-red-400 transition-colors">
+                            <div className="flex justify-between text-xs font-bold mb-1 text-on-surface-variant group-hover:text-red-400 transition-colors">
                                 <span>Cancelados</span>
                                 <span>{statusDist.cancelledPct}%</span>
                             </div>
-                            <div className="w-full h-2 bg-[#12130f] rounded-full overflow-hidden border border-[#2d2e26]">
+                            <div className="w-full h-2 bg-surface rounded-full overflow-hidden border border-outline-variant">
                                 <div className="h-full bg-red-400 transition-all duration-1000 ease-out" style={{ width: `${statusDist.cancelledPct}%` }}></div>
                             </div>
                         </div>
                     </div>
                     <div className="mt-8 flex justify-center z-10">
-                        <button className="text-xs font-bold text-main hover:text-emerald-400 transition-colors uppercase tracking-wider">
+                        <button className="text-xs font-bold text-primary hover:text-emerald-400 transition-colors uppercase tracking-wider">
                             Gestión Activa de Estados
                         </button>
                     </div>
@@ -405,15 +401,15 @@ export default function AdminOrdersPage() {
             {/* Modal de Artículos */}
             {selectedOrder && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-in fade-in duration-200">
-                    <div className="bg-[#1c1d18] border border-[#2d2e26] rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-5 border-b border-[#2d2e26] flex items-center justify-between">
-                            <h3 className="font-bold text-lg text-white flex items-center gap-2 font-sans">
-                                <Package className="w-5 h-5 text-main" />
+                    <div className="bg-surface-container-low border border-outline-variant rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-5 border-b border-outline-variant flex items-center justify-between">
+                            <h3 className="font-bold text-lg text-on-surface flex items-center gap-2 font-sans">
+                                <Package className="w-5 h-5 text-primary" />
                                 Artículos del Pedido
                             </h3>
                             <button
                                 onClick={() => setSelectedOrder(null)}
-                                className="text-gray-400 hover:text-white transition-colors"
+                                className="text-outline hover:text-on-surface transition-colors"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                             </button>
@@ -421,26 +417,28 @@ export default function AdminOrdersPage() {
                         <div className="p-5 max-h-[60vh] overflow-y-auto space-y-4">
                             {selectedOrder.order_items && selectedOrder.order_items.length > 0 ? (
                                 selectedOrder.order_items.map((item, idx) => (
-                                    <div key={idx} className="flex gap-4 p-4 rounded-xl bg-[#12130f] border border-[#2d2e26]">
+                                    <div key={idx} className="flex gap-4 p-4 rounded-xl bg-surface border border-outline-variant">
                                         {item.products?.images && item.products.images.length > 0 ? (
-                                            <img src={item.products.images[0]} alt={item.products.name} className="w-16 h-16 object-cover rounded-lg bg-[#1c1d18]" />
+                                            <div className="relative w-16 h-16 shrink-0 rounded-lg bg-surface-container-low overflow-hidden">
+                                                <Image src={item.products.images[0]} alt={item.products.name} fill sizes="64px" className="object-cover" />
+                                            </div>
                                         ) : (
-                                            <div className="w-16 h-16 rounded-lg bg-[#1c1d18] flex items-center justify-center text-gray-500">
+                                            <div className="w-16 h-16 rounded-lg bg-surface-container-low flex items-center justify-center text-outline">
                                                 <Package className="w-6 h-6" />
                                             </div>
                                         )}
                                         <div className="flex-1">
-                                            <h4 className="font-bold text-white text-sm line-clamp-1">{item.products?.name || `Producto no disponible`}</h4>
-                                            <div className="text-xs text-gray-400 mt-1 space-y-0.5 font-medium">
-                                                <p>Talla: <span className="font-bold text-main">{item.size}</span></p>
-                                                <p>Cantidad: <span className="font-bold text-white">{item.quantity}</span></p>
-                                                <p>Precio histórico: <span className="font-bold text-white">${(item.price_at_purchase || 0).toLocaleString("es-AR")}</span></p>
+                                            <h4 className="font-bold text-on-surface text-sm line-clamp-1">{item.products?.name || `Producto no disponible`}</h4>
+                                            <div className="text-xs text-outline mt-1 space-y-0.5 font-medium">
+                                                <p>Talla: <span className="font-bold text-primary">{item.size}</span></p>
+                                                <p>Cantidad: <span className="font-bold text-on-surface">{item.quantity}</span></p>
+                                                <p>Precio histórico: <span className="font-bold text-on-surface">${(item.price_at_purchase || 0).toLocaleString("es-AR")}</span></p>
                                             </div>
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-center text-gray-400 py-6 text-sm">No hay artículos detallados para este pedido.</p>
+                                <p className="text-center text-outline py-6 text-sm">No hay artículos detallados para este pedido.</p>
                             )}
                         </div>
                     </div>

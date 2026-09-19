@@ -5,7 +5,9 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Upload } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { use } from "react";
+import { toast } from "sonner";
 
 export default function EditProduct({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -98,7 +100,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
             }
         } catch (error) {
             console.error(error);
-            alert("Error cargando el producto");
+            toast.error("Error cargando el producto");
             router.push('/admin/products');
         } finally {
             setIsLoading(false);
@@ -189,7 +191,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
 
         } catch (error: any) {
             console.error(error);
-            alert("Error al editar: " + (error.message || "Error inesperado"));
+            toast.error("Error al editar: " + (error.message || "Error inesperado"));
         } finally {
             setIsSaving(false);
         }

@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 client_secret.json
+
+# Scripts de prueba y debug (M7)
+test-*.js
+trigger*.js

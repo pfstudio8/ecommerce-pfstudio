@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useCartStore } from "@/store/cart";
+import { useCartStore } from "@/features/orders/store/cart";
 import { CheckCircle2, ArrowRight, Loader2, Package } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -32,7 +32,7 @@ export default function SuccessClient() {
         clearCart();
 
         // 2. Set 'pago exitoso' cookie for 30 days
-        document.cookie = `pago_exitoso=true; max-age=${60 * 60 * 24 * 30}; path=/`;
+        document.cookie = `pago_exitoso=true; max-age=${60 * 60 * 24 * 30}; path=/; SameSite=Strict; Secure`;
 
         // 3. Minimum display delay for smooth branding loading experience
         const timer = setTimeout(() => {

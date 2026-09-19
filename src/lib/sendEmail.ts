@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { generateWelcomeEmail, generateOrderEmail } from './emailTemplates';
+import { generateWelcomeEmail, generateOrderEmail, generateAbandonedCartEmail } from './emailTemplates';
 
 // Create a transporter using standard SMTP (ej. Gmail App Passwords)
 const transporter = nodemailer.createTransport({
@@ -39,5 +39,21 @@ export const sendWelcomeEmail = async (toEmail: string, name?: string) => {
         console.log(`Welcome email sent to ${toEmail} [${info.messageId}]`);
     } catch (error) {
         console.error("Error sending welcome email:", error);
+    }
+};
+
+export const sendAbandonedCartEmail = async (toEmail: string) => {
+    try {
+        const mailOptions = {
+            from: `"PFSTUDIO" <${process.env.EMAIL_USER}>`,
+            to: toEmail,
+            subject: '¡Te olvidaste algo en el carrito! 🛒',
+            html: generateAbandonedCartEmail(toEmail)
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`Abandoned cart email sent to ${toEmail} [${info.messageId}]`);
+    } catch (error) {
+        console.error("Error sending abandoned cart email:", error);
     }
 };

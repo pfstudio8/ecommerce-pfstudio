@@ -1,10 +1,25 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/server';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
     try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user || !user.email) {
+            return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+        }
+
+        const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
+        const adminEmailsList = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+        
+        if (!adminEmailsList.includes(user.email.toLowerCase())) {
+            return NextResponse.json({ error: 'Prohibido: Se requiere rol de administrador' }, { status: 403 });
+        }
+
         const params = await props.params;
         const { id } = params;
         
@@ -18,12 +33,23 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
             );
         }
 
-        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+        const supabaseAdmin = createSupabaseClient(supabaseUrl, serviceRoleKey, {
             auth: {
                 autoRefreshToken: false,
                 persistSession: false
             }
         });
+
+        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(id);
+        
+        if (!userError && userData?.user?.email) {
+            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
+            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+            
+            if (adminEmails.includes(userData.user.email.toLowerCase())) {
+                return NextResponse.json({ error: 'No se puede eliminar al administrador principal del sistema.' }, { status: 403 });
+            }
+        }
 
         const { data, error } = await supabaseAdmin.auth.admin.deleteUser(id);
 

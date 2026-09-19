@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { createClient as createServerClient } from '@/utils/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,43 +12,41 @@ export async function POST(request: Request) {
         const cleanOrderId = orderId ? String(orderId).trim() : null;
         const cleanEmail = email ? String(email).trim().toLowerCase() : null;
 
-        if (!cleanOrderId && !cleanEmail) {
+        if (!cleanOrderId || !cleanEmail) {
             return NextResponse.json(
-                { error: "Por favor ingresá tu número de pedido o correo electrónico." },
+                { error: "Por favor ingresá tu número de pedido Y tu correo electrónico para buscar tu orden." },
                 { status: 400 }
             );
         }
 
-        const supabase = createAdminClient();
+        const serverSupabase = await createServerClient();
+        const { data: { session } } = await serverSupabase.auth.getSession();
+
+        const supabase = session ? serverSupabase : createAdminClient();
 
         let query = supabase
             .from('orders')
             .select(`
-                *,
+                id, status, total_amount, created_at, tracking_number, carrier,
                 items:order_items(
-                    *,
-                    product:products(*)
+                    quantity, size, product_id, price_at_purchase,
+                    product:products(name, images)
                 )
             `)
             .order('created_at', { ascending: false });
 
-        if (cleanEmail && !cleanOrderId) {
-            // Search all orders for this email
-            query = query.ilike('customer_email', cleanEmail);
-        } else if (cleanOrderId && !cleanEmail) {
-            // Check if full UUID or short UUID prefix
-            if (cleanOrderId.length > 20) {
-                query = query.eq('id', cleanOrderId);
-            } else {
-                query = query.ilike('id', `${cleanOrderId}%`);
-            }
-        } else if (cleanOrderId && cleanEmail) {
-            // Search by both for exact precision
-            if (cleanOrderId.length > 20) {
-                query = query.eq('id', cleanOrderId).ilike('customer_email', cleanEmail);
-            } else {
-                query = query.ilike('id', `${cleanOrderId}%`).ilike('customer_email', cleanEmail);
-            }
+        // Search by both for exact precision to prevent PII leaks
+        if (cleanOrderId.length < 8) {
+            return NextResponse.json(
+                { error: "El número de pedido ingresado es muy corto. Por seguridad, ingresa al menos los primeros 8 caracteres." },
+                { status: 400 }
+            );
+        }
+
+        if (cleanOrderId.length > 20) {
+            query = query.eq('id', cleanOrderId).eq('customer_email', cleanEmail);
+        } else {
+            query = query.ilike('id', `${cleanOrderId}%`).eq('customer_email', cleanEmail);
         }
 
         const { data: orders, error } = await query;

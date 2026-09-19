@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { checkoutLimiter } from '@/utils/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
     try {
+        const ip = request.headers.get('x-forwarded-for') || 'unknown';
+        if (!checkoutLimiter.check(ip)) {
+            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
+        }
+
         const body = await request.json();
         const { items, user_email, billingDetails } = body;
 
@@ -12,12 +18,35 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No items provided" }, { status: 400 });
         }
 
-        // Calculate total amount
-        const totalAmount = items.reduce((acc: number, item: any) => acc + (Number(item.product.price) * item.quantity), 0);
+        const supabase = createAdminClient();
+        const productIds = items.map((item: any) => item.product.id);
+        
+        const { data: dbProducts, error: dbError } = await supabase
+            .from('products')
+            .select('id, price')
+            .in('id', productIds);
+
+        if (dbError || !dbProducts) {
+            return NextResponse.json({ error: 'Error fetching products from database' }, { status: 500 });
+        }
+
+        const productMap = new Map(dbProducts.map(p => [p.id, p]));
+
+        // Early validation to prevent Data Littering
+        for (const item of items) {
+            if (!productMap.has(item.product.id)) {
+                return NextResponse.json({ error: `Product ${item.product.id} not found or unavailable` }, { status: 400 });
+            }
+        }
+
+        // Calculate total amount based on real prices
+        const totalAmount = items.reduce((acc: number, item: any) => {
+            const dbProduct = productMap.get(item.product.id);
+            const realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            return acc + (realPrice * item.quantity);
+        }, 0);
 
         const fakePaymentId = `transfer_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-
-        const supabase = createAdminClient();
 
         // Create the order in Supabase with 'pending' status (matches schema constraints)
         const { data: orderData, error: orderError } = await supabase
@@ -40,13 +69,17 @@ export async function POST(request: Request) {
         }
 
         // Insert the line items
-        const orderItemsToInsert = items.map((item: any) => ({
-            order_id: orderData.id,
-            product_id: item.product.id || null,
-            size: item.size || 'N/A',
-            quantity: item.quantity || 1,
-            price_at_purchase: item.product.price || 0
-        }));
+        const orderItemsToInsert = items.map((item: any) => {
+            const dbProduct = productMap.get(item.product.id);
+            const realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            return {
+                order_id: orderData.id,
+                product_id: item.product.id || null,
+                size: item.size || 'N/A',
+                quantity: item.quantity || 1,
+                price_at_purchase: realPrice
+            };
+        });
 
         const { error: itemsError } = await supabase
             .from('order_items')
@@ -56,34 +89,19 @@ export async function POST(request: Request) {
             console.error("Error creating transfer line items:", itemsError);
         }
 
-        // Reserve Stock Eagerly to prevent overselling on pending transfers (Atomic RPC call)
-        for (const item of items) {
-            const productId = item.product.id;
-            const qtyBought = Number(item.quantity) || 1;
-            const size = item.size;
-
-            if (!productId || !size) continue;
-
-            const { error: rpcError } = await supabase.rpc('decrement_stock', {
-                p_id: productId,
-                p_size: size,
-                p_qty: qtyBought
-            });
-
-            if (rpcError) {
-                console.error(`Error executing decrement_stock RPC for product ${productId}:`, rpcError);
-            }
-        }
-
+        // Stock will be deducted manually by admin when payment is confirmed
         // Send confirmation email
         if (user_email) {
             try {
-                const itemsForEmail = items.map((item: any) => ({
-                    name: item.product.name,
-                    size: item.size,
-                    quantity: item.quantity,
-                    price: item.product.price
-                }));
+                const itemsForEmail = items.map((item: any) => {
+                    const dbProduct = productMap.get(item.product.id);
+                    return {
+                        name: dbProduct ? dbProduct.name : item.product.name,
+                        size: item.size,
+                        quantity: item.quantity,
+                        price: dbProduct ? Number(dbProduct.price) : Number(item.product.price)
+                    };
+                });
                 const { sendPurchaseSuccessEmail } = await import('@/lib/sendEmail');
                 await sendPurchaseSuccessEmail(user_email, orderData.id, totalAmount, itemsForEmail, billingDetails);
             } catch (emailError) {

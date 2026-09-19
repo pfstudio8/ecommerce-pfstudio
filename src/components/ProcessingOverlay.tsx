@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, CreditCard, Landmark, Sparkles, Lock, Loader2 } from "lucide-react";
+import { ShieldCheck, CreditCard, Landmark, Sparkles, Lock } from "lucide-react";
 
 interface ProcessingOverlayProps {
     isOpen: boolean;
@@ -21,13 +21,13 @@ export default function ProcessingOverlay({
     const getIcon = () => {
         switch (type) {
             case 'auth':
-                return <Lock className="w-6 h-6 text-emerald-400" />;
+                return <Lock className="w-6 h-6 text-primary" />;
             case 'mercadopago':
-                return <CreditCard className="w-6 h-6 text-emerald-400" />;
+                return <CreditCard className="w-6 h-6 text-primary" />;
             case 'transfer':
-                return <Landmark className="w-6 h-6 text-emerald-400" />;
+                return <Landmark className="w-6 h-6 text-primary" />;
             default:
-                return <Sparkles className="w-6 h-6 text-emerald-400" />;
+                return <Sparkles className="w-6 h-6 text-primary" />;
         }
     };
 
@@ -39,17 +39,17 @@ export default function ProcessingOverlay({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="fixed inset-0 z-9999 flex items-center justify-center bg-zinc-950/85 backdrop-blur-xl p-4 select-none"
+                    className="fixed inset-0 z-1000 flex items-center justify-center bg-surface/80 backdrop-blur-md p-4 select-none"
                 >
                     <motion.div
-                        initial={{ scale: 0.9, y: 15, opacity: 0 }}
+                        initial={{ scale: 0.95, y: 15, opacity: 0 }}
                         animate={{ scale: 1, y: 0, opacity: 1 }}
-                        exit={{ scale: 0.9, y: 15, opacity: 0 }}
+                        exit={{ scale: 0.95, y: 15, opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                        className="relative max-w-sm w-full bg-zinc-900/90 border border-white/10 rounded-3xl p-8 text-center shadow-2xl flex flex-col items-center overflow-hidden"
+                        className="relative max-w-sm w-full bg-surface-container-lowest border border-outline-variant rounded-3xl p-8 text-center shadow-lg flex flex-col items-center overflow-hidden"
                     >
                         {/* Glow Ambient Layer */}
-                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-emerald-500/20 blur-[60px] rounded-full pointer-events-none" />
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-primary-container/30 blur-2xl rounded-full pointer-events-none" />
 
                         {/* Brand Pulsing Logo / Icon Container */}
                         <div className="relative mb-6 flex items-center justify-center">
@@ -57,52 +57,52 @@ export default function ProcessingOverlay({
                             <motion.div
                                 animate={{ rotate: 360 }}
                                 transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
-                                className="w-20 h-20 rounded-full border-2 border-transparent border-t-emerald-400 border-r-emerald-500/30"
+                                className="w-20 h-20 rounded-full border-2 border-transparent border-t-primary border-r-primary/30"
                             />
 
                             {/* Center Icon Circle */}
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-14 h-14 rounded-2xl bg-zinc-950/90 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/20 animate-pulse">
+                                <div className="w-14 h-14 rounded-2xl bg-surface border border-primary/20 flex items-center justify-center shadow-sm animate-pulse">
                                     {getIcon()}
                                 </div>
                             </div>
                         </div>
 
                         {/* Brand Name Tag */}
-                        <span className="text-[10px] font-extrabold uppercase tracking-[0.25em] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1 rounded-full mb-3 inline-flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-emerald-400" />
+                        <span className="text-label-sm font-label-sm font-bold uppercase tracking-widest text-primary bg-primary-container/50 border border-primary/10 px-3 py-1 rounded-full mb-3 inline-flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-primary" />
                             PFSTUDIO
                         </span>
 
                         {/* Dynamic Title */}
-                        <h3 className="text-lg font-black uppercase tracking-tight text-white mb-2">
+                        <h3 className="text-headline-sm font-headline-sm text-on-surface mb-2">
                             {title}
                         </h3>
 
                         {/* Dynamic Subtitle */}
                         {subtitle && (
-                            <p className="text-xs text-zinc-400 leading-relaxed max-w-xs font-medium">
+                            <p className="text-body-sm font-body-sm text-on-surface-variant max-w-xs">
                                 {subtitle}
                             </p>
                         )}
 
                         {/* Animated Progress Bar */}
-                        <div className="w-full bg-zinc-950/80 rounded-full h-1.5 mt-6 overflow-hidden border border-white/5 relative">
+                        <div className="w-full bg-surface-container-highest rounded-full h-1 mt-6 overflow-hidden relative">
                             <motion.div
-                                className="bg-linear-to-r from-emerald-500 to-cyan-400 h-full rounded-full"
+                                className="bg-primary h-full rounded-full"
                                 initial={{ x: "-100%" }}
                                 animate={{ x: "100%" }}
                                 transition={{
                                     repeat: Infinity,
-                                    duration: 1.4,
+                                    duration: 1.2,
                                     ease: "easeInOut"
                                 }}
                             />
                         </div>
 
                         {/* Security Tag */}
-                        <div className="mt-5 pt-4 border-t border-white/5 w-full flex items-center justify-center gap-1.5 text-[10px] text-zinc-500 font-medium">
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                        <div className="mt-5 pt-4 border-t border-outline-variant w-full flex items-center justify-center gap-1.5 text-label-sm font-label-sm text-on-surface-variant">
+                            <ShieldCheck className="w-4 h-4 text-primary" />
                             <span>Procesamiento 100% Seguro</span>
                         </div>
                     </motion.div>
