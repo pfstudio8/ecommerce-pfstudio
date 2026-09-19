@@ -28,28 +28,31 @@ export default function ContactoPage() {
         setIsSubmitting(true);
 
         try {
-            const { error } = await supabase
-                .from('messages')
-                .insert([{
-                    user_name: formData.user_name,
-                    user_email: formData.user_email,
-                    content: formData.content
-                }]);
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
 
-            if (error) throw error;
+            if (!res.ok) {
+                if (res.status === 429) {
+                    throw new Error("Has enviado muchos mensajes. Por favor, espera un momento.");
+                }
+                throw new Error("Error al procesar la solicitud.");
+            }
 
             toast.success("Mensaje Enviado", { description: "Nos podremos en contacto contigo a la brevedad." });
             setFormData({ user_name: "", user_email: "", content: "" });
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error sending message:", error);
-            toast.error("Error", { description: "Hubo un problema al enviar el mensaje. Intenta nuevamente." });
+            toast.error("Error", { description: error.message || "Hubo un problema al enviar el mensaje. Intenta nuevamente." });
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="min-h-[80vh] flex flex-col justify-center py-20 bg-[var(--background)] animate-in fade-in duration-500">
+        <div className="min-h-[80vh] flex flex-col justify-center py-20 bg-(--background) animate-in fade-in duration-500">
             <div className="container mx-auto px-4 max-w-2xl">
                 <div className="text-center mb-12">
                     <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4 uppercase">Contacto</h1>
@@ -60,13 +63,13 @@ export default function ContactoPage() {
 
                 <div className="bg-zinc-900/40 border border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-sm relative overflow-hidden">
                     {/* Decorative Blob */}
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-main)] opacity-10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-(--color-main) opacity-10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
                     <form onSubmit={handleSubmit} className="relative z-10 space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
-                                    <User className="w-4 h-4 text-[var(--color-main)]" /> Nombre
+                                    <User className="w-4 h-4 text-(--color-main)" /> Nombre
                                 </label>
                                 <input
                                     type="text"
@@ -75,13 +78,13 @@ export default function ContactoPage() {
                                     onChange={handleChange}
                                     placeholder="Tu nombre"
                                     required
-                                    className="w-full px-4 py-3 bg-zinc-950/50 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-[var(--color-main)] focus:border-transparent transition-all outline-none text-white"
+                                    className="w-full px-4 py-3 bg-zinc-950/50 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-(--color-main) focus:border-transparent transition-all outline-none text-white"
                                 />
                             </div>
                             
                             <div className="space-y-2">
                                 <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
-                                    <Mail className="w-4 h-4 text-[var(--color-main)]" /> Correo Electrónico
+                                    <Mail className="w-4 h-4 text-(--color-main)" /> Correo Electrónico
                                 </label>
                                 <input
                                     type="email"
@@ -90,14 +93,14 @@ export default function ContactoPage() {
                                     onChange={handleChange}
                                     placeholder="tu@email.com"
                                     required
-                                    className="w-full px-4 py-3 bg-zinc-950/50 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-[var(--color-main)] focus:border-transparent transition-all outline-none text-white"
+                                    className="w-full px-4 py-3 bg-zinc-950/50 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-(--color-main) focus:border-transparent transition-all outline-none text-white"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-2">
                             <label className="text-sm font-bold text-gray-300 flex items-center gap-2">
-                                <MessageSquare className="w-4 h-4 text-[var(--color-main)]" /> Mensaje
+                                <MessageSquare className="w-4 h-4 text-(--color-main)" /> Mensaje
                             </label>
                             <textarea
                                 name="content"
@@ -106,14 +109,14 @@ export default function ContactoPage() {
                                 placeholder="Escribe tu consulta aquí..."
                                 rows={5}
                                 required
-                                className="w-full px-4 py-3 bg-zinc-950/50 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-[var(--color-main)] focus:border-transparent transition-all outline-none text-white resize-none"
+                                className="w-full px-4 py-3 bg-zinc-950/50 border border-zinc-800 rounded-xl focus:ring-2 focus:ring-(--color-main) focus:border-transparent transition-all outline-none text-white resize-none"
                             />
                         </div>
 
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-full bg-[var(--color-main)] hover:bg-[var(--color-main)]/90 text-white py-4 rounded-xl font-bold text-lg flex justify-center items-center gap-2 transition-all shadow-[0_0_20px_rgba(var(--color-main-rgb),0.3)] hover:shadow-[0_0_30px_rgba(var(--color-main-rgb),0.5)] disabled:opacity-70"
+                            className="w-full bg-(--color-main) hover:bg-(--color-main)/90 text-white py-4 rounded-xl font-bold text-lg flex justify-center items-center gap-2 transition-all shadow-[0_0_20px_rgba(var(--color-main-rgb),0.3)] hover:shadow-[0_0_30px_rgba(var(--color-main-rgb),0.5)] disabled:opacity-70"
                         >
                             {isSubmitting ? (
                                 <Loader2 className="w-6 h-6 animate-spin" />

@@ -29,12 +29,15 @@ export class RateLimiter {
 const globalForRateLimiter = globalThis as unknown as {
     checkoutLimiter: RateLimiter | undefined;
     notifyLimiter: RateLimiter | undefined;
+    contactLimiter: RateLimiter | undefined;
 };
 
 export const checkoutLimiter = globalForRateLimiter.checkoutLimiter ?? new RateLimiter(60000, 10); // 10 requests per minute
 export const notifyLimiter = globalForRateLimiter.notifyLimiter ?? new RateLimiter(3600000, 3); // 3 requests per hour
+export const contactLimiter = globalForRateLimiter.contactLimiter ?? new RateLimiter(3600000, 5); // 5 requests per hour
 
 if (process.env.NODE_ENV !== 'production') {
     globalForRateLimiter.checkoutLimiter = checkoutLimiter;
     globalForRateLimiter.notifyLimiter = notifyLimiter;
+    globalForRateLimiter.contactLimiter = contactLimiter;
 }

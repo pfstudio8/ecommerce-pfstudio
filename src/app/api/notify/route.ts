@@ -33,7 +33,7 @@ export async function POST(req: Request) {
             const { createAdminClient } = await import('@/utils/supabase/admin');
             const adminClient = createAdminClient();
             
-            const { data: { users }, error } = await adminClient.auth.admin.listUsers();
+            const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
             
             if (error || !users) {
                 return NextResponse.json({ error: 'Failed to verify user' }, { status: 500 });

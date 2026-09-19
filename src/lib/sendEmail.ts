@@ -20,7 +20,7 @@ export const sendPurchaseSuccessEmail = async (toEmail: string, orderId: string,
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log(`Confirmation email sent to ${toEmail} [${info.messageId}]`);
+        console.log(`Confirmation email sent [${info.messageId}]`);
     } catch (error) {
         console.error("Error sending order email:", error);
     }
@@ -36,7 +36,7 @@ export const sendWelcomeEmail = async (toEmail: string, name?: string) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log(`Welcome email sent to ${toEmail} [${info.messageId}]`);
+        console.log(`Welcome email sent [${info.messageId}]`);
     } catch (error) {
         console.error("Error sending welcome email:", error);
     }
@@ -52,7 +52,7 @@ export const sendAbandonedCartEmail = async (toEmail: string) => {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log(`Abandoned cart email sent to ${toEmail} [${info.messageId}]`);
+        console.log(`Abandoned cart email sent [${info.messageId}]`);
     } catch (error) {
         console.error("Error sending abandoned cart email:", error);
     }
