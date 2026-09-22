@@ -7,7 +7,10 @@ import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/features/auth/store/auth";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import dynamic from "next/dynamic";
+
+const RevenueChart = dynamic(() => import('./components/AdminCharts').then(mod => mod.RevenueChart), { ssr: false });
+const CategoryPieChart = dynamic(() => import('./components/AdminCharts').then(mod => mod.CategoryPieChart), { ssr: false });
 
 interface AdminStats {
     totalRevenue: number;
@@ -259,51 +262,17 @@ export default function AdminDashboard() {
                     <div className="bg-surface-container-low backdrop-blur-md border border-outline-variant rounded-2xl p-6 shadow-lg flex flex-col gap-8 h-auto">
                         <div>
                             <h4 className="text-sm font-bold text-on-surface font-sans">Evolución de Ingresos (Últimos 7 días)</h4>
-                            <div className="h-62.5 mt-4">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={fastStats.trafficData}>
-                                        <defs>
-                                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#00A87A" stopOpacity={0.8}/>
-                                                <stop offset="95%" stopColor="#00A87A" stopOpacity={0}/>
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                                        <XAxis dataKey="label" stroke="#888" fontSize={10} tickLine={false} axisLine={false} />
-                                        <YAxis stroke="#888" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                                        <Tooltip 
-                                            contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
-                                            itemStyle={{ color: '#00A87A', fontWeight: 'bold' }}
-                                        />
-                                        <Area type="monotone" dataKey="revenue" stroke="#00A87A" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                            <div className="h-64 mt-4">
+                                <RevenueChart data={fastStats.trafficData} />
                             </div>
                         </div>
 
                         <div className="border-t border-outline-variant pt-8">
                             <h4 className="text-sm font-bold text-on-surface font-sans">Ventas por Categoría</h4>
-                            <div className="h-62.5 mt-4 flex flex-col sm:flex-row items-center">
-                                <ResponsiveContainer width="100%" height="100%" className="min-h-50">
-                                    <PieChart>
-                                        <Pie
-                                            data={fastStats.categoryData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={90}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                        >
-                                            {fastStats.categoryData?.map((entry: any, index: number) => (
-                                                <Cell key={`cell-${index}`} fill={['#00A87A', '#10B981', '#34D399', '#6EE7B7', '#A7F3D0', '#D1FAE5'][index % 6]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip 
-                                            contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
-                                        />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                            <div className="h-64 mt-4 flex flex-col sm:flex-row items-center">
+                                <div className="w-full h-full min-h-50 sm:w-[60%]">
+                                    <CategoryPieChart data={fastStats.categoryData} />
+                                </div>
                                 <div className="sm:ml-4 mt-4 sm:mt-0 space-y-2 shrink-0">
                                     {fastStats.categoryData?.map((entry: any, index: number) => (
                                         <div key={index} className="flex items-center gap-2 text-xs text-outline">

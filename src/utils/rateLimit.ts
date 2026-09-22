@@ -1,43 +1,36 @@
-export class RateLimiter {
-    private requests: Map<string, number[]> = new Map();
-    private windowMs: number;
-    private maxRequests: number;
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
-    constructor(windowMs: number, maxRequests: number) {
-        this.windowMs = windowMs;
-        this.maxRequests = maxRequests;
-    }
+// Allow fallback to a dummy rate limiter or memory if env vars are missing during build/local
+const hasRedis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
 
-    check(ip: string): boolean {
-        const now = Date.now();
-        const windowStart = now - this.windowMs;
+const redis = hasRedis ? Redis.fromEnv() : null;
 
-        let timestamps = this.requests.get(ip) || [];
-        timestamps = timestamps.filter((time) => time > windowStart);
-
-        if (timestamps.length >= this.maxRequests) {
-            return false;
-        }
-
-        timestamps.push(now);
-        this.requests.set(ip, timestamps);
-        return true;
-    }
-}
-
-// Global instances for memory persistence across hot reloads (in dev) or lambdas (in prod to some extent)
-const globalForRateLimiter = globalThis as unknown as {
-    checkoutLimiter: RateLimiter | undefined;
-    notifyLimiter: RateLimiter | undefined;
-    contactLimiter: RateLimiter | undefined;
+// Dummy limiter para desarrollo o fallback si no hay Redis configurado aún
+const dummyLimiter = {
+    limit: async (identifier: string) => ({ success: true })
 };
 
-export const checkoutLimiter = globalForRateLimiter.checkoutLimiter ?? new RateLimiter(60000, 10); // 10 requests per minute
-export const notifyLimiter = globalForRateLimiter.notifyLimiter ?? new RateLimiter(3600000, 3); // 3 requests per hour
-export const contactLimiter = globalForRateLimiter.contactLimiter ?? new RateLimiter(3600000, 5); // 5 requests per hour
+// Checkout limit: 10 requests per minute
+export const checkoutLimiter = redis
+    ? new Ratelimit({
+          redis,
+          limiter: Ratelimit.slidingWindow(10, "1 m"),
+      })
+    : dummyLimiter;
 
-if (process.env.NODE_ENV !== 'production') {
-    globalForRateLimiter.checkoutLimiter = checkoutLimiter;
-    globalForRateLimiter.notifyLimiter = notifyLimiter;
-    globalForRateLimiter.contactLimiter = contactLimiter;
-}
+// Contact limit: 5 requests per hour
+export const contactLimiter = redis
+    ? new Ratelimit({
+          redis,
+          limiter: Ratelimit.slidingWindow(5, "1 h"),
+      })
+    : dummyLimiter;
+
+// Notify limit: 3 requests per hour
+export const notifyLimiter = redis
+    ? new Ratelimit({
+          redis,
+          limiter: Ratelimit.slidingWindow(3, "1 h"),
+      })
+    : dummyLimiter;

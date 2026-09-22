@@ -21,7 +21,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
     const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
     const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
-    const [categories, setCategories] = useState<string[]>(["Clásicas", "Boxy Fit", "Oversize", "Gorras", "Botineros", "Camisetas", "Tazas", "Encendedores", "Llaveros", "Vasos", "Accesorios"]);
+    const [categories, setCategories] = useState<string[]>(["Clásicas", "Boxy Fit", "Oversize", "Gorras", "Botineros", "Tazas", "Encendedores", "Llaveros", "Vasos", "Accesorios"]);
 
     useEffect(() => {
         const fetchCategories = async () => {

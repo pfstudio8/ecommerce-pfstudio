@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 // Production URL (Update this when deploying to the real domain)
 const URL = 'https://pfstudio.com.ar';
@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
 
     try {
+        const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
         const { data: products } = await supabase.from('products').select('id, updated_at');
         const { data: categories } = await supabase.from('categories').select('slug');
 

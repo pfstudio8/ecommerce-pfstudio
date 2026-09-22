@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import type { PreferenceRequest } from 'mercadopago/dist/clients/preference/commonTypes';
 import { z } from 'zod';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { checkoutLimiter } from '@/utils/rateLimit';
@@ -32,7 +33,8 @@ const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCE
 export async function POST(request: Request) {
     try {
         const ip = request.headers.get('x-forwarded-for') || 'unknown';
-        if (!checkoutLimiter.check(ip)) {
+        const { success } = await checkoutLimiter.limit(`checkout_${ip}`);
+        if (!success) {
             return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
         }
 
@@ -44,31 +46,55 @@ export async function POST(request: Request) {
         
         const { items, billingDetails, user_email } = parseResult.data;
 
-        const supabase = createAdminClient();
-        const productIds = items.map(item => item.product.id);
-        
-        const { data: dbProducts, error: dbError } = await supabase
-            .from('products')
-            .select('id, name, price')
-            .in('id', productIds);
+        const normalItems = items.filter((item: CheckoutItemType) => !item.product.id.startsWith('custom-'));
+        const customItems = items.filter((item: CheckoutItemType) => item.product.id.startsWith('custom-'));
 
-        if (dbError || !dbProducts) {
-            return NextResponse.json({ error: 'Error fetching products from database' }, { status: 500 });
+        const supabase = createAdminClient();
+        const productIds = normalItems.map((item: CheckoutItemType) => item.product.id);
+        
+        let dbProducts: any[] = [];
+        if (productIds.length > 0) {
+            const { data, error: dbError } = await supabase
+                .from('products')
+                .select('id, name, price')
+                .in('id', productIds);
+
+            if (dbError) {
+                return NextResponse.json({ error: 'Error fetching products from database' }, { status: 500 });
+            }
+            if (data) dbProducts = data;
         }
 
         const productMap = new Map(dbProducts.map(p => [p.id, p]));
 
         // Early validation to prevent Data Littering
-        for (const item of items) {
+        for (const item of normalItems) {
             if (!productMap.has(item.product.id)) {
                 return NextResponse.json({ error: `Product ${item.product.id} not found or unavailable` }, { status: 400 });
             }
         }
 
+        // Validate custom items
+        const { CUSTOM_PRICING } = await import('@/utils/customPricing');
+        for (const item of customItems) {
+            const match = item.product.id.match(/^custom-(.+?)-\d+$/);
+            if (!match || !(match[1] in CUSTOM_PRICING)) {
+                return NextResponse.json({ error: `Custom product invalid or unavailable` }, { status: 400 });
+            }
+        }
+
         // Calculate total amount based on real prices
         const totalAmount = items.reduce((acc: number, item: CheckoutItemType) => {
-            const dbProduct = productMap.get(item.product.id);
-            const realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            let realPrice = 0;
+            if (item.product.id.startsWith('custom-')) {
+                const match = item.product.id.match(/^custom-(.+?)-\d+$/);
+                if (match && CUSTOM_PRICING[match[1]]) {
+                    realPrice = CUSTOM_PRICING[match[1]];
+                }
+            } else {
+                const dbProduct = productMap.get(item.product.id);
+                realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            }
             return acc + (realPrice * item.quantity);
         }, 0);
 
@@ -96,8 +122,17 @@ export async function POST(request: Request) {
 
         // Insert the line items
         const orderItemsToInsert = items.map((item: CheckoutItemType) => {
-            const dbProduct = productMap.get(item.product.id);
-            const realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            let realPrice = 0;
+            if (item.product.id.startsWith('custom-')) {
+                const match = item.product.id.match(/^custom-(.+?)-\d+$/);
+                if (match && CUSTOM_PRICING[match[1]]) {
+                    realPrice = CUSTOM_PRICING[match[1]];
+                }
+            } else {
+                const dbProduct = productMap.get(item.product.id);
+                realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            }
+            
             return {
                 order_id: orderData.id,
                 product_id: item.product.id || null,
@@ -115,9 +150,23 @@ export async function POST(request: Request) {
 
         // Convertir los items del carrito al formato de MercadoPago
         const mpItems = items.map((item: CheckoutItemType) => {
-            const dbProduct = productMap.get(item.product.id);
-            if (!dbProduct) {
-                throw new Error(`Product ${item.product.id} not found in database`);
+            let realPrice = 0;
+            let title = '';
+
+            if (item.product.id.startsWith('custom-')) {
+                const match = item.product.id.match(/^custom-(.+?)-\d+$/);
+                if (!match || !(match[1] in CUSTOM_PRICING)) {
+                    throw new Error(`Custom product ${item.product.id} invalid`);
+                }
+                realPrice = CUSTOM_PRICING[match[1]];
+                title = `${item.product.name} - Talle ${item.size}`;
+            } else {
+                const dbProduct = productMap.get(item.product.id);
+                if (!dbProduct) {
+                    throw new Error(`Product ${item.product.id} not found in database`);
+                }
+                realPrice = Number(dbProduct.price);
+                title = `${dbProduct.name} - Talle ${item.size}`;
             }
             
             let pictureUrl = item.product.images[0] || '';
@@ -127,9 +176,9 @@ export async function POST(request: Request) {
 
             return {
                 id: item.product.id,
-                title: `${dbProduct.name} - Talle ${item.size}`,
+                title: title,
                 quantity: item.quantity,
-                unit_price: Number(dbProduct.price),
+                unit_price: realPrice,
                 currency_id: 'ARS',
                 picture_url: pictureUrl,
                 description: item.product.category || 'Product'
@@ -144,11 +193,26 @@ export async function POST(request: Request) {
                 user_email: user_email || null,
                 billing_details: billingDetails,
                 cart_items: items.map((item: CheckoutItemType) => {
-                    const dbProduct = productMap.get(item.product.id);
+                    let name = item.product.name;
+                    let price = Number(item.product.price);
+
+                    if (item.product.id.startsWith('custom-')) {
+                        const match = item.product.id.match(/^custom-(.+?)-\d+$/);
+                        if (match && CUSTOM_PRICING[match[1]]) {
+                            price = CUSTOM_PRICING[match[1]];
+                        }
+                    } else {
+                        const dbProduct = productMap.get(item.product.id);
+                        if (dbProduct) {
+                            name = dbProduct.name;
+                            price = Number(dbProduct.price);
+                        }
+                    }
+
                     return {
                         id: item.product.id,
-                        name: dbProduct ? dbProduct.name : item.product.name,
-                        price: dbProduct ? Number(dbProduct.price) : Number(item.product.price),
+                        name: name,
+                        price: price,
                         quantity: item.quantity,
                         size: item.size
                     };
@@ -163,7 +227,7 @@ export async function POST(request: Request) {
         };
 
         const response = await preference.create({
-            body: bodyPayload as any
+            body: bodyPayload as PreferenceRequest
         });
 
         // Retornar la URL de la pasarela de pagos al frontend

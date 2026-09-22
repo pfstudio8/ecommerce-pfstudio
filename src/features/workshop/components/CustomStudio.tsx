@@ -10,6 +10,8 @@ import { useCartStore, CartStore } from "@/features/orders/store/cart";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import Viewer3D from "./Viewer3D";
+import { Product } from "@/types/product";
 
 export interface InsumoOption {
     id: string;
@@ -46,12 +48,65 @@ export default function CustomStudio() {
     const [imageOffsets, setImageOffsets] = useState<{ frente: { x: number; y: number }; dorso: { x: number; y: number } }>({ frente: { x: 0, y: 0 }, dorso: { x: 0, y: 0 } });
     const [imageFits, setImageFits] = useState<{ frente: "cover" | "contain"; dorso: "cover" | "contain" }>({ frente: "cover", dorso: "cover" });
     const [baseColor, setBaseColor] = useState<string>("#ffffff");
+    const [show3D, setShow3D] = useState(false);
+    const textureCanvasRef = useRef<HTMLCanvasElement>(null);
 
     const isDraggingImage = useRef(false);
     const dragStartCoords = useRef({ x: 0, y: 0 });
-
+    const tempOffset = useRef({ x: 0, y: 0 });
+    const imageElementRef = useRef<SVGImageElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const addItem = useCartStore((state: CartStore) => state.addItem);
+
+    // Active image states for convenience
+    const activeImage = images[previewSide];
+    const activeScale = imageScales[previewSide];
+    const activeRotation = imageRotations[previewSide];
+    const activeOffset = imageOffsets[previewSide];
+    const activeFit = imageFits[previewSide];
+
+    // Sync 2D interactions to a hidden canvas for the 3D viewer
+    useEffect(() => {
+        if (!textureCanvasRef.current) return;
+        const canvas = textureCanvasRef.current;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        ctx.fillStyle = baseColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        if (activeImage) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.save();
+                const scaleVal = activeScale / 100;
+                ctx.translate(300, 380); // Center of 600x680 (SVG is 300x340)
+                ctx.rotate((activeRotation * Math.PI) / 180);
+                ctx.translate(activeOffset.x * 2, activeOffset.y * 2);
+                ctx.scale(scaleVal, scaleVal);
+                
+                // Basic handling for object-fit
+                if (activeFit === "cover") {
+                    ctx.drawImage(img, -300, -340, 600, 680); // Stretch/Cover approx
+                } else {
+                    const ratio = Math.min(600 / img.width, 680 / img.height);
+                    const w = img.width * ratio;
+                    const h = img.height * ratio;
+                    ctx.drawImage(img, -w/2, -h/2, w, h);
+                }
+                
+                ctx.restore();
+            };
+            img.src = activeImage;
+        } else {
+            ctx.fillStyle = "#f1f5f9";
+            ctx.fillRect(0, 0, 600, 680);
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "bold 32px sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("TU DISEÑO", 300, 340);
+        }
+    }, [activeImage, activeScale, activeRotation, activeOffset, activeFit, baseColor, previewSide]);
 
     // Dynamic Insumo Categories & Items
     const [categories, setCategories] = useState<InsumoCategory[]>([
@@ -222,7 +277,6 @@ export default function CustomStudio() {
         }
     }, [activeCategoryId]);
 
-    // Get current category & selected option
     const activeCategory = categories.find(c => c.id === activeCategoryId) || categories[0];
     const currentOption = activeCategory.options.find(o => o.id === selectedItemType) || activeCategory.options[0];
 
@@ -345,51 +399,59 @@ export default function CustomStudio() {
         const compressedFrente = images.frente ? await compressImage(images.frente) : null;
         const compressedDorso = images.dorso ? await compressImage(images.dorso) : null;
 
-        const customProduct = {
+        const customProduct: Product = {
             id: `custom-${selectedItemType}-${Date.now()}`,
             name: productName,
             price: price,
+            description: "Producto personalizado desde Custom Studio",
             category: activeCategory.name,
+            image_url: compressedFrente || "/placeholder.png",
             images: [compressedFrente, compressedDorso].filter(Boolean) as string[],
             stock: 9999
         };
 
-        addItem(customProduct as any, selectedVariant || "Único");
+        addItem(customProduct, selectedVariant || "Único");
     };
-
-    const activeImage = images[previewSide];
-    const activeScale = imageScales[previewSide];
-    const activeRotation = imageRotations[previewSide];
-    const activeOffset = imageOffsets[previewSide];
-    const activeFit = imageFits[previewSide];
     const isMultiSide = ["llaveros", "chopps-tazas", "vasos-botellas"].includes(activeCategoryId);
 
     const handlePointerDown = (e: React.PointerEvent) => {
         if (!activeImage) return;
         isDraggingImage.current = true;
         dragStartCoords.current = { x: e.clientX, y: e.clientY };
+        tempOffset.current = { x: 0, y: 0 };
         e.currentTarget.setPointerCapture(e.pointerId);
     };
 
     const handlePointerMove = (e: React.PointerEvent) => {
-        if (!isDraggingImage.current || !activeImage) return;
+        if (!isDraggingImage.current || !activeImage || !imageElementRef.current) return;
+        
         const dx = e.clientX - dragStartCoords.current.x;
         const dy = e.clientY - dragStartCoords.current.y;
+        tempOffset.current = { x: dx, y: dy };
+        
+        // Direct DOM update to bypass slow React re-renders
+        const scaleVal = activeScale / 100;
+        const baseTranslateX = (150 - 150 * scaleVal) / scaleVal;
+        const baseTranslateY = (190 - 190 * scaleVal) / scaleVal;
+        const userOffsetX = (activeOffset.x + dx) / scaleVal;
+        const userOffsetY = (activeOffset.y + dy) / scaleVal;
+        
+        const transformStr = `scale(${scaleVal}) translate(${baseTranslateX + userOffsetX} ${baseTranslateY + userOffsetY}) rotate(${activeRotation} 150 190)`;
+        imageElementRef.current.setAttribute("transform", transformStr);
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        if (!isDraggingImage.current) return;
+        isDraggingImage.current = false;
+        e.currentTarget.releasePointerCapture(e.pointerId);
         
         setImageOffsets(prev => ({
             ...prev,
             [previewSide]: {
-                x: prev[previewSide].x + dx,
-                y: prev[previewSide].y + dy
+                x: prev[previewSide].x + tempOffset.current.x,
+                y: prev[previewSide].y + tempOffset.current.y
             }
         }));
-        
-        dragStartCoords.current = { x: e.clientX, y: e.clientY };
-    };
-
-    const handlePointerUp = (e: React.PointerEvent) => {
-        isDraggingImage.current = false;
-        e.currentTarget.releasePointerCapture(e.pointerId);
     };
 
     // Render Keychain & Product Interactive Mockup SVG
@@ -561,6 +623,7 @@ export default function CustomStudio() {
 
                         {activeImage ? (
                             <image
+                                ref={imageElementRef}
                                 href={activeImage}
                                 x="0"
                                 y="0"
@@ -619,32 +682,32 @@ export default function CustomStudio() {
                     {/* Integrated 3-Step Process Bar */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-4xl mt-8 p-3 rounded-2xl bg-surface-container border border-outline-variant shadow-sm">
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-outline-variant text-left transition-all shadow-sm">
-                            <span className="w-10 h-10 rounded-lg bg-primary text-on-primary font-bold text-label-md flex items-center justify-center shrink-0">
+                            <span className="w-10 h-10 rounded-lg bg-primary text-on-primary font-bold font-sans text-label-md flex items-center justify-center shrink-0">
                                 01
                             </span>
                             <div>
-                                <p className="text-label-md font-bold text-on-surface uppercase tracking-wide">1. Modelo</p>
-                                <p className="text-label-sm text-primary font-bold truncate">{currentOption?.label || activeCategory.name}</p>
+                                <p className="text-label-md font-label-md font-bold text-on-surface uppercase tracking-wide">1. Modelo</p>
+                                <p className="text-label-sm font-label-sm text-primary font-bold truncate">{currentOption?.label || activeCategory.name}</p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-outline-variant text-left transition-all shadow-sm">
-                            <span className="w-10 h-10 rounded-lg bg-primary-container text-primary font-bold text-label-md flex items-center justify-center shrink-0 border border-primary/20">
+                            <span className="w-10 h-10 rounded-lg bg-primary text-on-primary font-bold font-sans text-label-md flex items-center justify-center shrink-0">
                                 02
                             </span>
                             <div>
-                                <p className="text-label-md font-bold text-on-surface uppercase tracking-wide">2. Diseño</p>
-                                <p className="text-label-sm text-on-surface-variant">PNG, JPG o WebP</p>
+                                <p className="text-label-md font-label-md font-bold text-on-surface uppercase tracking-wide">2. Diseño</p>
+                                <p className="text-label-sm font-label-sm text-on-surface-variant">PNG, JPG o WebP</p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-outline-variant text-left transition-all shadow-sm">
-                            <span className="w-10 h-10 rounded-lg bg-primary-container text-primary font-bold text-label-md flex items-center justify-center shrink-0 border border-primary/20">
+                            <span className="w-10 h-10 rounded-lg bg-primary text-on-primary font-bold font-sans text-label-md flex items-center justify-center shrink-0">
                                 03
                             </span>
                             <div>
-                                <p className="text-label-md font-bold text-on-surface uppercase tracking-wide">3. Pedido</p>
-                                <p className="text-label-sm text-on-surface-variant">Agregá al carrito y listo</p>
+                                <p className="text-label-md font-label-md font-bold text-on-surface uppercase tracking-wide">3. Pedido</p>
+                                <p className="text-label-sm font-label-sm text-on-surface-variant">Agregá al carrito y listo</p>
                             </div>
                         </div>
                     </div>
@@ -658,7 +721,7 @@ export default function CustomStudio() {
                                 <button
                                     key={cat.id}
                                     onClick={() => handleCategoryChange(cat.id)}
-                                    className={`flex items-center gap-2 px-5 py-3 rounded-xl border-2 text-label-md font-bold uppercase tracking-wide transition-all cursor-pointer ${
+                                    className={`flex items-center gap-2 px-5 py-3 rounded-xl border-2 text-label-md font-bold font-sans uppercase tracking-wide transition-all cursor-pointer ${
                                         isActive
                                             ? "bg-primary text-on-primary border-primary shadow-md scale-105"
                                             : "bg-surface text-on-surface-variant border-outline-variant hover:border-primary/50 hover:text-on-surface"
@@ -691,7 +754,7 @@ export default function CustomStudio() {
                                     Estudio Interactivo
                                 </h3>
                             </div>
-                            <span className="text-label-sm bg-primary-container text-primary font-bold px-3 py-1.5 rounded-full border border-primary/20">
+                            <span className="text-label-sm font-sans bg-primary text-on-primary font-bold px-3 py-1.5 rounded-full border border-primary/20">
                                 {currentOption?.dimensions || "Sublimación Full"}
                             </span>
                         </div>
@@ -720,9 +783,30 @@ export default function CustomStudio() {
                             </div>
                         )}
 
-                        {/* Mockup Canvas Component */}
-                        <div className="w-full flex-1 flex items-center justify-center min-h-100 py-4 relative">
-                            {renderInteractiveMockup()}
+                        {/* 3D / 2D Toggle & Canvas Container */}
+                        <div className="w-full flex justify-end mb-2">
+                            <button
+                                onClick={() => setShow3D(!show3D)}
+                                className="px-4 py-2 bg-surface text-primary border border-primary/30 rounded-xl text-label-sm font-bold uppercase tracking-wide hover:bg-primary-container/20 transition shadow-sm"
+                            >
+                                {show3D ? "Volver a Edición 2D" : "Ver en 3D"}
+                            </button>
+                        </div>
+                        
+                        <div className="w-full flex-1 flex items-center justify-center min-h-[500px] py-4 relative">
+                            {show3D ? (
+                                <Viewer3D 
+                                    categoryId={activeCategoryId} 
+                                    optionId={currentOption.id} 
+                                    textureCanvasRef={textureCanvasRef} 
+                                    isMultiSide={isMultiSide}
+                                />
+                            ) : (
+                                renderInteractiveMockup()
+                            )}
+                            
+                            {/* Hidden canvas used as texture for 3D */}
+                            <canvas ref={textureCanvasRef} width={600} height={680} style={{ display: 'none' }} />
                         </div>
 
                         {/* Interactive Design Controls Bar */}
@@ -809,7 +893,7 @@ export default function CustomStudio() {
                                     <ImageIcon className="w-7 h-7 text-primary" />
                                     Detalles
                                 </h3>
-                                <span className="text-label-sm uppercase font-bold tracking-widest text-primary bg-primary-container/40 border border-primary/20 px-4 py-1.5 rounded-full">
+                                <span className="text-label-sm font-sans uppercase font-bold tracking-widest text-on-primary bg-primary border border-primary/20 px-4 py-1.5 rounded-full">
                                     {activeCategory.name}
                                 </span>
                             </div>

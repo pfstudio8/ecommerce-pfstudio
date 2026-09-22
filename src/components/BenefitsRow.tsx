@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Sparkles, Palette, MapPin, MessageSquare } from "lucide-react";
 
 export default function BenefitsRow() {
@@ -42,12 +41,8 @@ export default function BenefitsRow() {
                     {benefits.map((benefit, index) => {
                         const Icon = benefit.icon;
                         return (
-                            <motion.div
+                            <div
                                 key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.4, delay: index * 0.1 }}
                                 className={`p-6 rounded-2xl border ${benefit.bg} flex gap-4 items-start hover:scale-[1.02] transition-transform duration-300`}
                             >
                                 <div className={`p-3 rounded-xl bg-white/5 ${benefit.color} shrink-0`}>
@@ -61,7 +56,7 @@ export default function BenefitsRow() {
                                         {benefit.description}
                                     </p>
                                 </div>
-                            </motion.div>
+                            </div>
                         );
                     })}
                 </div>

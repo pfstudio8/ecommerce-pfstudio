@@ -124,3 +124,26 @@ FULL OUTER JOIN order_stats o ON p.email = o.customer_email;
 
 -- Permisos para la vista en Supabase
 GRANT SELECT ON public.customer_profiles TO service_role;
+
+-- 11. Tabla de Reseñas (Reviews)
+CREATE TABLE IF NOT EXISTS public.reviews (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_email TEXT NOT NULL,
+    rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+    comment TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- RLS Policies para Reviews
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Reseñas son visibles para todos" 
+ON public.reviews FOR SELECT 
+USING (true);
+
+CREATE POLICY "Usuarios pueden insertar sus propias reseñas" 
+ON public.reviews FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+

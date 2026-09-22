@@ -140,7 +140,7 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
                                 <span className="text-sm font-semibold uppercase tracking-widest text-(--foreground)">Selecciona tu talla</span>
                                 <button
                                     onClick={() => setIsSizeGuideOpen(true)}
-                                    className="text-sm text-gray-500 underline cursor-pointer hover:text-(--foreground) transition-colors"
+                                    className="text-sm text-primary underline cursor-pointer hover:text-primary/80 transition-colors font-bold"
                                 >
                                     Guía de tallas
                                 </button>
@@ -166,7 +166,7 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
                             <button
                                 onClick={handleAddToCart}
                                 disabled={!selectedSize}
-                                className="w-full py-5 sm:py-6 bg-(--foreground) text-(--background) rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-main hover:text-white transition-all transform hover:-translate-y-1 hover:shadow-xl hover:shadow-main/30 uppercase tracking-widest text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                                className="w-full py-5 sm:py-6 bg-primary text-on-primary rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-primary/90 transition-all transform hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/30 uppercase tracking-widest text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
                             >
                                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                                 {selectedSize ? "Agregar a la Bolsa" : "Selecciona Talla"}
@@ -230,12 +230,12 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl relative z-10 text-left overflow-y-auto max-h-[90vh]"
+                            className="bg-surface-container-low border border-outline-variant rounded-3xl p-6 md:p-8 w-full max-w-lg shadow-2xl relative z-10 text-left overflow-y-auto max-h-[90vh]"
                         >
-                            <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-zinc-800 pb-4">
-                                <h3 className="text-xl font-black uppercase tracking-wider text-(--foreground)">
-                                    Guía de Talles
-                                </h3>
+                                <div className="flex justify-between items-center mb-6 border-b border-outline-variant pb-4">
+                                    <h3 className="text-xl font-black uppercase tracking-wider text-on-surface">
+                                        Guía de Talles
+                                    </h3>
                                 <button
                                     onClick={() => setIsSizeGuideOpen(false)}
                                     className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors text-gray-400 hover:text-(--foreground)"
@@ -246,21 +246,21 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
 
                             {/* size chart table */}
                             <div className="space-y-6">
-                                <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-2xl border border-gray-100 dark:border-zinc-800">
-                                    <h4 className="font-bold text-sm text-main mb-1 uppercase tracking-widest">
+                                <div className="bg-surface-container-highest p-4 rounded-2xl border border-outline-variant">
+                                    <h4 className="font-bold text-sm text-primary mb-1 uppercase tracking-widest">
                                         Remeras Oversize & Regular
                                     </h4>
-                                    <p className="text-xs text-zinc-500 mb-3">Medidas aproximadas tomadas sobre superficie plana (en cm).</p>
+                                    <p className="text-xs text-on-surface-variant mb-3">Medidas aproximadas tomadas sobre superficie plana (en cm).</p>
                                     <table className="w-full text-sm">
                                         <thead>
-                                            <tr className="border-b border-gray-200 dark:border-zinc-800 text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
+                                            <tr className="border-b border-outline-variant text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">
                                                 <th className="py-2 text-left">Talle</th>
                                                 <th className="py-2 text-center">Ancho (Pecho)</th>
                                                 <th className="py-2 text-center">Largo Total</th>
                                                 <th className="py-2 text-center">Manga</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-(--foreground)">
+                                        <tbody className="divide-y divide-outline-variant/50 text-on-surface">
                                             <tr>
                                                 <td className="py-2 font-bold">S</td>
                                                 <td className="py-2 text-center">56 cm</td>
@@ -295,20 +295,20 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
                                     </table>
                                 </div>
 
-                                <div className="bg-gray-50 dark:bg-zinc-950 p-4 rounded-2xl border border-gray-100 dark:border-zinc-800">
-                                    <h4 className="font-bold text-sm text-main mb-1 uppercase tracking-widest">
-                                        Camisetas de Fútbol
+                                <div className="bg-surface-container-highest p-4 rounded-2xl border border-outline-variant">
+                                    <h4 className="font-bold text-sm text-primary mb-1 uppercase tracking-widest">
+
                                     </h4>
-                                    <p className="text-xs text-zinc-500 mb-3">Medidas corporales estimadas para un calce clásico y deportivo.</p>
+                                    <p className="text-xs text-on-surface-variant mb-3">Medidas corporales estimadas para un calce clásico y deportivo.</p>
                                     <table className="w-full text-sm">
                                         <thead>
-                                            <tr className="border-b border-gray-200 dark:border-zinc-800 text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
+                                            <tr className="border-b border-outline-variant text-[10px] text-on-surface-variant uppercase tracking-wider font-bold">
                                                 <th className="py-2 text-left">Talle</th>
                                                 <th className="py-2 text-center">Ancho (Pecho)</th>
                                                 <th className="py-2 text-center">Largo Total</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-gray-100 dark:divide-zinc-800 text-(--foreground)">
+                                        <tbody className="divide-y divide-outline-variant/50 text-on-surface">
                                             <tr>
                                                 <td className="py-2 font-bold">S</td>
                                                 <td className="py-2 text-center">50 cm</td>
@@ -338,8 +338,8 @@ export default function ProductClient({ product, relatedProducts }: ProductClien
                                     </table>
                                 </div>
 
-                                <div className="text-xs text-zinc-500 leading-relaxed border-t border-gray-100 dark:border-zinc-800 pt-4 flex flex-col gap-1.5">
-                                    <p className="font-semibold text-zinc-400 uppercase tracking-widest text-[10px]">¿Cómo tomar las medidas?</p>
+                                <div className="text-xs text-on-surface-variant leading-relaxed border-t border-outline-variant pt-4 flex flex-col gap-1.5">
+                                    <p className="font-semibold text-outline uppercase tracking-widest text-[10px]">¿Cómo tomar las medidas?</p>
                                     <p>📐 <strong>Ancho:</strong> Medí de axila a axila de una prenda que te quede bien, a lo ancho sobre una mesa.</p>
                                     <p>📏 <strong>Largo:</strong> Medí desde la costura más alta del hombro (junto al cuello) en línea recta hasta el borde inferior.</p>
                                 </div>

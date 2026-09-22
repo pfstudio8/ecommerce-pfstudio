@@ -60,7 +60,6 @@ export default function RootLayout({
   return (
     <html lang="es" className="light scroll-smooth bg-background text-on-surface">
       <head>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
       <body className={`${inter.variable} ${plusJakartaSans.variable} antialiased min-h-screen bg-background text-on-surface flex flex-col`}>
         <Toaster position="top-center" richColors />

@@ -61,23 +61,7 @@ export default function CategoryExplore() {
                         </div>
                     </Link>
                     
-                    {/* Category 3: Camisetas & Deportivas */}
-                    <Link href="/catalog?cat=Camisetas" className="group relative bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-primary transition-all duration-200 hover:shadow-md">
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-                                    <span className="material-symbols-outlined text-headline-md">sports_soccer</span>
-                                </div>
-                            </div>
-                            <h3 className="text-headline-sm font-headline-sm text-on-surface group-hover:text-primary transition-colors">Camisetas</h3>
-                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">Línea deportiva, conjuntos de fútbol y street style.</p>
-                        </div>
-                        <div className="mt-6 pt-3 border-t border-outline-variant/60 flex items-center justify-between text-secondary">
-                            <span className="text-label-sm font-label-sm font-medium">Ver opciones</span>
-                            <span className="material-symbols-outlined text-headline-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                        </div>
-                    </Link>
-                    
+
                     {/* Category 4: Gorras & Caps */}
                     <Link href="/catalog?cat=Gorras" className="group relative bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-primary transition-all duration-200 hover:shadow-md">
                         <div>

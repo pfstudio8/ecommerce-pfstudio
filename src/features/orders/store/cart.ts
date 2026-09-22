@@ -52,8 +52,9 @@ export const useCartStore = create<CartStore>()(
                             toast.error(`Solo hay ${maxStock} unidades disponibles en talla ${size}.`);
                             return { items: state.items };
                         }
+                        const displayName = product.name.replace("Sublimación - ", "Personalizado: ").replace(" (1 Cara)", "").replace(" (2 Caras)", "");
                         newItems[existingItemIndex].quantity = newQty;
-                        toast.success(`¡Sumaste otro ${product.name}${size && size !== 'Único' ? ' (' + size + ')' : ''} al carrito!`);
+                        toast.success(`¡Sumaste otro ${displayName}${size && size !== 'Único' && size !== 'Standard' && !displayName.includes(size) ? ' (' + size + ')' : ''} al carrito!`);
                         return { items: newItems };
                     } else {
                         // Add new item if within limit
@@ -61,7 +62,8 @@ export const useCartStore = create<CartStore>()(
                             toast.error(`No hay stock disponible para talla ${size}.`);
                             return { items: state.items };
                         }
-                        toast.success(`¡Agregaste ${product.name}${size && size !== 'Único' ? ' (' + size + ')' : ''} al carrito!`);
+                        const displayName = product.name.replace("Sublimación - ", "Personalizado: ").replace(" (1 Cara)", "").replace(" (2 Caras)", "");
+                        toast.success(`¡Agregaste ${displayName}${size && size !== 'Único' && size !== 'Standard' && !displayName.includes(size) ? ' (' + size + ')' : ''} al carrito!`);
                         return { items: [...state.items, { product, size, quantity: 1 }] };
                     }
                 });

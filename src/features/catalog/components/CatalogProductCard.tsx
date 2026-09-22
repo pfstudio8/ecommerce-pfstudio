@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCartStore } from "@/features/orders/store/cart";
+import { useFavoritesStore } from "@/features/catalog/store/favorites";
 import { toast } from "sonner";
 import { Product } from "@/types/product";
 
@@ -55,10 +56,26 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
         );
     }
 
+    const { toggleFavorite, favoriteIds } = useFavoritesStore();
+    const isFav = favoriteIds.includes(product.id);
+
     return (
         <article className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col group hover:border-primary transition-colors h-full focus-within:ring-2 focus-within:ring-primary relative">
             <Link href={`/product/${product.id}`} className="relative aspect-4/5 bg-surface-container-high overflow-hidden block">
                 {tag}
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        toggleFavorite(product.id);
+                        if (!isFav) {
+                            toast.success(`Agregaste ${product.name} a favoritos`);
+                        }
+                    }}
+                    className={`absolute top-3 right-3 p-2 rounded-full z-20 shadow-sm transition-all hover:scale-110 ${isFav ? 'bg-error/10 text-error' : 'bg-surface/80 text-outline hover:text-error'}`}
+                    aria-label={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+                >
+                    <span className={`material-symbols-outlined text-headline-sm ${isFav ? 'material-symbols-fill' : ''}`}>favorite</span>
+                </button>
                 <Image 
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

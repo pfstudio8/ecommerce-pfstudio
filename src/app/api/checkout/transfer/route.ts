@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
     try {
         const ip = request.headers.get('x-forwarded-for') || 'unknown';
-        if (!checkoutLimiter.check(ip)) {
+        const { success } = await checkoutLimiter.limit(`transfer_${ip}`);
+        if (!success) {
             return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
         }
 
@@ -18,31 +19,55 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No items provided" }, { status: 400 });
         }
 
-        const supabase = createAdminClient();
-        const productIds = items.map((item: any) => item.product.id);
-        
-        const { data: dbProducts, error: dbError } = await supabase
-            .from('products')
-            .select('id, name, price')
-            .in('id', productIds);
+        const normalItems = items.filter((item: any) => !item.product.id.startsWith('custom-'));
+        const customItems = items.filter((item: any) => item.product.id.startsWith('custom-'));
 
-        if (dbError || !dbProducts) {
-            return NextResponse.json({ error: 'Error fetching products from database' }, { status: 500 });
+        const supabase = createAdminClient();
+        const productIds = normalItems.map((item: any) => item.product.id);
+        
+        let dbProducts: any[] = [];
+        if (productIds.length > 0) {
+            const { data, error: dbError } = await supabase
+                .from('products')
+                .select('id, name, price')
+                .in('id', productIds);
+
+            if (dbError) {
+                return NextResponse.json({ error: 'Error fetching products from database' }, { status: 500 });
+            }
+            if (data) dbProducts = data;
         }
 
         const productMap = new Map(dbProducts.map(p => [p.id, p]));
 
         // Early validation to prevent Data Littering
-        for (const item of items) {
+        for (const item of normalItems) {
             if (!productMap.has(item.product.id)) {
                 return NextResponse.json({ error: `Product ${item.product.id} not found or unavailable` }, { status: 400 });
             }
         }
 
+        // Validate custom items
+        const { CUSTOM_PRICING } = await import('@/utils/customPricing');
+        for (const item of customItems) {
+            const match = item.product.id.match(/^custom-(.+?)-\d+$/);
+            if (!match || !(match[1] in CUSTOM_PRICING)) {
+                return NextResponse.json({ error: `Custom product invalid or unavailable` }, { status: 400 });
+            }
+        }
+
         // Calculate total amount based on real prices
         const totalAmount = items.reduce((acc: number, item: any) => {
-            const dbProduct = productMap.get(item.product.id);
-            const realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            let realPrice = 0;
+            if (item.product.id.startsWith('custom-')) {
+                const match = item.product.id.match(/^custom-(.+?)-\d+$/);
+                if (match && CUSTOM_PRICING[match[1]]) {
+                    realPrice = CUSTOM_PRICING[match[1]];
+                }
+            } else {
+                const dbProduct = productMap.get(item.product.id);
+                realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            }
             return acc + (realPrice * item.quantity);
         }, 0);
 
@@ -70,8 +95,17 @@ export async function POST(request: Request) {
 
         // Insert the line items
         const orderItemsToInsert = items.map((item: any) => {
-            const dbProduct = productMap.get(item.product.id);
-            const realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            let realPrice = 0;
+            if (item.product.id.startsWith('custom-')) {
+                const match = item.product.id.match(/^custom-(.+?)-\d+$/);
+                if (match && CUSTOM_PRICING[match[1]]) {
+                    realPrice = CUSTOM_PRICING[match[1]];
+                }
+            } else {
+                const dbProduct = productMap.get(item.product.id);
+                realPrice = dbProduct ? Number(dbProduct.price) : 0;
+            }
+            
             return {
                 order_id: orderData.id,
                 product_id: item.product.id || null,
@@ -94,12 +128,27 @@ export async function POST(request: Request) {
         if (user_email) {
             try {
                 const itemsForEmail = items.map((item: any) => {
-                    const dbProduct = productMap.get(item.product.id);
+                    let name = item.product.name;
+                    let price = Number(item.product.price);
+
+                    if (item.product.id.startsWith('custom-')) {
+                        const match = item.product.id.match(/^custom-(.+?)-\d+$/);
+                        if (match && CUSTOM_PRICING[match[1]]) {
+                            price = CUSTOM_PRICING[match[1]];
+                        }
+                    } else {
+                        const dbProduct = productMap.get(item.product.id);
+                        if (dbProduct) {
+                            name = dbProduct.name;
+                            price = Number(dbProduct.price);
+                        }
+                    }
+
                     return {
-                        name: dbProduct ? dbProduct.name : item.product.name,
+                        name: name,
                         size: item.size,
                         quantity: item.quantity,
-                        price: dbProduct ? Number(dbProduct.price) : Number(item.product.price)
+                        price: price
                     };
                 });
                 const { sendPurchaseSuccessEmail } = await import('@/lib/sendEmail');

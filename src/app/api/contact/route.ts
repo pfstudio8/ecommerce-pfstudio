@@ -12,7 +12,8 @@ const contactSchema = z.object({
 export async function POST(request: Request) {
     try {
         const ip = request.headers.get('x-forwarded-for') || 'unknown';
-        if (!contactLimiter.check(ip)) {
+        const { success } = await contactLimiter.limit(`contact_${ip}`);
+        if (!success) {
             return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
         }
 

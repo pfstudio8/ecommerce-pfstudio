@@ -1,37 +1,29 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 import CatalogProductCard from "./CatalogProductCard";
 import { Product } from "@/types/product";
 
-export default function FeaturedProducts() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+export default async function FeaturedProducts() {
+    let products: Product[] = [];
+    
+    try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        const { data, error } = await supabase
+            .from('products')
+            .select('*, product_stock(size, stock_quantity)')
+            .limit(4);
 
-    useEffect(() => {
-        const fetchFeaturedProducts = async () => {
-            try {
-                // Fetch the latest 4 products that have images
-                const { data, error } = await supabase
-                    .from('products')
-                    .select('*, product_stock(size, stock_quantity)')
-                    .limit(4);
+        if (error) throw error;
+        if (data) {
+            products = data as Product[];
+        }
+    } catch (error) {
+        console.error('Error fetching featured products:', error);
+    }
 
-                if (error) throw error;
-                if (data) {
-                    setProducts(data as Product[]);
-                }
-            } catch (error) {
-                console.error('Error fetching featured products:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchFeaturedProducts();
-    }, []);
 
     return (
         <section id="remeras" className="py-space-xl bg-surface border-b border-outline-variant">
@@ -51,19 +43,7 @@ export default function FeaturedProducts() {
                 
                 {/* 4-Column Product Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter-desktop">
-                    {isLoading ? (
-                        // Loading skeletons
-                        Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden h-100 flex flex-col animate-pulse">
-                                <div className="aspect-4/5 bg-surface-container-high w-full"></div>
-                                <div className="p-4 flex flex-col gap-3 flex-1">
-                                    <div className="h-4 bg-surface-container-high rounded w-1/3"></div>
-                                    <div className="h-5 bg-surface-container-high rounded w-3/4"></div>
-                                    <div className="mt-auto h-8 bg-surface-container-high rounded w-full"></div>
-                                </div>
-                            </div>
-                        ))
-                    ) : products.length > 0 ? (
+                    {products.length > 0 ? (
                         products.map(product => (
                             <CatalogProductCard key={product.id} product={product} />
                         ))

@@ -21,7 +21,7 @@ const DEFAULT_CATEGORIES = [
     "Oversize", 
     "Gorras", 
     "Botineros", 
-    "Camisetas", 
+
     "Tazas", 
     "Encendedores", 
     "Llaveros", 

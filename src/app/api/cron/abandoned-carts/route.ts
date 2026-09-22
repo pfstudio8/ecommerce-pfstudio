@@ -28,6 +28,7 @@ export async function GET(request: Request) {
             .from('orders')
             .select('id, customer_email, created_at')
             .eq('status', 'pending')
+            .neq('payment_method', 'transfer')
             .lt('created_at', twoHoursAgo.toISOString());
 
         if (ordersError || !pendingOrders) {

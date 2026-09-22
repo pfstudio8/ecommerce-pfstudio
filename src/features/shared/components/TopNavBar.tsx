@@ -179,18 +179,17 @@ export default function TopNavBar() {
                     )}
                 </div>
 
-                {/* Navigation Links */}
                 <nav className="hidden md:flex items-center gap-space-sm mx-auto">
-                    <Link href="#catalogo" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
+                    <Link href="/#catalogo" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
                         Catálogo
                     </Link>
-                    <Link href="#personalizador" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
+                    <Link href="/#personalizador" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
                         Diseñá tu Producto
                     </Link>
-                    <Link href="#insumos" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
+                    <Link href="/#insumos" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
                         Insumos
                     </Link>
-                    <Link href="#comunidad" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
+                    <Link href="/#comunidad" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
                         Comunidad
                     </Link>
                 </nav>
@@ -198,7 +197,7 @@ export default function TopNavBar() {
                 {/* Trailing Action Buttons */}
                 <div className="flex items-center gap-space-sm">
                     {/* Diseñar en Vivo CTA */}
-                    <Link href="#personalizador" className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-tertiary-fixed hover:bg-tertiary-container text-on-tertiary-fixed font-headline-sm text-label-md rounded-lg shadow-sm active:scale-95 transition-all">
+                    <Link href="/#personalizador" className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-tertiary-fixed hover:bg-tertiary-container text-on-tertiary-fixed font-headline-sm text-label-md rounded-lg shadow-sm active:scale-95 transition-all">
                         <span className="material-symbols-outlined text-headline-sm material-symbols-fill">auto_fix_high</span>
                         Diseñar en Vivo
                     </Link>
@@ -285,14 +284,21 @@ export default function TopNavBar() {
                                     <div className="px-4 py-2 text-xs font-bold text-secondary uppercase tracking-widest">
                                         Navegación
                                     </div>
-                                    <Link href="#catalogo" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 px-4 rounded-xl flex items-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors font-medium">
+                                    <Link href="/#catalogo" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-4 px-4 py-2.5">
                                         Catálogo
+                                        <span className="material-symbols-outlined">chevron_right</span>
                                     </Link>
-                                    <Link href="#personalizador" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 px-4 rounded-xl flex items-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors font-medium">
+                                    <Link href="/#personalizador" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-4 px-4 py-2.5">
                                         Diseñá tu Producto
+                                        <span className="material-symbols-outlined">chevron_right</span>
                                     </Link>
-                                    <Link href="#insumos" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 px-4 rounded-xl flex items-center text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors font-medium">
+                                    <Link href="/#insumos" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-4 px-4 py-2.5">
                                         Insumos
+                                        <span className="material-symbols-outlined">chevron_right</span>
+                                    </Link>
+                                    <Link href="/#comunidad" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between px-4 py-2.5">
+                                        Comunidad
+                                        <span className="material-symbols-outlined">chevron_right</span>
                                     </Link>
                                 </div>
                             </div>

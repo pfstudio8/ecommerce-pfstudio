@@ -9,16 +9,18 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_TYPES: Record<string, string[]> = {
-    "Llaveros": ["Cuadrado", "Redondo", "Corazón", "Cinta", "Destapador"],
-    "Tazas": ["Cerámica Clásica", "Mágica", "Cónica", "Plástico", "Vidrio", "Chopp"],
-    "Gorras": ["Trucker", "Plana", "Curva", "Bucket (Piluso)"],
+    "Llaveros": ["Círculo", "Corazón", "Camiseta", "Credencial Reforzada"],
+    "Tazas": ["Mágicas", "Cerámica", "Chopp Cervecero"],
+    "Gorras": ["Trucker", "Curva"],
     "Vasos": ["Térmico", "Vidrio", "Acrílico", "Chopp"],
-    "Camisetas": ["Fútbol", "Básquet", "Entrenamiento"],
-    "Botineros": ["Estándar", "Premium"],
+    "Botineros": ["Normal"],
     "Accesorios": ["Mochila", "Riñonera", "Billetera", "Morral"],
     "Clásicas": ["Algodón Peinado", "Spun"],
-    "Boxy Fit": ["Algodón Pesado"],
-    "Oversize": ["Algodón Pesado"]
+    "Boxy Fit": ["Algodón Peinado"],
+    "Oversize": ["Algodón Peinado"],
+    "Buzos": ["Hoodie", "Cuello Redondo"],
+    "Shorts": ["Deportivo", "Algodón"],
+    "Pantalones": ["Jogger", "Cargo"]
 };
 export default function CreateProduct() {
     const router = useRouter();
@@ -26,7 +28,7 @@ export default function CreateProduct() {
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
-    const [categories, setCategories] = useState<string[]>(["Clásicas", "Boxy Fit", "Oversize", "Gorras", "Botineros", "Camisetas", "Tazas", "Llaveros", "Vasos", "Accesorios"]);
+    const [categories, setCategories] = useState<string[]>(["Clásicas", "Boxy Fit", "Oversize", "Buzos", "Pantalones", "Shorts", "Gorras", "Botineros", "Tazas", "Llaveros", "Vasos", "Accesorios"]);
 
     useEffect(() => {
         const fetchCategories = async () => {

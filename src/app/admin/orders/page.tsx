@@ -1,12 +1,13 @@
 "use client";
 import { FourSquare } from "react-loading-indicators";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { DollarSign, ShoppingBag, TrendingUp, Filter, Download, Package, Truck, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth";
 import { toast } from "sonner";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 
 interface Order {
     id: string;
@@ -36,12 +37,24 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function AdminOrdersPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+            <AdminOrdersContent />
+        </Suspense>
+    );
+}
+
+function AdminOrdersContent() {
     const isInitialized = useAuthStore((state) => state.isInitialized);
+    const searchParams = useSearchParams();
+    const searchQuery = searchParams?.get('search')?.toLowerCase() || "";
+    
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+    const [filterStatus, setFilterStatus] = useState<string>("all");
     
     // Tracking form states
     const [trackingNumber, setTrackingNumber] = useState("");
@@ -146,6 +159,24 @@ export default function AdminOrdersPage() {
         }
     };
 
+    const handleExport = () => {
+        if (orders.length === 0) return toast.error("No hay pedidos para exportar.");
+        
+        const csvHeader = "ID,Fecha,Cliente,Monto,Estado\n";
+        const csvBody = orders.map(o => {
+            return `${o.id.split('-')[0]},${new Date(o.created_at).toLocaleDateString('es-AR')},${o.customer_email},${o.total_amount || 0},${STATUS_LABELS[o.status] || o.status}`;
+        }).join("\n");
+        
+        const blob = new Blob([csvHeader + csvBody], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `pedidos_${new Date().toLocaleDateString('es-AR').replace(/\//g, '-')}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // Calculations for Charts
     const velocityData = orders.slice(0, 7).reverse().map(order => {
         const maxAmount = Math.max(...orders.slice(0, 7).map(o => o.total_amount || 0));
@@ -163,6 +194,15 @@ export default function AdminOrdersPage() {
         shippedPct: Math.round((shippedCount / totalCount) * 100),
         cancelledPct: Math.round((cancelledCount / totalCount) * 100)
     };
+
+    let filteredOrders = filterStatus === "all" ? orders : orders.filter(o => o.status === filterStatus);
+    
+    if (searchQuery) {
+        filteredOrders = filteredOrders.filter(o => 
+            o.id.toLowerCase().includes(searchQuery) || 
+            o.customer_email.toLowerCase().includes(searchQuery)
+        );
+    }
 
 
     return (
@@ -222,10 +262,20 @@ export default function AdminOrdersPage() {
                         <p className="text-xs text-outline">Detalle general de órdenes recibidas.</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button className="px-3.5 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-bold text-on-surface-variant hover:text-on-surface hover:border-primary transition-all flex items-center gap-2">
-                            <Filter className="w-4 h-4 text-primary" /> Filtrar
-                        </button>
-                        <button className="px-3.5 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-bold text-on-surface-variant hover:text-on-surface hover:border-primary transition-all flex items-center gap-2">
+                        <select 
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="px-3.5 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-bold text-on-surface-variant hover:text-on-surface hover:border-primary transition-all outline-none appearance-none cursor-pointer"
+                        >
+                            <option value="all">Todos los Estados</option>
+                            {STATUS_OPTIONS.map(status => (
+                                <option key={status} value={status}>{STATUS_LABELS[status]}</option>
+                            ))}
+                        </select>
+                        <button 
+                            onClick={handleExport}
+                            className="px-3.5 py-2 bg-surface border border-outline-variant rounded-xl text-xs font-bold text-on-surface-variant hover:text-on-surface hover:border-primary transition-all flex items-center gap-2"
+                        >
                             <Download className="w-4 h-4 text-primary" /> Exportar
                         </button>
                     </div>
@@ -244,14 +294,14 @@ export default function AdminOrdersPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[#2d2e26]">
-                            {orders.length === 0 ? (
+                            {filteredOrders.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="text-center py-16 text-outline text-sm font-medium">
                                         No hay pedidos registrados aún.
                                     </td>
                                 </tr>
                             ) : (
-                                orders.map((order) => (
+                                filteredOrders.map((order) => (
                                     <tr key={order.id} className="hover:bg-surface-container-highest/30 transition-colors group">
                                         <td className="px-6 py-5 font-mono text-xs text-primary font-bold">
                                             #{order.id.split('-')[0].toUpperCase()}
@@ -310,7 +360,7 @@ export default function AdminOrdersPage() {
 
                 {/* Pagination */}
                 <div className="px-6 py-4 bg-surface border-t border-outline-variant flex items-center justify-between">
-                    <p className="text-xs text-outline font-medium">Mostrando <span className="text-on-surface font-bold">{orders.length > 0 ? 1 : 0}-{orders.length}</span> de <span className="text-on-surface font-bold">{orders.length}</span> pedidos</p>
+                    <p className="text-xs text-outline font-medium">Mostrando <span className="text-on-surface font-bold">{filteredOrders.length > 0 ? 1 : 0}-{filteredOrders.length}</span> de <span className="text-on-surface font-bold">{filteredOrders.length}</span> pedidos</p>
                     <div className="flex gap-2">
                         <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-surface-container-low border border-outline-variant text-outline hover:text-on-surface transition-colors"><ChevronLeft className="w-4 h-4" /></button>
                         <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-tertiary-container text-on-tertiary-container font-bold text-xs">1</button>

@@ -162,11 +162,11 @@ export default function AdminMessagesPage() {
                     </div>
 
                     <div className="bg-surface-container-low backdrop-blur-md p-6 rounded-2xl border border-outline-variant shadow-lg space-y-4">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-outline">Etiquetas</h3>
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-outline">Etiquetas rápidas</h3>
                         <div className="flex flex-wrap gap-2">
-                            <span className="bg-primary-container text-on-primary-container border border-primary px-3 py-1 rounded-full text-xs font-semibold cursor-pointer hover:bg-primary-container transition-colors">Soporte</span>
-                            <span className="bg-surface text-on-surface-variant border border-outline-variant px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:text-on-surface transition-colors">Consultas</span>
-                            <span className="bg-surface text-on-surface-variant border border-outline-variant px-3 py-1 rounded-full text-xs font-medium cursor-pointer hover:text-on-surface transition-colors">Comentarios</span>
+                            <button onClick={() => setSearchTerm(searchTerm === "soporte" ? "" : "soporte")} className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors border ${searchTerm.toLowerCase() === "soporte" ? "bg-primary-container text-on-primary-container border-primary" : "bg-surface text-on-surface-variant border-outline-variant hover:text-on-surface"}`}>Soporte</button>
+                            <button onClick={() => setSearchTerm(searchTerm === "consulta" ? "" : "consulta")} className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors border ${searchTerm.toLowerCase() === "consulta" ? "bg-primary-container text-on-primary-container border-primary" : "bg-surface text-on-surface-variant border-outline-variant hover:text-on-surface"}`}>Consultas</button>
+                            <button onClick={() => setSearchTerm(searchTerm === "reseña" ? "" : "reseña")} className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors border ${searchTerm.toLowerCase() === "reseña" ? "bg-primary-container text-on-primary-container border-primary" : "bg-surface text-on-surface-variant border-outline-variant hover:text-on-surface"}`}>Reseñas</button>
                         </div>
                     </div>
                 </div>

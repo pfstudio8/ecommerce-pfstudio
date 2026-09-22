@@ -24,8 +24,17 @@ function CatalogGridContent() {
     const PAGE_SIZE = 12;
 
     // Categories available in the store
-    const categories = ["Todas", "Oversize", "Boxy Fit", "Clásicas", "Camisetas", "Gorras", "Accesorios"];
+    const categories = ["Todas", "Oversize", "Boxy Fit", "Clásicas", "Buzos", "Pantalones", "Shorts", "Gorras", "Llaveros", "Tazas", "Vasos", "Accesorios"];
     const sizes = ["Todos", "S", "M", "L", "XL", "XXL"];
+    
+    const categoryTypes: Record<string, string[]> = {
+        "Gorras": ["Todos", "Trucker", "Curva"],
+        "Vasos": ["Todos", "Térmico", "Vidrio", "Acrílico", "Chopp"],
+        "Llaveros": ["Todos", "Círculo", "Corazón", "Camiseta", "Credencial Reforzada"],
+        "Tazas": ["Todos", "Mágicas", "Cerámica", "Chopp Cervecero"],
+        "Accesorios": ["Todos", "Mochila", "Riñonera", "Billetera", "Morral"],
+    };
+    const isApparel = (cat: string) => !Object.keys(categoryTypes).includes(cat);
 
     const fetchProducts = async (pageNum: number, isLoadMore = false) => {
         if (isLoadMore) setIsLoadingMore(true);
@@ -44,24 +53,31 @@ function CatalogGridContent() {
                 if (filterCategory === "Accesorios") {
                     query = query.in('category', ['Llaveros', 'Vasos', 'Tazas', 'Encendedores', 'Accesorios']);
                 } else {
-                    query = query.eq('category', filterCategory);
+                    query = query.ilike('category', `%${filterCategory}%`);
                 }
             }
 
             const from = (pageNum - 1) * PAGE_SIZE;
             const to = from + PAGE_SIZE - 1;
             
-            const { data, count, error } = await query.range(from, to).order('created_at', { ascending: false });
+            const { data, count, error } = await query.range(from, to).order('id');
 
             if (error) throw error;
             if (data) {
                 let fetchedProducts = data as Product[];
 
-                // frontend filter for size since inner join drops other size arrays
+                // frontend filter for size or type
                 if (filterSize !== "Todos") {
-                    fetchedProducts = fetchedProducts.filter(p => 
-                        p.product_stock?.some(s => s.size === filterSize && s.stock_quantity > 0)
-                    );
+                    if (isApparel(filterCategory) || filterCategory === "Todas") {
+                        fetchedProducts = fetchedProducts.filter(p => 
+                            p.product_stock?.some(s => s.size === filterSize && s.stock_quantity > 0)
+                        );
+                    } else {
+                        // For non apparel, filter by description (type)
+                        fetchedProducts = fetchedProducts.filter(p => 
+                            p.description?.toLowerCase().includes(filterSize.toLowerCase())
+                        );
+                    }
                 }
 
                 if (isLoadMore) {
@@ -131,21 +147,23 @@ function CatalogGridContent() {
                         </div>
                     </div>
 
-                    {/* Size Filter */}
+                    {/* Size / Type Filter */}
                     <div>
-                        <h3 className="text-headline-sm font-headline-sm text-on-surface mb-3">Talles</h3>
+                        <h3 className="text-headline-sm font-headline-sm text-on-surface mb-3">
+                            {isApparel(filterCategory) || filterCategory === "Todas" ? "Talles" : "Tipo"}
+                        </h3>
                         <div className="flex flex-wrap gap-2">
-                            {sizes.map(size => (
+                            {(isApparel(filterCategory) || filterCategory === "Todas" ? sizes : categoryTypes[filterCategory] || ["Todos"]).map(filterVal => (
                                 <button
-                                    key={size}
-                                    onClick={() => setFilterSize(size)}
-                                    className={`w-10 h-10 rounded-lg text-label-md font-label-md flex items-center justify-center transition-colors ${
-                                        filterSize === size
+                                    key={filterVal}
+                                    onClick={() => setFilterSize(filterVal)}
+                                    className={`px-3 h-10 rounded-lg text-label-md font-label-md flex items-center justify-center transition-colors ${
+                                        filterSize === filterVal
                                         ? "bg-primary text-on-primary font-bold shadow-sm"
                                         : "bg-surface-container-lowest border border-outline-variant text-on-surface hover:bg-surface-container hover:border-primary/50"
                                     }`}
                                 >
-                                    {size}
+                                    {filterVal}
                                 </button>
                             ))}
                         </div>
