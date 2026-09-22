@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useAuthStore } from "@/features/auth/store/auth";
@@ -26,6 +26,16 @@ export default function AuthModal() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [authError, setAuthError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isModalOpen) {
+                setModalOpen(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isModalOpen, setModalOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -183,7 +193,7 @@ export default function AuthModal() {
                         className="absolute inset-0 bg-surface/50 backdrop-blur-sm"
                     />
 
-                    <div className="relative w-full flex items-center justify-center max-h-[95vh] overflow-y-auto">
+                    <div className="relative w-full flex items-center justify-center max-h-[95vh] overflow-y-auto pointer-events-none">
                         <AnimatePresence custom={direction} mode="wait">
                             {isForgotPassword ? (
                                 <motion.div
@@ -194,7 +204,7 @@ export default function AuthModal() {
                                     animate="center"
                                     exit="exit"
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                    className="relative w-full max-w-[430px] apple-glass-card rounded-2xl p-8 sm:p-10 shadow-xl"
+                                    className="relative w-full max-w-107.5 apple-glass-card rounded-2xl p-8 sm:p-10 shadow-xl pointer-events-auto"
                                 >
                                     <button onClick={() => setModalOpen(false)} className="absolute top-4 right-4 text-outline/60 hover:text-on-surface">
                                         <X className="w-5 h-5" />
@@ -234,7 +244,7 @@ export default function AuthModal() {
                                     animate="center"
                                     exit="exit"
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                    className="relative w-full max-w-[430px] apple-glass-card rounded-2xl p-8 sm:p-10 shadow-xl"
+                                    className="relative w-full max-w-107.5 apple-glass-card rounded-2xl p-8 sm:p-10 shadow-xl pointer-events-auto"
                                 >
                                     <button onClick={() => setModalOpen(false)} className="absolute top-4 right-4 text-outline/60 hover:text-on-surface">
                                         <X className="w-5 h-5" />
@@ -355,7 +365,7 @@ export default function AuthModal() {
                                     animate="center"
                                     exit="exit"
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                                    className="relative w-full max-w-[540px] apple-glass rounded-3xl border border-outline-variant/40 shadow-[0_16px_40px_-12px_rgba(49,68,46,0.08)] p-8 sm:p-11"
+                                    className="relative w-full max-w-135 apple-glass rounded-3xl border border-outline-variant/40 shadow-[0_16px_40px_-12px_rgba(49,68,46,0.08)] p-8 sm:p-11 pointer-events-auto"
                                 >
                                     <button onClick={() => setModalOpen(false)} className="absolute top-4 right-4 text-outline/60 hover:text-on-surface">
                                         <X className="w-5 h-5" />
@@ -488,14 +498,14 @@ export default function AuthModal() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.05 }}
-                    className="fixed inset-0 z-[1000] flex flex-col items-center justify-center p-4 bg-surface backdrop-blur-3xl"
+                    className="fixed inset-0 z-1000 flex flex-col items-center justify-center p-4 bg-surface backdrop-blur-3xl"
                 >
                     <div className="absolute inset-0 overflow-hidden pointer-events-none flex justify-center items-center opacity-30">
                         <motion.div 
                             initial={{ scale: 0, rotate: 0 }}
                             animate={{ scale: 1.5, rotate: 180 }}
                             transition={{ duration: 3, ease: "easeOut" }}
-                            className="w-[80vw] h-[80vw] max-w-2xl max-h-[80vw] rounded-full bg-gradient-to-tr from-primary to-transparent blur-[100px] opacity-20"
+                            className="w-[80vw] h-[80vw] max-w-2xl max-h-[80vw] rounded-full bg-linear-to-tr from-primary to-transparent blur-[100px] opacity-20"
                         />
                     </div>
 
