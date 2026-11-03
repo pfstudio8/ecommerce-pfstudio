@@ -5,196 +5,242 @@ import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useCartStore } from '@/features/orders/store/cart';
 import { supabase } from '@/lib/supabase';
-import { CheckCircle, Copy, MessageCircle, ArrowRight, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { CheckCircle, Copy, MessageCircle, ArrowRight, Landmark, CreditCard, Hash, DollarSign, User, ShieldCheck } from 'lucide-react';
 import { toast } from "sonner";
-import styles from '@/app/success/TransactionAnimation.module.css';
+import ProcessingOverlay from '@/components/ProcessingOverlay';
 
 function TransferSuccessContent() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('orderId');
+    const amountParam = searchParams.get('amount');
+    const parsedAmount = amountParam ? Number(amountParam) : 0;
     const { clearCart } = useCartStore();
-    const [copied, setCopied] = useState<'cbu' | 'alias' | 'total' | null>(null);
+    const [copiedField, setCopiedField] = useState<string | null>(null);
     const [storeInfo, setStoreInfo] = useState<any>(null);
+    const [bankInfo, setBankInfo] = useState<any>(null);
+    const [orderData, setOrderData] = useState<{ total_amount: number; status: string; customer_email: string } | null>(null);
 
     useEffect(() => {
-        const fetchSettings = async () => {
-            const { data } = await supabase
+        const fetchSettingsAndOrder = async () => {
+            // 1. Cargar configuraciones de tienda y banco
+            const { data: settingsData } = await supabase
                 .from('settings')
-                .select('value')
-                .eq('key', 'store_info')
-                .single();
-            if (data?.value) setStoreInfo(data.value);
+                .select('key, value')
+                .in('key', ['store_info', 'bank_info']);
+            
+            if (settingsData) {
+                const store = settingsData.find(item => item.key === 'store_info')?.value;
+                const bank = settingsData.find(item => item.key === 'bank_info')?.value;
+                if (store) setStoreInfo(store);
+                if (bank) setBankInfo(bank);
+            }
+
+            // 2. Cargar datos del pedido
+            if (orderId) {
+                const { data: order } = await supabase
+                    .from('orders')
+                    .select('total_amount, status, customer_email')
+                    .eq('id', orderId)
+                    .single();
+
+                if (order) setOrderData(order);
+            }
         };
-        fetchSettings();
-    }, []);
 
-    // Fallback bank details if not stored yet
-    const bankDetails = {
-        bankName: storeInfo?.bankName || "Naranja X",
-        accountHolder: storeInfo?.accountHolder || "Paula Alvarenga",
-        cbu: storeInfo?.cbu || "4530000800010655590139",
-        alias: storeInfo?.alias || "PFSTUDIO.VENTAS",
-        cuit: storeInfo?.cuit || "27-44685115-8"
-    };
+        fetchSettingsAndOrder();
+    }, [orderId]);
 
-    const whatsappNumber = storeInfo?.whatsapp || "5493704724837";
-
+    // Vaciar el carrito al llegar a la página de éxito
     useEffect(() => {
-        // Clear the cart when they land on the success page
         clearCart();
     }, [clearCart]);
 
-    const handleCopy = (text: string, type: 'cbu' | 'alias' | 'total') => {
+    const bankDetails = {
+        bankName: bankInfo?.bank || bankInfo?.bankName || storeInfo?.bankName || "Naranja X",
+        accountHolder: bankInfo?.holder || bankInfo?.accountHolder || storeInfo?.accountHolder || "Paula Alvarenga",
+        cbu: bankInfo?.cbu || storeInfo?.cbu || "4530000800010655590139",
+        alias: bankInfo?.alias || storeInfo?.alias || "PFSTUDIO.VENTAS",
+        cuit: bankInfo?.cuit || storeInfo?.cuit || "27-44685115-8"
+    };
+
+    const whatsappNumber = storeInfo?.whatsapp || "5493704245651";
+    const orderReference = orderId ? orderId.split('-')[0].toUpperCase() : "";
+    const totalAmount = orderData?.total_amount || parsedAmount || 0;
+
+    const handleCopy = (text: string, fieldName: string) => {
         navigator.clipboard.writeText(text);
-        setCopied(type);
-        toast.success("Copiado al portapapeles");
-        setTimeout(() => setCopied(null), 2000);
+        setCopiedField(fieldName);
+        toast.success(`"${text}" copiado al portapapeles`);
+        setTimeout(() => setCopiedField(null), 2000);
     };
 
     if (!orderId) {
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
-                <p className="text-xl font-medium mb-4">No se encontró el número de orden.</p>
-                <Link href="/" className="text-main hover:underline flex items-center gap-2">
+                <p className="text-xl font-medium mb-4">No se encontró el número de pedido.</p>
+                <Link href="/" className="text-primary hover:underline flex items-center gap-2">
                     Volver al inicio <ArrowRight className="w-4 h-4" />
                 </Link>
             </div>
         );
     }
 
-    const whatsappMessage = encodeURIComponent(`Hola! Acabo de realizar una compra en la web. Mi número de orden es: ${orderId.split('-')[0].toUpperCase()}. Te adjunto el comprobante de transferencia.`);
+    const whatsappMessage = encodeURIComponent(
+        `¡Hola PF STUDIO! Realicé el pedido #${orderReference} por un total de $${totalAmount.toLocaleString('es-AR')}. Te adjunto el comprobante de la transferencia para confirmar el pago.`
+    );
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
     return (
-        <div className="min-h-screen pt-24 pb-12 px-6 flex flex-col items-center bg-background text-on-background">
-            <div className="max-w-xl w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        <div className="min-h-screen pt-24 pb-16 px-4 sm:px-6 flex flex-col items-center bg-background text-on-surface">
+            <div className="max-w-xl w-full mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-500">
+                
                 {/* Header Success Section */}
-                <div className="text-center space-y-4">
-                    {/* Clean Success Icon */}
-                    <div className="flex justify-center mb-6">
-                        <div className="w-20 h-20 bg-primary-container/30 border border-primary/20 rounded-full flex items-center justify-center animate-pulse">
-                            <CheckCircle className="w-10 h-10 text-primary" />
+                <div className="text-center space-y-3">
+                    <div className="flex justify-center mb-4">
+                        <div className="w-16 h-16 bg-primary-container border border-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/20">
+                            <CheckCircle className="w-8 h-8 text-on-primary-container" />
                         </div>
                     </div>
                     
-                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-on-surface">
-                        ¡Tu pedido fue registrado!
+                    <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-on-surface font-sans">
+                        ¡Pedido #{orderReference} Registrado!
                     </h1>
-                    <p className="text-on-surface-variant text-lg">
-                        Para recibir tus productos, recordá que debés abonar mediante transferencia bancaria.
+                    <p className="text-on-surface-variant text-sm sm:text-base max-w-md mx-auto">
+                        Para comenzar a preparar tu pedido, transferí el monto exacto a la siguiente cuenta bancaria.
                     </p>
                 </div>
 
-                {/* Order ID Banner */}
-                <div className="bg-surface-container border border-outline-variant rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-                    <div>
-                        <p className="text-sm font-medium text-on-surface-variant mb-1">
-                            Número de Orden
-                        </p>
-                        <p className="text-2xl font-mono font-bold text-on-surface">
-                            #{orderId.split('-')[0].toUpperCase()}
-                        </p>
-                    </div>
-                    <div className="text-primary font-bold bg-primary-container/30 px-4 py-2 rounded-full border border-primary/20 shadow-sm text-sm uppercase tracking-widest">
-                        Pendiente de Pago
-                    </div>
-                </div>
-
-                {/* Bank Details Card */}
-                <div className="bg-surface-container-lowest border border-outline-variant rounded-3xl p-6 sm:p-8 shadow-sm">
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-(--foreground)">
-                        Datos para la Transferencia
-                    </h2>
-
-                    <div className="space-y-6">
-                        {/* Info Rows */}
-                        <div className="grid gap-6 sm:grid-cols-2">
-                            <div>
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Banco</p>
-                                <p className="font-medium">{bankDetails.bankName}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Titular</p>
-                                <p className="font-medium">{bankDetails.accountHolder}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">CUIT</p>
-                                <p className="font-medium">{bankDetails.cuit}</p>
+                {/* Card de Datos Bancarios y Pago */}
+                <div className="bg-surface-container-low border border-outline-variant rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                    
+                    {/* Monto Exacto y Referencia Destacados */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6 border-b border-outline-variant">
+                        <div className="bg-surface p-4 rounded-2xl border border-outline-variant flex flex-col justify-between">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-outline">Monto Exacto a Transferir</span>
+                            <div className="flex items-center justify-between mt-2">
+                                <span className="text-2xl font-black text-primary font-sans">
+                                    ${totalAmount.toLocaleString("es-AR")}
+                                </span>
+                                <button
+                                    onClick={() => handleCopy(totalAmount.toString(), 'amount')}
+                                    className="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface transition-colors"
+                                    title="Copiar monto"
+                                >
+                                    {copiedField === 'amount' ? <CheckCircle className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+                                </button>
                             </div>
                         </div>
 
-                        <div className="h-px w-full bg-outline-variant my-4" />
-
-                        {/* Copyable Rows */}
-                        <div className="space-y-4">
-                            {/* CBU */}
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-surface-container border border-surface-container">
-                                <div>
-                                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">CBU</p>
-                                    <p className="font-mono font-bold text-lg text-on-surface">{bankDetails.cbu}</p>
-                                </div>
+                        <div className="bg-surface p-4 rounded-2xl border border-outline-variant flex flex-col justify-between">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-outline">Referencia / N° de Pedido</span>
+                            <div className="flex items-center justify-between mt-2">
+                                <span className="text-xl font-black font-mono text-on-surface">
+                                    #{orderReference}
+                                </span>
                                 <button
-                                    onClick={() => handleCopy(bankDetails.cbu, 'cbu')}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold bg-surface-container-lowest border border-outline-variant rounded-lg hover:bg-surface-container transition-colors w-full sm:w-auto text-on-surface shadow-sm"
+                                    onClick={() => handleCopy(orderReference, 'reference')}
+                                    className="p-2 hover:bg-surface-container rounded-lg text-outline hover:text-on-surface transition-colors"
+                                    title="Copiar referencia"
                                 >
-                                    {copied === 'cbu' ? <CheckCircle className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4 text-on-surface-variant" />}
-                                    {copied === 'cbu' ? 'Copiado' : 'Copiar'}
-                                </button>
-                            </div>
-
-                            {/* Alias */}
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-surface-container border border-surface-container">
-                                <div>
-                                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Alias</p>
-                                    <p className="font-mono font-bold text-lg text-on-surface">{bankDetails.alias}</p>
-                                </div>
-                                <button
-                                    onClick={() => handleCopy(bankDetails.alias, 'alias')}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold bg-surface-container-lowest border border-outline-variant rounded-lg hover:bg-surface-container transition-colors w-full sm:w-auto text-on-surface shadow-sm"
-                                >
-                                    {copied === 'alias' ? <CheckCircle className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4 text-on-surface-variant" />}
-                                    {copied === 'alias' ? 'Copiado' : 'Copiar'}
+                                    {copiedField === 'reference' ? <CheckCircle className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Instructions & Actions */}
-                <div className="space-y-6">
-                    <div className="bg-primary-container/20 border border-primary/20 rounded-2xl p-6">
-                        <h3 className="font-bold text-primary mb-2">Importante</h3>
-                        <p className="text-on-surface-variant text-sm leading-relaxed">
-                            Una vez que realices la transferencia, envianos el <strong>comprobante</strong> indicando tu <strong>número de orden</strong> a nuestro WhatsApp para que podamos procesar tu pedido y preparar el envío.
-                        </p>
+                    {/* Datos de la Cuenta */}
+                    <div className="space-y-4">
+                        <h2 className="text-xs font-black uppercase tracking-widest text-outline flex items-center gap-2">
+                            <Landmark className="w-4 h-4 text-primary" />
+                            Datos para la Transferencia
+                        </h2>
+
+                        {/* Banco y Titular */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                            <div className="p-3.5 bg-surface rounded-xl border border-outline-variant flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Banco / App</p>
+                                    <p className="font-bold text-on-surface mt-0.5">{bankDetails.bankName}</p>
+                                </div>
+                            </div>
+
+                            <div className="p-3.5 bg-surface rounded-xl border border-outline-variant flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Titular</p>
+                                    <p className="font-bold text-on-surface mt-0.5">{bankDetails.accountHolder}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Alias con botón Copiar */}
+                        <div className="p-4 bg-surface rounded-2xl border border-outline-variant flex items-center justify-between gap-3">
+                            <div>
+                                <p className="text-[10px] font-bold text-outline uppercase tracking-wider">Alias de Transferencia</p>
+                                <p className="font-mono font-black text-lg text-primary mt-0.5">{bankDetails.alias}</p>
+                            </div>
+                            <button
+                                onClick={() => handleCopy(bankDetails.alias, 'alias')}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-primary-container text-on-primary-container border border-primary rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-primary hover:text-on-primary transition-all shadow-sm"
+                            >
+                                {copiedField === 'alias' ? <CheckCircle className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                                {copiedField === 'alias' ? 'Copiado' : 'Copiar Alias'}
+                            </button>
+                        </div>
+
+                        {/* CBU con botón Copiar */}
+                        <div className="p-4 bg-surface rounded-2xl border border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="overflow-hidden">
+                                <p className="text-[10px] font-bold text-outline uppercase tracking-wider">CBU / CVU</p>
+                                <p className="font-mono font-bold text-sm text-on-surface mt-0.5 truncate">{bankDetails.cbu}</p>
+                            </div>
+                            <button
+                                onClick={() => handleCopy(bankDetails.cbu, 'cbu')}
+                                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-surface-container border border-outline-variant rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-surface-container-high transition-colors shrink-0"
+                            >
+                                {copiedField === 'cbu' ? <CheckCircle className="w-3.5 h-3.5 text-primary" /> : <Copy className="w-3.5 h-3.5" />}
+                                {copiedField === 'cbu' ? 'Copiado' : 'Copiar CBU'}
+                            </button>
+                        </div>
+
+                        {/* CUIT */}
+                        {bankDetails.cuit && (
+                            <p className="text-[11px] text-outline text-right">
+                                CUIT: <span className="font-mono font-semibold">{bankDetails.cuit}</span>
+                            </p>
+                        )}
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Botón de Enviar Comprobante por WhatsApp */}
+                    <div className="pt-2">
                         <Link
                             href={whatsappUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-[#25D366] text-white rounded-xl font-bold uppercase tracking-widest text-sm hover:scale-[1.02] transition-all shadow-lg shadow-[#25D366]/20"
+                            className="w-full py-4 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-2xl font-bold uppercase tracking-wider text-sm flex items-center justify-center gap-2.5 transition-all shadow-lg shadow-[#25D366]/20 active:scale-[1.01]"
                         >
                             <MessageCircle className="w-5 h-5 fill-current" />
-                            Enviar Comprobante
+                            Enviar Comprobante por WhatsApp
                         </Link>
-
-                        <Link
-                            href="/"
-                            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-surface-container-lowest text-on-surface border border-outline-variant rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-surface-container transition-colors shadow-sm"
-                        >
-                            Volver al Inicio
-                        </Link>
+                        <p className="text-[11px] text-center text-outline mt-2.5">
+                            Tu pedido cambiará a <strong>Pagado</strong> tan pronto como nuestro equipo confirme la acreditación.
+                        </p>
                     </div>
+                </div>
+
+                {/* Back to Home / Orders */}
+                <div className="flex justify-center gap-4 text-xs font-bold uppercase tracking-wider">
+                    <Link href="/profile" className="text-on-surface-variant hover:text-primary transition-colors py-2">
+                        Ver Mis Pedidos
+                    </Link>
+                    <span className="text-outline py-2">•</span>
+                    <Link href="/" className="text-on-surface-variant hover:text-primary transition-colors py-2">
+                        Seguir Comprando
+                    </Link>
                 </div>
             </div>
         </div>
     );
 }
-
-import ProcessingOverlay from '@/components/ProcessingOverlay';
 
 export default function TransferSuccessPage() {
     return (
@@ -202,7 +248,7 @@ export default function TransferSuccessPage() {
             <ProcessingOverlay
                 isOpen={true}
                 type="transfer"
-                title="Cargando tu orden..."
+                title="Cargando tu pedido..."
                 subtitle="Obteniendo la información bancaria e instrucciones de pago."
             />
         }>

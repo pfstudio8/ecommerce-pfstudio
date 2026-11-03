@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase";
 
 const HERO_CONTENT = [
     {
@@ -27,6 +28,34 @@ export default function LandingHero() {
     const [activeIndex, setActiveIndex] = useState(0);
     const videoRef = useRef<HTMLVideoElement>(null);
     const transitioningRef = useRef(false);
+    const [texts, setTexts] = useState({
+        badge: "Taller de Estampado & Sublimación Integral",
+        title: "PFSTUDIO — Sublimación Integral, Remeras & Diseños a Medida",
+        subtitle: "Sublimación integral en todo tipo de insumos: Remeras Boxy Fit, Gorras, Chopps, Tazas, Llaveros, Vasos y más. Personalizá tus productos en tiempo real con la mejor calidad y diseños únicos."
+    });
+
+    useEffect(() => {
+        const fetchLandingTexts = async () => {
+            try {
+                const { data } = await supabase
+                    .from('settings')
+                    .select('value')
+                    .eq('key', 'landing_texts')
+                    .single();
+
+                if (data?.value) {
+                    setTexts(prev => ({
+                        badge: data.value.badge || prev.badge,
+                        title: data.value.title || prev.title,
+                        subtitle: data.value.subtitle || prev.subtitle
+                    }));
+                }
+            } catch (err) {
+                // Keep default texts
+            }
+        };
+        fetchLandingTexts();
+    }, []);
 
     useEffect(() => {
         // Al cambiar de video, reiniciamos el bloqueo
@@ -62,13 +91,13 @@ export default function LandingHero() {
                     <div className="lg:col-span-7 flex flex-col gap-space-md">
                         <div className="inline-flex items-center gap-2 self-start bg-surface-container px-3 py-1 rounded-full border border-outline-variant">
                             <span className="material-symbols-outlined text-primary text-label-md material-symbols-fill">precision_manufacturing</span>
-                            <span className="text-label-sm font-label-sm uppercase tracking-wider text-secondary">Taller de Estampado & Sublimación Integral</span>
+                            <span className="text-label-sm font-label-sm uppercase tracking-wider text-secondary">{texts.badge}</span>
                         </div>
                         <h1 className="text-display-lg font-display-lg text-on-surface leading-tight">
-                            PFSTUDIO — Sublimación Integral, Remeras & Diseños a Medida
+                            {texts.title}
                         </h1>
                         <p className="text-body-lg font-body-lg text-on-surface-variant max-w-2xl">
-                            Sublimación integral en todo tipo de insumos: Remeras Boxy Fit, Gorras, Chopps, Tazas, Llaveros, Vasos y más. Personalizá tus productos en tiempo real con la mejor calidad y diseños únicos.
+                            {texts.subtitle}
                         </p>
 
                         {/* Call to Actions */}
@@ -78,9 +107,9 @@ export default function LandingHero() {
                                 Ver Catálogo
                                 <span className="material-symbols-outlined text-headline-sm">arrow_forward</span>
                             </Link>
-                            <Link href="#personalizador" className="inline-flex items-center gap-2 px-space-lg py-3 bg-tertiary-fixed text-on-tertiary-fixed font-headline-sm text-headline-sm rounded-lg border border-tertiary-container shadow-sm hover:bg-tertiary-fixed-dim transition-colors active:scale-95">
+                            <Link href="#personalizados" className="inline-flex items-center gap-2 px-space-lg py-3 bg-tertiary-fixed text-on-tertiary-fixed font-headline-sm text-headline-sm rounded-lg border border-tertiary-container shadow-sm hover:bg-tertiary-fixed-dim transition-colors active:scale-95">
                                 <span className="material-symbols-outlined text-headline-sm material-symbols-fill">palette</span>
-                                Personalizá tu Insumo
+                                Consultá por WhatsApp
                             </Link>
                         </div>
 

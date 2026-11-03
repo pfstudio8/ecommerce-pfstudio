@@ -1,8 +1,84 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+interface DBCategory {
+    name: string;
+    description?: string;
+    productCount?: number;
+}
+
+const CATEGORY_ICONS: Record<string, string> = {
+    "Oversize": "styler",
+    "Boxy Fit": "checkroom",
+    "Clásicas": "apparel",
+    "Llaveros": "key",
+    "Gorras": "explore",
+    "Tazas": "local_cafe",
+    "Vasos": "water_bottle",
+    "Buzos": "dry_cleaning",
+    "Pantalones": "styler",
+    "Shorts": "styler",
+    "Botineros": "sports_soccer",
+    "Camisetas": "sports_jersey",
+    "Encendedores": "local_fire_department",
+    "Accesorios": "shopping_bag"
+};
 
 export default function CategoryExplore() {
+    const [categories, setCategories] = useState<DBCategory[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                // 1. Fetch from categories table
+                const { data: catData, error: catError } = await supabase
+                    .from('categories')
+                    .select('name, description')
+                    .order('name');
+
+                // 2. Fetch active products to count per category
+                const { data: prodData } = await supabase
+                    .from('products')
+                    .select('category')
+                    .eq('active', true);
+
+                const counts: Record<string, number> = {};
+                (prodData || []).forEach(p => {
+                    if (p.category) {
+                        counts[p.category] = (counts[p.category] || 0) + 1;
+                    }
+                });
+
+                if (catData && catData.length > 0) {
+                    const mapped = catData.map(c => ({
+                        name: c.name,
+                        description: c.description || "Insumos y confecciones personalizadas.",
+                        productCount: counts[c.name] || 0
+                    }));
+                    setCategories(mapped);
+                } else {
+                    // Fallback to distinct product categories if categories table is empty
+                    const distinctCats = Object.keys(counts).map(name => ({
+                        name,
+                        description: "Artículos disponibles en taller.",
+                        productCount: counts[name]
+                    }));
+                    setCategories(distinctCats);
+                }
+            } catch (err) {
+                console.warn("Error fetching categories in explore section:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
     return (
         <section id="catalogo" className="py-space-xl bg-surface border-b border-outline-variant">
             <div className="w-full px-margin-desktop max-w-7xl mx-auto flex flex-col gap-space-lg">
@@ -15,102 +91,71 @@ export default function CategoryExplore() {
                         <h2 className="text-headline-lg font-headline-lg text-on-surface mt-1">Explorá por Categoría</h2>
                         <p className="text-body-md font-body-md text-on-surface-variant">Encontrá el corte y el estilo perfecto para tu outfit diario o creá tu prenda personalizada desde cero.</p>
                     </div>
-                    <div className="flex items-center gap-space-sm overflow-x-auto pb-1 custom-scrollbar w-full md:w-auto">
-                        <span className="text-body-sm font-body-sm text-on-surface-variant shrink-0">Filtrar vista:</span>
-                        <button className="px-3 py-1.5 bg-primary text-on-primary rounded-lg text-label-md font-label-md shrink-0">Todos</button>
-                        <button className="px-3 py-1.5 bg-surface-container-lowest border border-outline-variant hover:bg-surface-container rounded-lg text-label-md font-label-md text-on-surface-variant shrink-0">Prendas</button>
-                        <button className="px-3 py-1.5 bg-surface-container-lowest border border-outline-variant hover:bg-surface-container rounded-lg text-label-md font-label-md text-on-surface-variant shrink-0">Accesorios</button>
+                    <div>
+                        <Link href="/catalog" className="text-xs font-bold uppercase tracking-wider text-primary hover:underline flex items-center gap-1">
+                            Ver catálogo completo
+                            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                        </Link>
                     </div>
                 </div>
                 
-                {/* 5-Card Interactive Bento Grid */}
+                {/* Dynamic Bento Grid from Database */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-space-md">
-                    {/* Bento Box 1: Remeras Oversize (Large) */}
-                    <Link href="/catalog?cat=Oversize" className="relative rounded-2xl overflow-hidden group shadow-sm border border-outline-variant p-space-md flex flex-col justify-between hover:border-primary transition-all duration-200 hover:shadow-md bg-surface-container-lowest">
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-                                    <span className="material-symbols-outlined text-headline-md">styler</span>
-                                </div>
-                                <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary-fixed text-on-primary-fixed">POPULAR</span>
-                            </div>
-                            <h3 className="text-headline-sm font-headline-sm text-on-surface group-hover:text-primary transition-colors">Remeras Oversize</h3>
-                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">Oversize, Boxy Fit y cortes clásicos de alto gramaje.</p>
-                        </div>
-                        <div className="mt-6 pt-3 border-t border-outline-variant/60 flex items-center justify-between text-secondary">
-                            <span className="text-label-sm font-label-sm font-medium">Ver opciones</span>
-                            <span className="material-symbols-outlined text-headline-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                        </div>
-                    </Link>
-                    
-                    {/* Bento Box 2: Llaveros Custom (Small) */}
-                    <Link href="/catalog?cat=Llaveros" className="relative rounded-2xl overflow-hidden group shadow-sm border border-outline-variant p-space-md flex flex-col justify-between hover:border-primary transition-all duration-200 hover:shadow-md bg-surface-container-lowest">
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-                                    <span className="material-symbols-outlined text-headline-md">key</span>
-                                </div>
-                                <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-tertiary-fixed text-on-tertiary-fixed">NUEVO</span>
-                            </div>
-                            <h3 className="text-headline-sm font-headline-sm text-on-surface group-hover:text-primary transition-colors">Llaveros Custom</h3>
-                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">Círculo, corazón, camiseta y credencial reforzada.</p>
-                        </div>
-                        <div className="mt-6 pt-3 border-t border-outline-variant/60 flex items-center justify-between text-secondary">
-                            <span className="text-label-sm font-label-sm font-medium">Personalizar 2D</span>
-                            <span className="material-symbols-outlined text-headline-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                        </div>
-                    </Link>
-                    
+                    {categories.slice(0, 5).map((category, index) => {
+                        const icon = CATEGORY_ICONS[category.name] || "category";
+                        const isFirst = index === 0;
 
-                    {/* Category 4: Gorras & Caps */}
-                    <Link href="/catalog?cat=Gorras" className="group relative bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-primary transition-all duration-200 hover:shadow-md">
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-                                    <span className="material-symbols-outlined text-headline-md">explore</span>
+                        return (
+                            <Link 
+                                key={category.name}
+                                href={`/catalog?cat=${encodeURIComponent(category.name)}`} 
+                                className="relative rounded-2xl overflow-hidden group shadow-sm border border-outline-variant p-space-md flex flex-col justify-between hover:border-primary transition-all duration-200 hover:shadow-md bg-surface-container-lowest"
+                            >
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
+                                            <span className="material-symbols-outlined text-headline-md">{icon}</span>
+                                        </div>
+                                        {isFirst ? (
+                                            <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary-fixed text-on-primary-fixed font-bold">
+                                                DESTACADO
+                                            </span>
+                                        ) : category.productCount !== undefined && category.productCount > 0 ? (
+                                            <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container text-on-surface-variant font-bold">
+                                                {category.productCount} {category.productCount === 1 ? 'modelo' : 'modelos'}
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                    <h3 className="text-headline-sm font-headline-sm text-on-surface group-hover:text-primary transition-colors font-bold">
+                                        {category.name}
+                                    </h3>
+                                    <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">
+                                        {category.description}
+                                    </p>
                                 </div>
-                            </div>
-                            <h3 className="text-headline-sm font-headline-sm text-on-surface group-hover:text-primary transition-colors">Gorras & Caps</h3>
-                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">Trucker, gabardina y caps con parches sublimados.</p>
-                        </div>
-                        <div className="mt-6 pt-3 border-t border-outline-variant/60 flex items-center justify-between text-secondary">
-                            <span className="text-label-sm font-label-sm font-medium">Ver opciones</span>
-                            <span className="material-symbols-outlined text-headline-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                        </div>
-                    </Link>
+                                <div className="mt-6 pt-3 border-t border-outline-variant/60 flex items-center justify-between text-secondary">
+                                    <span className="text-label-sm font-label-sm font-medium">Ver opciones</span>
+                                    <span className="material-symbols-outlined text-headline-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                </div>
+                            </Link>
+                        );
+                    })}
                     
-                    {/* Category 5: Tazas y Chopps */}
-                    <Link href="/catalog?cat=Tazas" className="group relative bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-primary transition-all duration-200 hover:shadow-md">
+                    {/* Bento Box: Diseños Personalizados */}
+                    <Link href="#personalizados" className="group relative bg-surface-container-high border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-primary transition-all duration-200 hover:shadow-md">
                         <div>
                             <div className="flex items-center justify-between mb-4">
-                                <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-colors">
-                                    <span className="material-symbols-outlined text-headline-md">local_cafe</span>
+                                <div className="w-10 h-10 rounded-lg bg-[#25D366]/20 text-[#25D366] flex items-center justify-center">
+                                    <span className="material-symbols-outlined text-headline-md material-symbols-fill">chat</span>
                                 </div>
+                                <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-[#25D366]/20 text-[#25D366] font-bold">A MEDIDA</span>
                             </div>
-                            <h3 className="text-headline-sm font-headline-sm text-on-surface group-hover:text-primary transition-colors">Tazas & Chopps</h3>
-                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">Mágicas, cerámicas y chopps cerveceros sublimados.</p>
+                            <h3 className="text-headline-sm font-headline-sm text-on-surface group-hover:text-primary transition-colors font-bold">Diseños Personalizados</h3>
+                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">Envianos tus ilustraciones, logos o fotos por WhatsApp y te armamos la muestra previa sin cargo.</p>
                         </div>
-                        <div className="mt-6 pt-3 border-t border-outline-variant/60 flex items-center justify-between text-secondary">
-                            <span className="text-label-sm font-label-sm font-medium">Ver opciones</span>
+                        <div className="mt-6 pt-3 border-t border-outline-variant/60 flex items-center justify-between text-[#25D366]">
+                            <span className="text-label-sm font-label-sm font-bold">Consultá por WhatsApp</span>
                             <span className="material-symbols-outlined text-headline-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                        </div>
-                    </Link>
-                    
-                    {/* Category 6: Custom Studio 2D/3D */}
-                    <Link href="#personalizador" className="group relative bg-surface-container-high border border-outline-variant rounded-xl p-space-md flex flex-col justify-between hover:border-tertiary transition-all duration-200 hover:shadow-md">
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="w-10 h-10 rounded-lg bg-tertiary-fixed text-on-tertiary-fixed flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-headline-md material-symbols-fill">palette</span>
-                                </div>
-                                <span className="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-error-container text-on-error-container font-bold">CUSTOM 2D/3D</span>
-                            </div>
-                            <h3 className="text-headline-sm font-headline-sm text-on-surface group-hover:text-tertiary transition-colors">Custom Studio</h3>
-                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-1">Subí tus ilustraciones, logos o fotos con render inmediato.</p>
-                        </div>
-                        <div className="mt-6 pt-3 border-t border-outline-variant/60 flex items-center justify-between text-tertiary">
-                            <span className="text-label-sm font-label-sm font-bold">Abrir Editor</span>
-                            <span className="material-symbols-outlined text-headline-sm group-hover:translate-x-1 transition-transform">brush</span>
                         </div>
                     </Link>
                 </div>

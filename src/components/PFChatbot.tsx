@@ -343,8 +343,8 @@ export default function PFChatbot() {
                 ];
             } else if (isCustom) {
                 targetPose = 'sublimacion';
-                responseText = "🎨 **Diseñador Interactivo Custom 2D/3D**:\n¡Creá tu diseño propio! Podés subir cualquier foto, logo o imagen en PNG o JPG a nuestra herramienta interactiva para personalizar remeras, llaveros polímero, tazas y gorras.";
-                externalLink = { url: "#personalizador", label: "Ir al Personalizador 2D/3D" };
+                responseText = "🎨 **Diseños Personalizados & Sublimación**:\n¡Hacemos realidad tu idea! Personalizamos remeras, llaveros, tazas y gorras por pedido. Podés consultarnos directamente por WhatsApp con tu diseño o imagen.";
+                externalLink = { url: "#personalizados", label: "Consultá por WhatsApp" };
             } else if (isEnvios) {
                 targetPose = 'envios';
                 responseText = "📍 **Retiro en Taller y Entregas Coordinadas**:\nPodés retirar tu pedido **sin costo** por nuestro taller de producción local o coordinar la entrega directa por nuestro WhatsApp oficial.";
@@ -354,7 +354,7 @@ export default function PFChatbot() {
                 ];
             } else if (isPagos) {
                 targetPose = 'pagos';
-                responseText = "💳 **Medios de Pago y Datos Bancarios**:\nAceptamos **Mercado Pago** (tarjetas/cuotas) y **Transferencia Bancaria** (Alias: `PFSTUDIO.VENTAS`). ¡Recordá enviar el comprobante con tu N° de orden por WhatsApp!";
+                responseText = "💳 **Medios de Pago y Datos Bancarios**:\nAboná cómodamente por **Transferencia Bancaria directa** sin comisiones extras. Al finalizar tu pedido en el carrito recibís el CBU y Alias para transferir y enviarnos el comprobante por WhatsApp.";
                 actionOptions = [{ label: "Enviar Comprobante por WhatsApp", action: "humano" }];
             } else if (isLavado) {
                 targetPose = 'idle';

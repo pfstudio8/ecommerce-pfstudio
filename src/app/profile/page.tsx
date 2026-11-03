@@ -48,7 +48,7 @@ export default function ProfilePage() {
             return;
         }
 
-        if (user.email === 'facundoesquivel03@gmail.com') {
+        if (false) {
             router.push('/admin');
             return;
         }
@@ -127,7 +127,7 @@ export default function ProfilePage() {
         }
     };
 
-    if (!isInitialized || (isInitialized && !user) || (user && user.email === 'facundoesquivel03@gmail.com')) {
+    if (!isInitialized || (isInitialized && !user)) {
         return (
             <div className="min-h-screen bg-(--background) flex items-center justify-center pt-24">
                 <div className="w-12 h-12 border-4 border-surface-container-highest border-t-primary rounded-full animate-spin"></div>
@@ -270,7 +270,7 @@ export default function ProfilePage() {
                                                                     )}
                                                                 </div>
                                                                 <div className="flex-1 text-sm">
-                                                                    <p className="font-bold text-(--foreground) line-clamp-1 mb-1">{item.product?.name || 'Producto Personalizado'}</p>
+                                                                    <p className="font-bold text-(--foreground) line-clamp-1 mb-1">{item.product_name || item.product?.name || 'Producto'}</p>
                                                                     <div className="flex items-center gap-3 text-gray-500">
                                                                         <span className="bg-white dark:bg-zinc-900 px-2 py-0.5 rounded border border-gray-200 dark:border-zinc-700 text-xs font-medium">Talle: {item.size}</span>
                                                                         <span className="text-xs font-medium">Unidades: {item.quantity}</span>

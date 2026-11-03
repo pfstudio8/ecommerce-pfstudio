@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { createClient as createServerClient } from '@/utils/supabase/server';
+import { trackingLimiter } from '@/utils/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
     try {
+        const ip = request.headers.get('x-forwarded-for') || 'unknown';
+        const { success } = await trackingLimiter.limit(`track_${ip}`);
+        if (!success) {
+            return NextResponse.json({ error: 'Demasiadas consultas de rastreo. Aguardá un instante.' }, { status: 429 });
+        }
         const body = await request.json().catch(() => ({}));
         const { orderId, email } = body;
 

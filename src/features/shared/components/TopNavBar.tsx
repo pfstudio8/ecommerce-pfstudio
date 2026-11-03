@@ -70,7 +70,7 @@ export default function TopNavBar() {
             try {
                 const { data } = await supabase
                     .from('products')
-                    .select('id, name, price, images, category');
+                    .select('id, name, price, images, category').eq('active', true);
                 
                 if (data) {
                     const Fuse = (await import('fuse.js')).default;
@@ -183,8 +183,8 @@ export default function TopNavBar() {
                     <Link href="/#catalogo" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
                         Catálogo
                     </Link>
-                    <Link href="/#personalizador" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
-                        Diseñá tu Producto
+                    <Link href="/#personalizados" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
+                        Personalizados
                     </Link>
                     <Link href="/#insumos" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
                         Insumos
@@ -196,10 +196,10 @@ export default function TopNavBar() {
 
                 {/* Trailing Action Buttons */}
                 <div className="flex items-center gap-space-sm">
-                    {/* Diseñar en Vivo CTA */}
-                    <Link href="/#personalizador" className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-tertiary-fixed hover:bg-tertiary-container text-on-tertiary-fixed font-headline-sm text-label-md rounded-lg shadow-sm active:scale-95 transition-all">
+                    {/* Consultá por WhatsApp CTA */}
+                    <Link href="/#personalizados" className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-tertiary-fixed hover:bg-tertiary-container text-on-tertiary-fixed font-headline-sm text-label-md rounded-lg shadow-sm active:scale-95 transition-all">
                         <span className="material-symbols-outlined text-headline-sm material-symbols-fill">auto_fix_high</span>
-                        Diseñar en Vivo
+                        Consultá por WhatsApp
                     </Link>
                     
                     {/* User profile link and Logout */}
@@ -288,8 +288,8 @@ export default function TopNavBar() {
                                         Catálogo
                                         <span className="material-symbols-outlined">chevron_right</span>
                                     </Link>
-                                    <Link href="/#personalizador" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-4 px-4 py-2.5">
-                                        Diseñá tu Producto
+                                    <Link href="/#personalizados" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-4 px-4 py-2.5">
+                                        Personalizados
                                         <span className="material-symbols-outlined">chevron_right</span>
                                     </Link>
                                     <Link href="/#insumos" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-4 px-4 py-2.5">

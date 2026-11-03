@@ -1,5 +1,20 @@
+/**
+ * Utility to escape all HTML characters and prevent HTML injection / XSS in emails.
+ */
+export function escapeHtml(str: string | number | null | undefined): string {
+    if (str === null || str === undefined) return '';
+    const text = String(str);
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 export const generateWelcomeEmail = (email: string, name?: string) => {
-    const displayName = name || email.split('@')[0];
+    const rawName = name || email.split('@')[0];
+    const displayName = escapeHtml(rawName);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pfstudio.com.ar';
 
     return `
@@ -40,7 +55,7 @@ export const generateWelcomeEmail = (email: string, name?: string) => {
                   </h2>
 
                   <p style="margin: 0 0 20px 0; font-size: 15px; line-height: 1.6; color: #4a483c;">
-                    Te damos la bienvenida oficial a <strong style="color: #1d1c16;">PFSTUDIO</strong>. Tu cuenta se ha registrado correctamente y ya podés explorar nuestra tienda online, elegir tus insumos o personalizar tus propias prendas de sublimación.
+                    Te damos la bienvenida oficial a <strong style="color: #1d1c16;">PFSTUDIO</strong>. Tu cuenta se ha registrado correctamente y ya podés explorar nuestra tienda online, elegir tus insumos o consultar por prendas personalizadas.
                   </p>
 
                   <!-- HIGHLIGHT BOX -->
@@ -51,9 +66,9 @@ export const generateWelcomeEmail = (email: string, name?: string) => {
                           ✨ Lo que podés hacer en PFSTUDIO:
                         </h3>
                         <ul style="margin: 0; padding-left: 20px; color: #4a483c; font-size: 14px; line-height: 1.8;">
-                          <li><strong>Sublimación Custom:</strong> Personalizá remeras, chopps, gorras, llaveros y tazas con tus diseños.</li>
+                          <li><strong>Sublimación Custom:</strong> Personalizá remeras, chopps, gorras, llaveros y tazas con tus diseños vía WhatsApp.</li>
                           <li><strong>Colecciones Exclusivas:</strong> Remeras Oversize, Boxy Fit y cortes clásicos.</li>
-                          <li><strong>Envíos Rápidos:</strong> Comprá online en segundos con total seguridad.</li>
+                          <li><strong>Envíos Rápidos:</strong> Comprá online en segundos con transferencia directa.</li>
                         </ul>
                       </td>
                     </tr>
@@ -94,39 +109,51 @@ export const generateWelcomeEmail = (email: string, name?: string) => {
 };
 
 export const generateOrderEmail = (orderId: string, email: string, total: number, items: any[], billingDetails: any = null) => {
-    const itemsHtml = items.map((item) => `
-      <tr>
-        <td style="padding: 10px 0; border-bottom: 1px solid #eee;">
-          <strong>${item.name || item.title || item.id}</strong>
-          ${item.size ? `<br><small style="color: #777;">Talle: ${item.size}</small>` : ''}
-        </td>
-        <td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-        <td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right;">$${(item.unit_price || item.price || 0) * item.quantity}</td>
-      </tr>
-    `).join("");
+    const safeEmail = escapeHtml(email);
+    const safeOrderId = escapeHtml(orderId.split('-')[0].toUpperCase());
+
+    const itemsHtml = items.map((item) => {
+        const safeName = escapeHtml(item.name || item.title || item.product_name || item.id);
+        const safeSize = item.size ? escapeHtml(item.size) : null;
+        const safeQty = Number(item.quantity) || 1;
+        const safeUnitPrice = Number(item.unit_price || item.price || item.price_at_purchase || 0);
+        const lineTotal = safeUnitPrice * safeQty;
+
+        return `
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #eee;">
+              <strong>${safeName}</strong>
+              ${safeSize ? `<br><small style="color: #777;">Talle: ${safeSize}</small>` : ''}
+            </td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: center;">${safeQty}</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #eee; text-align: right;">$${lineTotal.toLocaleString("es-AR")}</td>
+          </tr>
+        `;
+    }).join("");
 
     const billingHtml = billingDetails ? `
       <div style="margin-top: 30px; padding: 20px; background-color: #f0f0f0; border-radius: 6px; border-left: 4px solid #111;">
-        <h3 style="margin-top: 0; color: #111; font-size: 16px;">Datos de Facturación / Comprobante</h3>
-        <p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Nombre/Razón Social:</strong> ${billingDetails.name}</p>
-        <p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>DNI/CUIT:</strong> ${billingDetails.dni}</p>
-        <p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Teléfono:</strong> ${billingDetails.phone}</p>
-        <p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Dirección:</strong> ${billingDetails.address}</p>
+        <h3 style="margin-top: 0; color: #111; font-size: 16px;">Datos de Entrega / Facturación</h3>
+        <p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Nombre:</strong> ${escapeHtml(billingDetails.name)}</p>
+        ${billingDetails.phone ? `<p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Teléfono:</strong> ${escapeHtml(billingDetails.phone)}</p>` : ''}
+        ${billingDetails.address || billingDetails.shippingAddress ? `<p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Dirección:</strong> ${escapeHtml(billingDetails.address || billingDetails.shippingAddress)}</p>` : ''}
+        ${billingDetails.deliveryMethod ? `<p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Método:</strong> ${escapeHtml(billingDetails.deliveryMethod === 'pickup' ? 'Retiro en taller' : 'Envío a domicilio')}</p>` : ''}
+        ${billingDetails.notes ? `<p style="margin: 5px 0; font-size: 14px; color: #444;"><strong>Notas:</strong> ${escapeHtml(billingDetails.notes)}</p>` : ''}
       </div>
     ` : '';
 
     return `
-    <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; color: #333;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
       <div style="text-align: center; padding: 20px 0; border-bottom: 1px solid #eee;">
         <h1 style="margin: 0; font-size: 24px; letter-spacing: 0.1em; color: #111;">PFSTUDIO</h1>
       </div>
       <div style="padding: 40px 20px; background-color: #fafafa; border-radius: 8px; margin-top: 20px;">
         <h2 style="margin-top: 0; color: #111;">¡Gracias por tu compra!</h2>
         <p style="font-size: 16px; line-height: 1.5; color: #555;">
-          Hola <strong>${email}</strong>,
+          Hola <strong>${safeEmail}</strong>,
         </p>
         <p style="font-size: 16px; line-height: 1.5; color: #555;">
-          Hemos recibido tu pedido <strong>#${orderId.split('-')[0]}</strong> y estamos preparándolo. 
+          Hemos recibido tu pedido <strong>#${safeOrderId}</strong> y estamos a la espera de la confirmación de transferencia bancaria.
           Aquí tienes el resumen de tu compra:
         </p>
         
@@ -144,7 +171,7 @@ export const generateOrderEmail = (orderId: string, email: string, total: number
           <tfoot>
             <tr>
               <td colspan="2" style="padding-top: 15px; text-align: right; font-weight: bold;">Total del Pedido:</td>
-              <td style="padding-top: 15px; text-align: right; font-weight: bold; font-size: 18px; color: #111;">$${total.toLocaleString("es-AR")}</td>
+              <td style="padding-top: 15px; text-align: right; font-weight: bold; font-size: 18px; color: #111;">$${Number(total).toLocaleString("es-AR")}</td>
             </tr>
           </tfoot>
         </table>
@@ -153,7 +180,7 @@ export const generateOrderEmail = (orderId: string, email: string, total: number
 
       </div>
       <div style="text-align: center; padding: 20px; font-size: 12px; color: #999;">
-        Si tienes alguna duda, responde a este correo.<br>
+        Si tienes alguna duda o ya transferiste, envíanos tu comprobante por WhatsApp.<br>
         © ${new Date().getFullYear()} PF Studio. Todos los derechos reservados.
       </div>
     </div>
@@ -161,10 +188,12 @@ export const generateOrderEmail = (orderId: string, email: string, total: number
 };
 
 export const generateAbandonedCartEmail = (email: string) => {
+    const rawName = email.split('@')[0];
+    const safeName = escapeHtml(rawName);
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://pfstudio.com.ar';
 
     return `
-    <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; color: #333; background-color: #fafafa; padding: 40px 20px; border-radius: 8px;">
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; background-color: #fafafa; padding: 40px 20px; border-radius: 8px;">
       <div style="text-align: center; padding-bottom: 20px; border-bottom: 1px solid #ddd;">
         <h1 style="margin: 0; font-size: 28px; letter-spacing: 0.15em; color: #111;">PFSTUDIO</h1>
       </div>
@@ -173,13 +202,13 @@ export const generateAbandonedCartEmail = (email: string) => {
         <h2 style="color: #111; font-size: 22px;">¡Olvidaste algo en tu carrito! 🛒</h2>
         
         <p style="font-size: 16px; line-height: 1.6; color: #555; margin-top: 20px;">
-          Hola <strong>${email.split('@')[0]}</strong>,<br><br>
+          Hola <strong>${safeName}</strong>,<br><br>
           Notamos que estuviste navegando por nuestra tienda y dejaste algunos productos increíbles esperando por ti. 
           ¡No dejes que se escapen!
         </p>
 
         <p style="font-size: 16px; line-height: 1.6; color: #555;">
-          Hacé clic en el botón de abajo para volver a la tienda y finalizar tu compra de manera segura.
+          Hacé clic en el botón de abajo para volver a la tienda y finalizar tu compra por transferencia.
         </p>
 
         <div style="margin: 40px 0;">

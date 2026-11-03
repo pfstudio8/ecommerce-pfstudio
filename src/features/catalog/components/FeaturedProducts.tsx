@@ -7,18 +7,20 @@ export default async function FeaturedProducts() {
     let products: Product[] = [];
     
     try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+        if (supabaseUrl && supabaseKey) {
+            const supabase = createClient(supabaseUrl, supabaseKey);
         
         const { data, error } = await supabase
             .from('products')
-            .select('*, product_stock(size, stock_quantity)')
+            .select('*, product_stock(size, stock_quantity)').eq('active', true)
             .limit(4);
 
         if (error) throw error;
         if (data) {
             products = data as Product[];
+        }
         }
     } catch (error) {
         console.error('Error fetching featured products:', error);

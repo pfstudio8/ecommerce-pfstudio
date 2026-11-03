@@ -6,11 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --test tests/**/*.test.ts"
   },
   "dependencies": {
-    "@react-three/drei": "^10.7.8",
-    "@react-three/fiber": "^9.7.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.98.0",
     "@upstash/ratelimit": "^2.1.0",
@@ -21,9 +20,8 @@
     "fuse.js": "^7.5.0",
     "lucide-react": "^0.575.0",
     "material-symbols": "^0.47.4",
-    "mercadopago": "^3.6.1",
-    "next": "16.3.5",
-    "nodemailer": "^8.0.2",
+    "next": "16.4.2",
+    "nodemailer": "^10.2.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-loading-indicators": "^1.0.1",
@@ -31,19 +29,17 @@
     "resend": "^6.28.1",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.5.0",
-    "three": "^0.186.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/nodemailer": "^7.0.11",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/three": "^0.186.0",
     "eslint": "^9",
-    "eslint-config-next": "16.3.5",
+    "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

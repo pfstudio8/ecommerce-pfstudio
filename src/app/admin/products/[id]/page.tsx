@@ -303,7 +303,7 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                                     onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
                                     className="w-5 h-5 accent-main rounded border-[#2d2e26]"
                                 />
-                                <span className="font-semibold text-sm text-gray-300">Marcar como "NUEVO" en la tienda</span>
+                                <span className="font-semibold text-sm text-gray-300">Marcar como &quot;NUEVO&quot; en la tienda</span>
                             </label>
                         </div>
                     </div>

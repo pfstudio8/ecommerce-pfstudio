@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, ShoppingCart, Package, Users, Settings, MessageSquare, LogOut, Tags, ChevronLeft, ChevronRight, BadgeDollarSign } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, Package, Users, Settings, MessageSquare, LogOut, Tags, ChevronLeft, ChevronRight, BadgeDollarSign, Boxes } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -35,7 +35,8 @@ export default function AdminSidebar({
     const navItems = [
         { name: "Workspace", href: "/admin", icon: LayoutDashboard },
         { name: "Pedidos", href: "/admin/orders", icon: ShoppingCart },
-        { name: "Insumos & Stock", href: "/admin/products", icon: Package },
+        { name: "Productos", href: "/admin/products", icon: Package },
+        { name: "Inventario", href: "/admin/inventory", icon: Boxes },
         { name: "Categorías", href: "/admin/categories", icon: Tags },
         { name: "Usuarios", href: "/admin/users", icon: Users },
         { name: "Clientes", href: "/admin/customers", icon: BadgeDollarSign },

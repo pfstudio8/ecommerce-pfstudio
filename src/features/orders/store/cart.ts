@@ -7,10 +7,18 @@ export interface CartItem {
     product: Product;
     size: string;
     quantity: number;
+    availableStock?: number;
+    isOutOfStock?: boolean;
+    warning?: string;
 }
 
 export interface CartStore {
     items: CartItem[];
+    isCartOpen: boolean;
+    isValidating: boolean;
+    validationWarnings: string[];
+    setCartOpen: (isOpen: boolean) => void;
+    clearWarnings: () => void;
     addItem: (product: Product, size: string) => void;
     removeItem: (productId: string, size: string) => void;
     updateQuantity: (productId: string, size: string, quantity: number) => void;
@@ -18,8 +26,7 @@ export interface CartStore {
     clearCart: () => void;
     getTotalItems: () => number;
     getTotalPrice: () => number;
-    isCartOpen: boolean;
-    setCartOpen: (isOpen: boolean) => void;
+    validateWithServer: () => Promise<{ success: boolean; warnings: string[]; hasAdjustments: boolean }>;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -27,8 +34,17 @@ export const useCartStore = create<CartStore>()(
         (set, get) => ({
             items: [],
             isCartOpen: false,
+            isValidating: false,
+            validationWarnings: [],
 
-            setCartOpen: (isOpen) => set({ isCartOpen: isOpen }),
+            setCartOpen: (isOpen) => {
+                set({ isCartOpen: isOpen });
+                if (isOpen && get().items.length > 0) {
+                    get().validateWithServer();
+                }
+            },
+
+            clearWarnings: () => set({ validationWarnings: [] }),
 
             addItem: (product, size) => {
                 set((state) => {
@@ -45,7 +61,6 @@ export const useCartStore = create<CartStore>()(
                     );
 
                     if (existingItemIndex >= 0) {
-                        // Update quantity if item exists and within limit
                         const newItems = [...state.items];
                         const newQty = newItems[existingItemIndex].quantity + 1;
                         if (newQty > maxStock) {
@@ -57,14 +72,13 @@ export const useCartStore = create<CartStore>()(
                         toast.success(`¡Sumaste otro ${displayName}${size && size !== 'Único' && size !== 'Standard' && !displayName.includes(size) ? ' (' + size + ')' : ''} al carrito!`);
                         return { items: newItems };
                     } else {
-                        // Add new item if within limit
                         if (maxStock < 1) {
                             toast.error(`No hay stock disponible para talla ${size}.`);
                             return { items: state.items };
                         }
                         const displayName = product.name.replace("Sublimación - ", "Personalizado: ").replace(" (1 Cara)", "").replace(" (2 Caras)", "");
                         toast.success(`¡Agregaste ${displayName}${size && size !== 'Único' && size !== 'Standard' && !displayName.includes(size) ? ' (' + size + ')' : ''} al carrito!`);
-                        return { items: [...state.items, { product, size, quantity: 1 }] };
+                        return { items: [...state.items, { product, size, quantity: 1, availableStock: maxStock }] };
                     }
                 });
             },
@@ -107,6 +121,7 @@ export const useCartStore = create<CartStore>()(
                         }
                         const newItems = [...state.items];
                         newItems[existingItemIndex].quantity = newQuantity;
+                        newItems[existingItemIndex].availableStock = maxStock;
                         newItems.splice(itemToUpdateIndex, 1);
                         return { items: newItems };
                     } else {
@@ -116,6 +131,7 @@ export const useCartStore = create<CartStore>()(
                         }
                         const newItems = [...state.items];
                         newItems[itemToUpdateIndex].size = newSize;
+                        newItems[itemToUpdateIndex].availableStock = maxStock;
                         return { items: newItems };
                     }
                 });
@@ -128,6 +144,7 @@ export const useCartStore = create<CartStore>()(
                     if (!itemToUpdate) return { items: state.items };
 
                     const maxStock = (() => {
+                        if (itemToUpdate.availableStock !== undefined) return itemToUpdate.availableStock;
                         const product = itemToUpdate.product;
                         if (product.product_stock && product.product_stock.length > 0) {
                             const found = product.product_stock.find(s => s.size === size);
@@ -151,14 +168,70 @@ export const useCartStore = create<CartStore>()(
                 });
             },
 
-            clearCart: () => set({ items: [] }),
+            clearCart: () => set({ items: [], validationWarnings: [] }),
 
             getTotalItems: () => {
                 return get().items.reduce((total, item) => total + item.quantity, 0);
             },
 
             getTotalPrice: () => {
-                return get().items.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+                return get().items.reduce((total, item) => {
+                    if (item.isOutOfStock) return total;
+                    return total + (item.product.price * item.quantity);
+                }, 0);
+            },
+
+            validateWithServer: async () => {
+                const currentItems = get().items;
+                if (currentItems.length === 0) {
+                    return { success: true, warnings: [], hasAdjustments: false };
+                }
+
+                set({ isValidating: true });
+                try {
+                    const res = await fetch('/api/cart/validate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            items: currentItems.map(i => ({
+                                productId: i.product.id,
+                                size: i.size,
+                                quantity: i.quantity,
+                                price: i.product.price
+                            }))
+                        })
+                    });
+
+                    if (!res.ok) {
+                        throw new Error("No se pudo validar el carrito con el servidor");
+                    }
+
+                    const data = await res.json();
+                    const validatedItems: CartItem[] = (data.items || []).map((vItem: any) => ({
+                        product: vItem.product,
+                        size: vItem.size,
+                        quantity: vItem.quantity,
+                        availableStock: vItem.availableStock,
+                        isOutOfStock: vItem.isOutOfStock,
+                        warning: vItem.warning
+                    }));
+
+                    set({
+                        items: validatedItems,
+                        validationWarnings: data.warnings || [],
+                        isValidating: false
+                    });
+
+                    return {
+                        success: true,
+                        warnings: data.warnings || [],
+                        hasAdjustments: data.hasAdjustments || false
+                    };
+                } catch (err: any) {
+                    console.warn("Error validando carrito con el servidor:", err);
+                    set({ isValidating: false });
+                    return { success: false, warnings: [], hasAdjustments: false };
+                }
             }
         }),
         {
@@ -167,4 +240,3 @@ export const useCartStore = create<CartStore>()(
         }
     )
 );
-

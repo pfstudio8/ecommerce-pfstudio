@@ -330,7 +330,7 @@ export default function CreateProduct() {
                                     onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
                                     className="w-5 h-5 accent-tertiary-container rounded border-outline-variant"
                                 />
-                                <span className="font-semibold text-sm text-on-surface-variant">Marcar como "NUEVO" en la tienda</span>
+                                <span className="font-semibold text-sm text-on-surface-variant">Marcar como &quot;NUEVO&quot; en la tienda</span>
                             </label>
                         </div>
                     </div>

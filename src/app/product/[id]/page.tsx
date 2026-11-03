@@ -7,8 +7,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const { id } = await params;
     const supabase = await createClient();
 
-    // Fetch product
-    const { data: product } = await supabase.from('products').select('*').eq('id', id).single();
+    const { data: product } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
 
     if (!product) {
         return {
@@ -18,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
     return {
         title: `${product.name} | PFSTUDIO`,
-        description: `Comprá ${product.name} al mejor precio en PFSTUDIO.`,
+        description: product.description || `Comprá ${product.name} al mejor precio en PFSTUDIO.`,
         openGraph: {
             images: product.images && product.images.length > 0 ? [product.images[0]] : [],
         }
@@ -29,18 +32,24 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
     const { id } = await params;
     const supabase = await createClient();
 
-    // Fetch product
-    const { data: product } = await supabase.from('products').select('*').eq('id', id).single();
+    // Fetch product with variants from product_stock, ensuring active
+    const { data: product, error } = await supabase
+        .from('products')
+        .select('*, product_stock(*)')
+        .eq('id', id)
+        .eq('active', true)
+        .single();
 
-    if (!product) {
+    if (error || !product) {
         notFound();
     }
 
-    // Fetch related products (same category, excluding current product)
+    // Fetch related active products from same category
     const { data: relatedProducts } = await supabase
         .from('products')
-        .select('*')
+        .select('*, product_stock(*)')
         .eq('category', product.category)
+        .eq('active', true)
         .neq('id', id)
         .limit(4);
 

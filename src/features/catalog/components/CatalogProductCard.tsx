@@ -16,35 +16,39 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const addItem = useCartStore((state) => state.addItem);
 
-    // Filter available sizes (where stock > 0) or fallback to static sizes if no detailed stock
-    const availableSizes = ["S", "M", "L", "XL", "XXL"].filter(size => {
-        if (!product.product_stock || product.product_stock.length === 0) return true;
-        const stockData = product.product_stock.find(s => s.size === size);
-        return stockData && stockData.stock_quantity > 0;
-    });
+    // Dynamic variants directly from database
+    const productVariants = product.product_stock && product.product_stock.length > 0
+        ? product.product_stock
+        : ((product.stock ?? 0) > 0 ? [{ size: "Único", stock_quantity: product.stock ?? 0 }] : []);
 
-    const isOutOfStock = availableSizes.length === 0 && (product.stock === 0);
+    const availableVariants = productVariants.filter(v => (v.stock_quantity ?? 0) > 0);
+    const isOutOfStock = productVariants.length === 0 || availableVariants.length === 0;
 
     const handleAddToCart = () => {
-        if (!selectedSize && availableSizes.length > 0) {
-            toast.warning("Por favor selecciona un talle");
+        if (!selectedSize && availableVariants.length > 1) {
+            toast.warning("Por favor selecciona un talle o variante");
             return;
         }
         
-        // Use selected size or default to "Único" if no sizes are applicable
-        const sizeToAdd = selectedSize || (availableSizes.length > 0 ? availableSizes[0] : "Único");
+        const sizeToAdd = selectedSize || (availableVariants.length > 0 ? availableVariants[0].size : "Único");
         addItem(product, sizeToAdd);
         setSelectedSize(null);
     };
 
     // Calculate total stock for badge
-    const totalStock = product.product_stock?.reduce((acc, curr) => acc + curr.stock_quantity, 0) ?? product.stock ?? 10;
+    const totalStock = product.product_stock?.reduce((acc, curr) => acc + curr.stock_quantity, 0) ?? product.stock ?? 0;
     
     // Determine the product tag
     let tag = null;
-    if (totalStock > 0 && totalStock <= 3) {
+    if (isOutOfStock) {
         tag = (
-            <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-label-sm font-label-sm bg-error text-on-error font-bold z-10">
+            <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-label-sm font-label-sm bg-red-500/90 text-white font-bold z-10">
+                AGOTADO
+            </span>
+        );
+    } else if (totalStock > 0 && totalStock <= 3) {
+        tag = (
+            <span className="absolute top-3 left-3 px-2 py-0.5 rounded text-label-sm font-label-sm bg-amber-500 text-black font-extrabold z-10">
                 ¡ÚLTIMAS {totalStock}!
             </span>
         );
@@ -81,13 +85,13 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover group-hover:scale-105 transition-transform duration-300" 
                     alt={product.name} 
-                    src={product.images?.[0] || 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1000&auto=format&fit=crop'}
+                    src={product.images?.[0] || product.image_url || 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=1000&auto=format&fit=crop'}
                 />
             </Link>
             <div className="p-space-md flex-1 flex flex-col justify-between">
                 <div>
                     <div className="flex items-center justify-between">
-                        <span className="text-label-sm font-label-sm text-secondary uppercase font-semibold">{product.category}</span>
+                        <span className="text-label-sm font-label-sm text-secondary uppercase font-semibold">{product.category || "General"}</span>
                         {product.department && (
                             <span className="text-label-sm font-label-sm text-outline">{product.department}</span>
                         )}
@@ -100,38 +104,51 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
                 </div>
                 
                 <div className="my-space-sm flex-1">
-                    {availableSizes.length > 0 ? (
+                    {isOutOfStock ? (
+                        <p className="text-xs text-red-400 font-bold mt-2">Sin stock disponible</p>
+                    ) : productVariants.length > 1 ? (
                         <>
-                            <p className="text-label-sm font-label-sm text-outline mb-1">Talles Disponibles:</p>
-                            <div className="flex flex-wrap items-center gap-1">
-                                {["S", "M", "L", "XL", "XXL"].map(size => {
-                                    const isAvailable = availableSizes.includes(size);
+                            <p className="text-label-sm font-label-sm text-outline mb-1.5">Variantes / Talles:</p>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                                {productVariants.map(variant => {
+                                    const isAvailable = (variant.stock_quantity ?? 0) > 0;
+                                    const isSelected = selectedSize === variant.size;
+
                                     if (!isAvailable) {
                                         return (
-                                            <span key={size} className="w-8 h-8 rounded border border-outline-variant/30 text-body-sm font-body-sm font-bold flex items-center justify-center text-outline/30 relative overflow-hidden">
-                                                {size}
-                                                <div className="absolute inset-0 w-full h-full border-t border-outline-variant/30 rotate-45 transform origin-center"></div>
+                                            <span 
+                                                key={variant.size} 
+                                                title={`Talle ${variant.size} agotado`}
+                                                className="px-2.5 h-8 rounded border border-outline-variant/30 text-body-sm font-bold flex items-center justify-center text-outline/30 line-through cursor-not-allowed select-none"
+                                            >
+                                                {variant.size}
                                             </span>
                                         );
                                     }
+
                                     return (
                                         <button 
-                                            key={size}
-                                            onClick={() => setSelectedSize(size)}
-                                            className={`w-8 h-8 rounded text-body-sm font-body-sm flex items-center justify-center cursor-pointer transition-colors ${
-                                                selectedSize === size 
+                                            key={variant.size}
+                                            onClick={() => setSelectedSize(variant.size)}
+                                            className={`px-2.5 h-8 rounded text-body-sm flex items-center justify-center cursor-pointer transition-colors ${
+                                                isSelected 
                                                 ? "border-2 border-primary bg-primary-fixed/20 font-bold text-primary" 
                                                 : "border border-outline-variant text-on-surface hover:border-primary/50 font-bold"
                                             }`}
                                         >
-                                            {size}
+                                            {variant.size}
                                         </button>
                                     );
                                 })}
                             </div>
                         </>
                     ) : (
-                        <p className="text-label-sm font-label-sm text-error mt-4 font-medium">Agotado</p>
+                        <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs text-outline font-medium">Variante:</span>
+                            <span className="text-xs font-bold px-2 py-0.5 rounded bg-surface-container text-on-surface">
+                                {productVariants[0]?.size || "Único"}
+                            </span>
+                        </div>
                     )}
                 </div>
                 
@@ -143,8 +160,8 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
                         disabled={isOutOfStock}
                         onClick={handleAddToCart}
                         aria-label={`Agregar ${product.name} al carrito`}
-                        className="p-2 rounded-lg bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus:outline-none" 
-                        title="Agregar al carrito"
+                        className="p-2 rounded-lg bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus:outline-none" 
+                        title={isOutOfStock ? "Producto agotado" : "Agregar al carrito"}
                     >
                         <span aria-hidden="true" className="material-symbols-outlined text-headline-sm material-symbols-fill">add_shopping_cart</span>
                     </button>

@@ -3,48 +3,258 @@
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 
+export interface AdminUserData {
+    id: string;
+    email: string;
+    name?: string;
+    role: 'admin' | 'employee' | 'customer';
+    firstSeen: string;
+    lastSeen: string;
+    isAdmin: boolean;
+    active: boolean;
+}
+
 export async function getAdminUsers() {
     try {
         const supabase = await createClient();
         const adminClient = createAdminClient();
         
-        // Ensure user is admin before returning data
+        // Ensure user has admin/employee role
         const { data: { user } } = await supabase.auth.getUser();
         if (!user || !user.email) {
             throw new Error("No autenticado");
         }
         
-        const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-        const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-        
-        if (!adminEmails.includes(user.email.toLowerCase())) {
-            throw new Error("No autorizado");
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        const isAuthorized = profile && ['admin', 'employee'].includes(profile.role);
+        if (!isAuthorized) {
+            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
+            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+            if (!adminEmails.includes(user.email.toLowerCase())) {
+                throw new Error("No autorizado");
+            }
         }
 
-        // Fetch all registered users
+        // Fetch all registered users from auth
         const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
         if (authError) {
             throw new Error("Could not fetch auth users: " + authError.message);
         }
 
-        const userList: any[] = [];
+        // Fetch profiles for roles and active state
+        const { data: profiles } = await adminClient
+            .from('profiles')
+            .select('id, email, full_name, role, active');
+
+        const profileMap = new Map<string, any>();
+        (profiles || []).forEach(p => {
+            profileMap.set(p.id, p);
+            if (p.email) profileMap.set(p.email.toLowerCase(), p);
+        });
+
+        const userList: AdminUserData[] = [];
         if (authUsers && authUsers.users) {
             authUsers.users.forEach((u) => {
                 const email = u.email || 'Sin Correo';
+                const p = profileMap.get(u.id) || profileMap.get(email.toLowerCase());
+                const role = (p?.role || 'customer') as 'admin' | 'employee' | 'customer';
+                const isBanned = Boolean(u.banned_until && new Date(u.banned_until) > new Date());
+                const isActive = p?.active !== false && !isBanned;
+
                 userList.push({
                     id: u.id,
                     email,
+                    name: p?.full_name || (u.user_metadata?.full_name as string) || '',
+                    role,
                     firstSeen: u.created_at,
                     lastSeen: u.last_sign_in_at || u.created_at,
-                    isAdmin: adminEmails.includes(email.toLowerCase())
+                    isAdmin: role === 'admin' || role === 'employee',
+                    active: isActive
                 });
             });
         }
 
-        userList.sort((a: any, b: any) => new Date(b.firstSeen).getTime() - new Date(a.firstSeen).getTime());
+        userList.sort((a, b) => new Date(b.firstSeen).getTime() - new Date(a.firstSeen).getTime());
 
         return { success: true, data: userList };
     } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function updateUserRole(targetUserId: string, newRole: 'admin' | 'employee' | 'customer') {
+    try {
+        const supabase = await createClient();
+        const adminClient = createAdminClient();
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("No autenticado");
+
+        // Only full admins can change roles
+        const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (currentProfile?.role !== 'admin') {
+            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
+            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+            if (!user.email || !adminEmails.includes(user.email.toLowerCase())) {
+                throw new Error("Solo un administrador puede modificar roles");
+            }
+        }
+
+        const { error } = await adminClient
+            .from('profiles')
+            .update({ role: newRole })
+            .eq('id', targetUserId);
+
+        if (error) throw error;
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error updating user role:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function createUserOrInvite(params: {
+    email: string;
+    fullName: string;
+    role: 'admin' | 'employee' | 'customer';
+    password?: string;
+}) {
+    try {
+        const supabase = await createClient();
+        const adminClient = createAdminClient();
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("No autenticado");
+
+        // Verify current user is admin
+        const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (currentProfile?.role !== 'admin') {
+            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
+            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+            if (!user.email || !adminEmails.includes(user.email.toLowerCase())) {
+                throw new Error("Solo un administrador puede invitar o crear usuarios");
+            }
+        }
+
+        const { email, fullName, role, password } = params;
+        const normalizedEmail = email.trim().toLowerCase();
+
+        if (!normalizedEmail || !normalizedEmail.includes('@')) {
+            throw new Error("El correo electrónico no es válido.");
+        }
+
+        const finalPassword = password && password.trim().length >= 6 
+            ? password.trim() 
+            : `PFStudio_${Math.random().toString(36).slice(-6)}!`;
+
+        // Create auth user
+        const { data: newAuthUser, error: createError } = await adminClient.auth.admin.createUser({
+            email: normalizedEmail,
+            password: finalPassword,
+            email_confirm: true,
+            user_metadata: {
+                full_name: fullName.trim()
+            }
+        });
+
+        if (createError) {
+            throw new Error(`Error al crear usuario en Supabase Auth: ${createError.message}`);
+        }
+
+        if (!newAuthUser.user) {
+            throw new Error("No se pudo obtener el usuario creado.");
+        }
+
+        // Upsert into profiles
+        const { error: profileError } = await adminClient
+            .from('profiles')
+            .upsert({
+                id: newAuthUser.user.id,
+                email: normalizedEmail,
+                full_name: fullName.trim(),
+                role: role || 'employee',
+                active: true,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'id' });
+
+        if (profileError) {
+            console.warn("Could not upsert profile for new user:", profileError);
+        }
+
+        return { 
+            success: true, 
+            userId: newAuthUser.user.id,
+            generatedPassword: !password ? finalPassword : undefined
+        };
+    } catch (error: any) {
+        console.error("Error creating/inviting user:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function toggleUserActive(targetUserId: string, active: boolean) {
+    try {
+        const supabase = await createClient();
+        const adminClient = createAdminClient();
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("No autenticado");
+
+        if (user.id === targetUserId) {
+            throw new Error("No puedes desactivar tu propia cuenta de administrador.");
+        }
+
+        // Check if caller is admin
+        const { data: currentProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (currentProfile?.role !== 'admin') {
+            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
+            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+            if (!user.email || !adminEmails.includes(user.email.toLowerCase())) {
+                throw new Error("Solo un administrador puede activar o desactivar usuarios");
+            }
+        }
+
+        // 1. Update profiles table
+        const { error: profileError } = await adminClient
+            .from('profiles')
+            .update({ active, updated_at: new Date().toISOString() })
+            .eq('id', targetUserId);
+
+        if (profileError) throw profileError;
+
+        // 2. Ban / Unban in Supabase Auth to prevent logins
+        const { error: authError } = await adminClient.auth.admin.updateUserById(targetUserId, {
+            ban_duration: active ? 'none' : '876000h' // ~100 years if deactivated
+        });
+
+        if (authError) {
+            console.warn("Could not set ban duration in auth:", authError);
+        }
+
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error toggling user active state:", error);
         return { success: false, error: error.message };
     }
 }

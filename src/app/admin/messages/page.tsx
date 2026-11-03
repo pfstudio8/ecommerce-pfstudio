@@ -231,6 +231,14 @@ export default function AdminMessagesPage() {
                                                 {new Date(msg.created_at).toLocaleDateString('es-AR', { month: 'short', day: 'numeric' })}
                                             </p>
                                             <div className="mt-2 text-outline opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-1.5 md:gap-2">
+                                                <a 
+                                                    href={`mailto:${msg.user_email}?subject=Respuesta a consulta PFSTUDIO`}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="p-1.5 hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors"
+                                                    title={`Responder por email a ${msg.user_email}`}
+                                                >
+                                                    <Send className="w-3.5 h-3.5 text-primary" />
+                                                </a>
                                                 {msg.status === 'unread' ? (
                                                     <button onClick={(e) => { e.stopPropagation(); handleUpdateStatus(msg.id, 'read'); }} className="p-1.5 hover:bg-primary-container hover:text-on-primary-container rounded-lg transition-colors" title="Marcar como leído"><Star className="w-3.5 h-3.5" /></button>
                                                 ) : (

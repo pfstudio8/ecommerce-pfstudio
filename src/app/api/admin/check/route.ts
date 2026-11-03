@@ -9,16 +9,32 @@ export async function GET() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user || !user.email) {
-            return NextResponse.json({ isAdmin: false }, { status: 200 });
+            return NextResponse.json({ isAdmin: false, role: 'customer' }, { status: 200 });
         }
 
-        const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-        const adminEmails = adminEmailsEnv.split(',').map(e => e.trim());
-        const isAdmin = adminEmails.includes(user.email);
+        // Consultar el rol del usuario directamente en profiles
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
 
-        return NextResponse.json({ isAdmin }, { status: 200 });
+        let role = profile?.role || 'customer';
+        let isAdmin = role === 'admin' || role === 'employee';
+
+        // Fallback de transición si la tabla aún no se ha migrado
+        if (!isAdmin) {
+            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
+            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+            if (adminEmails.includes(user.email.toLowerCase())) {
+                isAdmin = true;
+                role = 'admin';
+            }
+        }
+
+        return NextResponse.json({ isAdmin, role }, { status: 200 });
     } catch (error: any) {
         console.error("Error in admin check API:", error);
-        return NextResponse.json({ isAdmin: false, error: error.message }, { status: 500 });
+        return NextResponse.json({ isAdmin: false, role: 'customer', error: error.message }, { status: 500 });
     }
 }

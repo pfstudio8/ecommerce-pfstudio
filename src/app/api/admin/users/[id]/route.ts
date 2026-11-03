@@ -13,10 +13,23 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
             return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
         }
 
-        const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-        const adminEmailsList = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+        // Consultar rol en profiles (fuente de verdad)
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        let isSuperAdmin = profile?.role === 'admin';
+        if (!isSuperAdmin) {
+            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
+            const adminEmailsList = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
+            if (adminEmailsList.includes(user.email.toLowerCase())) {
+                isSuperAdmin = true;
+            }
+        }
         
-        if (!adminEmailsList.includes(user.email.toLowerCase())) {
+        if (!isSuperAdmin) {
             return NextResponse.json({ error: 'Prohibido: Se requiere rol de administrador' }, { status: 403 });
         }
 
@@ -43,35 +56,35 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
         const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(id);
         
         if (!userError && userData?.user?.email) {
-            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-            
-            if (adminEmails.includes(userData.user.email.toLowerCase())) {
-                return NextResponse.json({ error: 'No se puede eliminar al administrador principal del sistema.' }, { status: 403 });
+            // Protección contra auto-eliminación
+            if (userData.user.id === user.id) {
+                return NextResponse.json({ error: 'No puedes eliminar tu propia cuenta de administrador.' }, { status: 400 });
             }
         }
 
-        const { data, error } = await supabaseAdmin.auth.admin.deleteUser(id);
+        // Intentar eliminar del motor de Auth
+        const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
 
         if (error) {
-            if (error.message === 'User not found' || error.status === 404) {
-                console.log("User not found in Auth, but we will try to delete from profiles table anyway.");
+            if (error.message === 'User not found' || (error as any).status === 404) {
+                console.log("User not found in Auth, deleting from profiles table anyway.");
             } else {
                 console.error("Error deleting user via Admin API:", error);
                 return NextResponse.json({ error: error.message }, { status: 500 });
             }
         }
 
-        // Eliminar también de la tabla profiles por si quedó huérfano (sin cascade delete)
+        // Eliminar también de la tabla profiles por si quedó huérfano
         const { error: profileError } = await supabaseAdmin.from('profiles').delete().eq('id', id);
 
         if (profileError) {
             console.error("Error deleting profile directly:", profileError);
         }
 
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, message: 'Usuario eliminado exitosamente' });
+
     } catch (error: any) {
-        console.error("Unexpected error in delete user API:", error);
-        return NextResponse.json({ error: error.message || 'Error inesperado del servidor' }, { status: 500 });
+        console.error("Internal API error deleting user:", error);
+        return NextResponse.json({ error: error.message || 'Error interno del servidor' }, { status: 500 });
     }
 }

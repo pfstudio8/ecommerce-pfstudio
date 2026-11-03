@@ -1,250 +1,235 @@
 import { NextResponse } from 'next/server';
-import { MercadoPagoConfig, Preference } from 'mercadopago';
-import type { PreferenceRequest } from 'mercadopago/dist/clients/preference/commonTypes';
 import { z } from 'zod';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { checkoutLimiter } from '@/utils/rateLimit';
+import { CUSTOM_PRICING } from '@/utils/customPricing';
+
+export const dynamic = 'force-dynamic';
 
 const checkoutItemSchema = z.object({
     product: z.object({
         id: z.string(),
-        name: z.string(),
-        price: z.number().or(z.string().transform(Number)),
-        images: z.array(z.string()).optional().default([]),
-        category: z.string().optional()
+        name: z.string().optional(),
+        price: z.number().or(z.string().transform(Number)).optional(),
+        images: z.array(z.string()).optional()
     }),
-    size: z.string(),
-    quantity: z.number().min(1)
+    size: z.string().min(1, 'El talle es requerido'),
+    quantity: z.number().int().min(1, 'La cantidad debe ser mayor a 0')
 });
 
-type CheckoutItemType = z.infer<typeof checkoutItemSchema>;
-
-const checkoutSchema = z.object({
-    items: z.array(checkoutItemSchema).min(1, 'Cart cannot be empty'),
-    billingDetails: z.any().optional(),
-    user_email: z.string().email().optional().nullable()
+const customerSchema = z.object({
+    name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
+    email: z.string().email('Email inválido'),
+    phone: z.string().min(6, 'Número de teléfono inválido'),
+    deliveryMethod: z.enum(['shipping', 'pickup']),
+    shippingAddress: z.string().optional().nullable(),
+    notes: z.string().optional().nullable()
 });
 
-export const dynamic = 'force-dynamic';
-
-// Instanciar MercadoPago con el token del usuario
-const client = new MercadoPagoConfig({ accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN! });
+const checkoutPayloadSchema = z.object({
+    items: z.array(checkoutItemSchema).min(1, 'El carrito no puede estar vacío'),
+    customer: customerSchema
+});
 
 export async function POST(request: Request) {
     try {
         const ip = request.headers.get('x-forwarded-for') || 'unknown';
-        const { success } = await checkoutLimiter.limit(`checkout_${ip}`);
-        if (!success) {
-            return NextResponse.json({ error: 'Too Many Requests' }, { status: 429 });
+        const { success: rateLimitOk } = await checkoutLimiter.limit(`checkout_${ip}`);
+        if (!rateLimitOk) {
+            return NextResponse.json({ error: 'Demasiadas solicitudes. Por favor, aguarda un instante.' }, { status: 429 });
         }
 
         const body = await request.json();
-        const parseResult = checkoutSchema.safeParse(body);
+        const parseResult = checkoutPayloadSchema.safeParse(body);
         if (!parseResult.success) {
-            return NextResponse.json({ error: 'Invalid checkout payload', issues: parseResult.error.format() }, { status: 400 });
+            const firstError = parseResult.error.issues[0]?.message || 'Datos de checkout inválidos';
+            return NextResponse.json({ error: firstError, issues: parseResult.error.issues }, { status: 400 });
         }
-        
-        const { items, billingDetails, user_email } = parseResult.data;
 
-        const normalItems = items.filter((item: CheckoutItemType) => !item.product.id.startsWith('custom-'));
-        const customItems = items.filter((item: CheckoutItemType) => item.product.id.startsWith('custom-'));
+        const { items, customer } = parseResult.data;
+
+        // Validar dirección en caso de envío
+        if (customer.deliveryMethod === 'shipping' && (!customer.shippingAddress || customer.shippingAddress.trim().length < 5)) {
+            return NextResponse.json({ error: 'Por favor, ingresá una dirección de envío completa.' }, { status: 400 });
+        }
 
         const supabase = createAdminClient();
-        const productIds = normalItems.map((item: CheckoutItemType) => item.product.id);
-        
+
+        // Separar productos estándar y personalizados
+        const normalItems = items.filter(item => !item.product.id.startsWith('custom-'));
+        const customItems = items.filter(item => item.product.id.startsWith('custom-'));
+        const productIds = normalItems.map(item => item.product.id);
+
+        // 1. Recalcular precios desde la base de datos (seguridad estricta contra client tampering)
         let dbProducts: any[] = [];
         if (productIds.length > 0) {
             const { data, error: dbError } = await supabase
                 .from('products')
-                .select('id, name, price')
+                .select('id, name, price, active')
                 .in('id', productIds);
 
             if (dbError) {
-                return NextResponse.json({ error: 'Error fetching products from database' }, { status: 500 });
+                console.error("Error consultando productos:", dbError);
+                return NextResponse.json({ error: 'Error al consultar catálogo de productos.' }, { status: 500 });
             }
-            if (data) dbProducts = data;
+            dbProducts = data || [];
         }
 
         const productMap = new Map(dbProducts.map(p => [p.id, p]));
 
-        // Early validation to prevent Data Littering
+        // Validar existencia y estado activo de productos normales
         for (const item of normalItems) {
-            if (!productMap.has(item.product.id)) {
-                return NextResponse.json({ error: `Product ${item.product.id} not found or unavailable` }, { status: 400 });
+            const dbProduct = productMap.get(item.product.id);
+            if (!dbProduct) {
+                return NextResponse.json({ error: `El producto "${item.product.name || item.product.id}" no existe en el catálogo.` }, { status: 400 });
+            }
+            if (dbProduct.active === false) {
+                return NextResponse.json({ error: `El producto "${dbProduct.name}" no se encuentra disponible actualmente.` }, { status: 400 });
             }
         }
 
-        // Validate custom items
-        const { CUSTOM_PRICING } = await import('@/utils/customPricing');
+        // Validar productos personalizados
         for (const item of customItems) {
             const match = item.product.id.match(/^custom-(.+?)-\d+$/);
             if (!match || !(match[1] in CUSTOM_PRICING)) {
-                return NextResponse.json({ error: `Custom product invalid or unavailable` }, { status: 400 });
+                return NextResponse.json({ error: 'Producto personalizado inválido o no disponible.' }, { status: 400 });
             }
         }
 
-        // Calculate total amount based on real prices
-        const totalAmount = items.reduce((acc: number, item: CheckoutItemType) => {
-            let realPrice = 0;
-            if (item.product.id.startsWith('custom-')) {
-                const match = item.product.id.match(/^custom-(.+?)-\d+$/);
-                if (match && CUSTOM_PRICING[match[1]]) {
-                    realPrice = CUSTOM_PRICING[match[1]];
-                }
-            } else {
-                const dbProduct = productMap.get(item.product.id);
-                realPrice = dbProduct ? Number(dbProduct.price) : 0;
+        // 2. Validar stock disponible en product_stock para cada variante
+        if (normalItems.length > 0) {
+            const { data: stockRecords, error: stockError } = await supabase
+                .from('product_stock')
+                .select('product_id, size, stock_quantity')
+                .in('product_id', productIds);
+
+            if (stockError) {
+                console.error("Error validando stock:", stockError);
+                return NextResponse.json({ error: 'Error al verificar disponibilidad de stock.' }, { status: 500 });
             }
-            return acc + (realPrice * item.quantity);
-        }, 0);
 
-        const fakePaymentId = `mp_pref_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+            const stockMap = new Map<string, number>();
+            (stockRecords || []).forEach(s => {
+                stockMap.set(`${s.product_id}_${s.size.toUpperCase()}`, s.stock_quantity);
+            });
 
-        // Create the order in Supabase with 'pending' status
-        const { data: orderData, error: orderError } = await supabase
-            .from('orders')
-            .insert([
-                {
-                    customer_email: user_email || 'invitado@mercadopago.com',
-                    status: 'pending', 
-                    total_amount: totalAmount,
-                    payment_method: 'mercadopago',
-                    payment_id: fakePaymentId
+            for (const item of normalItems) {
+                const stockKey = `${item.product.id}_${item.size.toUpperCase()}`;
+                const availableStock = stockMap.get(stockKey) ?? 0;
+                const dbProduct = productMap.get(item.product.id);
+                const productName = dbProduct?.name || item.product.name || 'Producto';
+
+                if (availableStock < item.quantity) {
+                    return NextResponse.json({
+                        error: `No hay suficiente stock para "${productName}" (Talle ${item.size}). Stock disponible: ${availableStock}.`
+                    }, { status: 400 });
                 }
-            ])
-            .select('id')
-            .single();
-
-        if (orderError) {
-            console.error("Error creating pending order:", orderError);
-            return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
+            }
         }
 
-        // Insert the line items
-        const orderItemsToInsert = items.map((item: CheckoutItemType) => {
+        // 3. Recalcular total exacto
+        let totalAmount = 0;
+        const processedItems = items.map(item => {
             let realPrice = 0;
+            let realName = '';
+
             if (item.product.id.startsWith('custom-')) {
                 const match = item.product.id.match(/^custom-(.+?)-\d+$/);
-                if (match && CUSTOM_PRICING[match[1]]) {
-                    realPrice = CUSTOM_PRICING[match[1]];
-                }
+                realPrice = (match && (CUSTOM_PRICING as any)[match[1]]) || 0;
+                realName = item.product.name || 'Prenda Personalizada';
             } else {
                 const dbProduct = productMap.get(item.product.id);
                 realPrice = dbProduct ? Number(dbProduct.price) : 0;
+                realName = dbProduct?.name || item.product.name || 'Producto';
             }
-            
+
+            totalAmount += realPrice * item.quantity;
+
             return {
-                order_id: orderData.id,
-                product_id: item.product.id || null,
-                size: item.size || 'N/A',
-                quantity: item.quantity || 1,
+                product_id: item.product.id.startsWith('custom-') ? null : item.product.id,
+                product_name: realName,
+                size: item.size,
+                quantity: item.quantity,
                 price_at_purchase: realPrice
             };
         });
 
-        await supabase.from('order_items').insert(orderItemsToInsert);
+        // 4. Crear el pedido en estado 'pending' (transferencia bancaria)
+        const paymentReference = `transfer_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+        const shippingDetails = customer.deliveryMethod === 'shipping'
+            ? `Envío a: ${customer.shippingAddress} | Contacto: ${customer.name} (Tel: ${customer.phone})`
+            : `Retiro en Local/Punto de Entrega | Contacto: ${customer.name} (Tel: ${customer.phone})`;
 
-        const preference = new Preference(client);
-
-        const origin = request.headers.get('origin') || 'http://localhost:3000';
-
-        // Convertir los items del carrito al formato de MercadoPago
-        const mpItems = items.map((item: CheckoutItemType) => {
-            let realPrice = 0;
-            let title = '';
-
-            if (item.product.id.startsWith('custom-')) {
-                const match = item.product.id.match(/^custom-(.+?)-\d+$/);
-                if (!match || !(match[1] in CUSTOM_PRICING)) {
-                    throw new Error(`Custom product ${item.product.id} invalid`);
+        const { data: orderData, error: orderError } = await supabase
+            .from('orders')
+            .insert([
+                {
+                    customer_email: customer.email,
+                    status: 'pending',
+                    total_amount: totalAmount,
+                    payment_method: 'transfer',
+                    payment_id: paymentReference,
+                    shipping_address: customer.deliveryMethod === 'shipping' ? customer.shippingAddress : 'Retiro en Local'
                 }
-                realPrice = CUSTOM_PRICING[match[1]];
-                title = `${item.product.name} - Talle ${item.size}`;
-            } else {
-                const dbProduct = productMap.get(item.product.id);
-                if (!dbProduct) {
-                    throw new Error(`Product ${item.product.id} not found in database`);
-                }
-                realPrice = Number(dbProduct.price);
-                title = `${dbProduct.name} - Talle ${item.size}`;
-            }
-            
-            let pictureUrl = item.product.images[0] || '';
-            if (pictureUrl && !pictureUrl.startsWith('http')) {
-                pictureUrl = `${origin}${pictureUrl.startsWith('/') ? '' : '/'}${pictureUrl}`;
-            }
+            ])
+            .select('id, created_at')
+            .single();
 
-            return {
-                id: item.product.id,
-                title: title,
-                quantity: item.quantity,
-                unit_price: realPrice,
-                currency_id: 'ARS',
-                picture_url: pictureUrl,
-                description: item.product.category || 'Product'
-            };
+        if (orderError || !orderData) {
+            console.error("Error creando pedido:", orderError);
+            return NextResponse.json({ error: "No se pudo registrar el pedido en el sistema." }, { status: 500 });
+        }
+
+        const finalOrderId = orderData.id;
+
+        // 5. Guardar los items con snapshot de nombre y precio
+        const orderItemsToInsert = processedItems.map(item => ({
+            order_id: finalOrderId,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            size: item.size,
+            quantity: item.quantity,
+            price_at_purchase: item.price_at_purchase
+        }));
+
+        const { error: itemsError } = await supabase
+            .from('order_items')
+            .insert(orderItemsToInsert);
+
+        if (itemsError) {
+            console.error("Error insertando order_items:", itemsError);
+        }
+
+        // 6. Registrar en el historial de pedidos (order_history)
+        await supabase.from('order_history').insert({
+            order_id: finalOrderId,
+            status: 'pending',
+            notes: `Pedido registrado por transferencia. Método: ${customer.deliveryMethod === 'shipping' ? 'Envío' : 'Retiro'}. ${customer.notes ? `Nota: "${customer.notes}"` : ''}`
         });
 
-        const isLocalhost = origin.includes('localhost');
-        const bodyPayload = {
-            items: mpItems,
-            metadata: {
-                internal_order_id: orderData.id,
-                user_email: user_email || null,
-                billing_details: billingDetails,
-                cart_items: items.map((item: CheckoutItemType) => {
-                    let name = item.product.name;
-                    let price = Number(item.product.price);
+        // 7. Enviar correo de confirmación de pedido pendiente
+        try {
+            const { sendPurchaseSuccessEmail } = await import('@/lib/sendEmail');
+            await sendPurchaseSuccessEmail(
+                customer.email, 
+                finalOrderId, 
+                totalAmount, 
+                processedItems.map(i => ({ name: i.product_name, size: i.size, quantity: i.quantity, price: i.price_at_purchase })),
+                { name: customer.name, phone: customer.phone, address: customer.shippingAddress || 'Retiro en punto de entrega' }
+            );
+        } catch (emailErr) {
+            console.error("Error enviando email de confirmación:", emailErr);
+        }
 
-                    if (item.product.id.startsWith('custom-')) {
-                        const match = item.product.id.match(/^custom-(.+?)-\d+$/);
-                        if (match && CUSTOM_PRICING[match[1]]) {
-                            price = CUSTOM_PRICING[match[1]];
-                        }
-                    } else {
-                        const dbProduct = productMap.get(item.product.id);
-                        if (dbProduct) {
-                            name = dbProduct.name;
-                            price = Number(dbProduct.price);
-                        }
-                    }
-
-                    return {
-                        id: item.product.id,
-                        name: name,
-                        price: price,
-                        quantity: item.quantity,
-                        size: item.size
-                    };
-                })
-            },
-            back_urls: {
-                success: `${origin}/success`,
-                failure: `${origin}/?status=failure`,
-                pending: `${origin}/?status=pending`
-            },
-            ...(isLocalhost ? {} : { auto_return: 'approved' })
-        };
-
-        const response = await preference.create({
-            body: bodyPayload as PreferenceRequest
+        return NextResponse.json({
+            success: true,
+            orderId: finalOrderId,
+            totalAmount: totalAmount,
+            reference: finalOrderId.split('-')[0].toUpperCase()
         });
-
-        // Retornar la URL de la pasarela de pagos al frontend
-        return NextResponse.json({ init_point: response.init_point });
 
     } catch (error: any) {
-        console.error("====== Error creating MercadoPago preference ======");
-        console.error("Error Message:", error.message);
-        if (error.cause) {
-            console.error("Error Cause:", JSON.stringify(error.cause, null, 2));
-        }
-        if (error.response) {
-            console.error("Error Response:", JSON.stringify(error.response, null, 2));
-        }
-        console.error("===================================================");
-        return NextResponse.json({
-            error: "Error al procesar el pago. Intentá nuevamente."
-        }, { status: 500 });
+        console.error("Error en POST /api/checkout:", error);
+        return NextResponse.json({ error: error.message || 'Error procesando la solicitud de compra.' }, { status: 500 });
     }
 }

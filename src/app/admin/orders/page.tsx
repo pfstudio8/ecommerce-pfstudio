@@ -3,7 +3,8 @@ import { FourSquare } from "react-loading-indicators";
 
 import { useEffect, useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
-import { DollarSign, ShoppingBag, TrendingUp, Filter, Download, Package, Truck, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { DollarSign, ShoppingBag, TrendingUp, Filter, Download, Package, Truck, Trash2, Loader2, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
+import { updateAdminOrderStatus } from "./actions";
 import { useAuthStore } from "@/features/auth/store/auth";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -97,12 +98,16 @@ function AdminOrdersContent() {
     const handleStatusChange = async (orderId: string, newStatus: string) => {
         setUpdatingId(orderId);
         try {
-            const { error } = await supabase
-                .from('orders')
-                .update({ status: newStatus })
-                .eq('id', orderId);
+            const result = await updateAdminOrderStatus(orderId, newStatus);
+            if (!result.success) {
+                throw new Error(result.error || "No se pudo actualizar el estado.");
+            }
 
-            if (error) throw error;
+            if (result.warning) {
+                toast.warning(result.warning);
+            } else {
+                toast.success(`Pedido actualizado a "${STATUS_LABELS[newStatus] || newStatus}"`);
+            }
 
             setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
         } catch (err) {
@@ -338,6 +343,17 @@ function AdminOrdersContent() {
                                                         </option>
                                                     ))}
                                                 </select>
+                                                {order.status === 'pending' && (
+                                                    <button
+                                                        onClick={() => handleStatusChange(order.id, 'paid')}
+                                                        disabled={updatingId === order.id}
+                                                        className="px-2.5 py-1 bg-primary text-on-primary rounded-full text-[10px] font-black uppercase tracking-wider hover:bg-primary-dark transition-all flex items-center gap-1 shadow-sm shrink-0"
+                                                        title="Confirmar Pago y Descontar Stock"
+                                                    >
+                                                        <CheckCircle className="w-3 h-3" />
+                                                        Confirmar
+                                                    </button>
+                                                )}
                                                 {updatingId === order.id && <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />}
                                             </div>
                                         </td>
@@ -478,7 +494,7 @@ function AdminOrdersContent() {
                                             </div>
                                         )}
                                         <div className="flex-1">
-                                            <h4 className="font-bold text-on-surface text-sm line-clamp-1">{item.products?.name || `Producto no disponible`}</h4>
+                                            <h4 className="font-bold text-on-surface text-sm line-clamp-1">{item.product_name || item.products?.name || "Producto"}</h4>
                                             <div className="text-xs text-outline mt-1 space-y-0.5 font-medium">
                                                 <p>Talla: <span className="font-bold text-primary">{item.size}</span></p>
                                                 <p>Cantidad: <span className="font-bold text-on-surface">{item.quantity}</span></p>
