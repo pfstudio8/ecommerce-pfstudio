@@ -15,7 +15,7 @@ export default function PrivacidadPage() {
                     <p className="text-body-md text-on-surface-variant mb-4">Tus datos son utilizados exclusivamente para la gestión de envíos, notificaciones del estado del pedido y comunicación directa en caso de eventualidades con tus diseños.</p>
                     
                     <h2 className="text-title-lg font-bold mt-6 mb-2">Protección y Seguridad</h2>
-                    <p className="text-body-md text-on-surface-variant mb-4">No vendemos, alquilamos ni compartimos tu información personal con terceros. Los procesamientos de pagos son gestionados a través de plataformas seguras y externas (como MercadoPago).</p>
+                    <p className="text-body-md text-on-surface-variant mb-4">No vendemos, alquilamos ni compartimos tu información personal con terceros. Los procesamientos de pagos se realizan de forma segura mediante transferencia bancaria directa (CBU/Alias) o en efectivo al retirar.</p>
                 </div>
             </div>
         </div>

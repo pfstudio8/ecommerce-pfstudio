@@ -270,7 +270,7 @@ export default function AdminSettingsPage() {
                                     name="bank"
                                     value={bankSettings.bank}
                                     onChange={handleBankChange}
-                                    placeholder="Ej: Naranja X / Banco Santander / Mercado Pago"
+                                    placeholder="Ej: Naranja X / Banco Santander / Banco Galicia"
                                     className="w-full px-4 py-3 bg-surface border border-outline-variant rounded-xl focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none text-on-surface text-sm"
                                 />
                             </div>

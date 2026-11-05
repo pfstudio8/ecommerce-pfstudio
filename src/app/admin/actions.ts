@@ -2,32 +2,14 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { requireAdminOrEmployee } from '@/utils/supabase/auth';
 
 export async function getDashboardStats() {
     try {
         const supabaseAuth = await createClient();
         const supabase = createAdminClient();
 
-        // Ensure user has admin/employee role before returning data
-        const { data: { user } } = await supabaseAuth.auth.getUser();
-        if (!user || !user.email) {
-            throw new Error("No autenticado");
-        }
-        
-        const { data: profile } = await supabaseAuth
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        const isAuthorized = profile && ['admin', 'employee'].includes(profile.role);
-        if (!isAuthorized) {
-            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-            if (!adminEmails.includes(user.email.toLowerCase())) {
-                throw new Error("No autorizado");
-            }
-        }
+        await requireAdminOrEmployee(supabaseAuth);
 
         // Fetch minimal data for orders aggregation
         const { data: orders, error: ordersError } = await supabase

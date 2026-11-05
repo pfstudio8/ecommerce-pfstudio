@@ -2,37 +2,14 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
-
-async function verifyAdminOrEmployee(supabaseAuth: Awaited<ReturnType<typeof createClient>>) {
-    const { data: { user } } = await supabaseAuth.auth.getUser();
-    if (!user || !user.email) {
-        throw new Error("No autenticado");
-    }
-
-    const { data: profile } = await supabaseAuth
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-    const isAuthorized = profile && ['admin', 'employee'].includes(profile.role);
-    if (!isAuthorized) {
-        const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-        const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-        if (!adminEmails.includes(user.email.toLowerCase())) {
-            throw new Error("No tienes permisos de administrador para gestionar inventario.");
-        }
-    }
-
-    return user;
-}
+import { requireAdminOrEmployee } from '@/utils/supabase/auth';
 
 export async function getInventoryData() {
     try {
         const supabaseAuth = await createClient();
         const adminClient = createAdminClient();
 
-        await verifyAdminOrEmployee(supabaseAuth);
+        await requireAdminOrEmployee(supabaseAuth);
 
         // 1. Obtener productos activos con sus variantes de stock
         const { data: productsData, error: productsError } = await adminClient
@@ -95,7 +72,7 @@ export async function adjustStockVariant(params: {
         const supabaseAuth = await createClient();
         const adminClient = createAdminClient();
 
-        const user = await verifyAdminOrEmployee(supabaseAuth);
+        const { user } = await requireAdminOrEmployee(supabaseAuth);
 
         const { productId, size, newQuantity, reason, notes } = params;
 

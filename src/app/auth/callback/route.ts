@@ -13,9 +13,17 @@ export async function GET(request: Request) {
   if (!next.startsWith('/') || next.startsWith('//')) {
     next = '/'
   }
+
+  // Handle forwarded host if behind a reverse proxy (e.g. Vercel)
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https'
+  const isLocalEnv = process.env.NODE_ENV === 'development'
+  const redirectOrigin = forwardedHost && !isLocalEnv ? `${forwardedProto}://${forwardedHost}` : origin
   
   if (code) {
     const cookieStore = await cookies()
+    // Create the redirect response upfront so cookies set during code exchange are attached to it
+    const response = NextResponse.redirect(new URL(next, redirectOrigin))
     
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -26,14 +34,15 @@ export async function GET(request: Request) {
             return cookieStore.getAll()
           },
           setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) => {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              try {
                 cookieStore.set(name, value, options)
-              })
-            } catch (error) {
-              // The `set` method was called from a Server Component.
-              // This can be ignored if you have middleware refreshing user sessions.
-            }
+              } catch {
+                // Ignore if called from context where cookieStore is read-only
+              }
+              // Explicitly attach the session cookies to the response headers
+              response.cookies.set(name, value, options)
+            })
           },
         },
       }
@@ -43,12 +52,12 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      return NextResponse.redirect(new URL(next, origin))
+      return response
     } else {
       console.error('Supabase Auth Error in Callback:', error)
     }
   }
 
-  // return the user to an error page with some instructions if login failed
-  return NextResponse.redirect(new URL('/?error=auth', origin))
+  // return the user to an error page with instructions if login failed
+  return NextResponse.redirect(new URL('/?error=auth', redirectOrigin))
 }

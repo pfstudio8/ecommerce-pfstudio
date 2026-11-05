@@ -54,10 +54,10 @@ export default function PFChatbot() {
         {
             id: '1',
             sender: 'bot',
-            text: "¡Hola! 👋 Soy **Coco**, tu **Asistente AI** 3D oficial de **PFSTUDIO** 🎨✨.\n\nEstoy entrenado para responder todas tus dudas al instante. ¿Sobre qué te gustaría consultar?",
+            text: "¡Hola! 👋 Soy **Coco**, tu **Asistente AI** oficial de **PFSTUDIO** 🎨✨.\n\nEstoy entrenado para responder todas tus dudas al instante. ¿Sobre qué te gustaría consultar?",
             options: [
                 { label: "👕 Talles y Calces (Oversize/Boxy)", action: "talles" },
-                { label: "🎨 Diseñador 2D/3D & Custom", action: "sublimacion" },
+                { label: "🎨 Pedidos Personalizados", action: "sublimacion" },
                 { label: "🚚 Envíos & Retiro en Taller", action: "envios" },
                 { label: "📦 Estado de mi Pedido", action: "seguimiento" },
                 { label: "💳 Pagos, Alias & Comprobantes", action: "pagos" },
@@ -171,8 +171,11 @@ export default function PFChatbot() {
                     botReply = {
                         id: (Date.now() + 1).toString(),
                         sender: 'bot',
-                        text: "🎨 **Custom Studio 2D/3D & Estampados Personalizados**:\n\nCreá tu propio producto en tiempo real:\n• **Remeras & Buzos**: Vinilo textil sublimable premium de alta definición y durabilidad extrema.\n• **Accesorios Polímero**: Llaveros (forma camiseta, corazón, círculo, rectángulo), tazas y gorras.\n\n✨ Podés subir tu foto, logo o imagen preferida (recomendado fondo transparente PNG o alta resolución JPG).",
-                        link: { url: "#personalizador", label: "Ir al Diseñador 2D/3D" }
+                        text: "🎨 **Pedidos y Confección Personalizada**:\n\nEstampamos y personalizamos tus prendas y accesorios a medida:\n• **Remeras Oversize y Boxy Fit** con estampa frontal o frente + espalda.\n• **Buzos Hoodie, Gorras Trucker, Tazas Cerámicas y Llaveros**.\n\nPodés elegir tu producto, talle y opciones en la tienda, o coordinar directamente por WhatsApp con tu diseño o foto.",
+                        link: { url: "/#personalizados", label: "Cotizar en la Tienda" },
+                        options: [
+                            { label: "📲 Coordinar por WhatsApp", action: "humano" }
+                        ]
                     };
                     break;
                 case 'envios':
@@ -204,9 +207,9 @@ export default function PFChatbot() {
                     botReply = {
                         id: (Date.now() + 1).toString(),
                         sender: 'bot',
-                        text: "💳 **Formas de Pago & Alias Oficial**:\n\n1. **Mercado Pago**: Tarjetas de crédito (hasta cuotas), débito y dinero disponible.\n2. **Transferencia Bancaria (Naranja X)**:\n   • **Alias**: `PFSTUDIO.VENTAS`\n\n📌 *Importante*: Si pagás por transferencia, una vez realizada enviá el comprobante por WhatsApp junto a tu número de orden de compra.",
+                        text: "💳 **Medios de Pago Oficiales**:\n\n1. **Transferencia Bancaria Directa (Naranja X / CBU / Alias)**:\n   • **Alias**: `PFSTUDIO.VENTAS`\n2. **Efectivo** al retirar personalmente en el taller.\n\n📌 *Importante*: Al realizar tu pedido, transferí el monto exacto y luego enviá el comprobante por WhatsApp indicando tu número de pedido para confirmarlo.",
                         options: [
-                            { label: "📲 Enviar Comprobante", action: "humano" }
+                            { label: "📲 Enviar Comprobante por WhatsApp", action: "humano" }
                         ]
                     };
                     break;
@@ -343,8 +346,8 @@ export default function PFChatbot() {
                 ];
             } else if (isCustom) {
                 targetPose = 'sublimacion';
-                responseText = "🎨 **Diseños Personalizados & Sublimación**:\n¡Hacemos realidad tu idea! Personalizamos remeras, llaveros, tazas y gorras por pedido. Podés consultarnos directamente por WhatsApp con tu diseño o imagen.";
-                externalLink = { url: "#personalizados", label: "Consultá por WhatsApp" };
+                responseText = "🎨 **Diseños Personalizados & Sublimación**:\n¡Hacemos realidad tu idea! Personalizamos remeras, buzos, llaveros, tazas y gorras por pedido. Podés cotizar en la sección personalizada de la tienda o coordinar directamente por WhatsApp con tu diseño.";
+                externalLink = { url: "/#personalizados", label: "Cotizar en la Tienda" };
             } else if (isEnvios) {
                 targetPose = 'envios';
                 responseText = "📍 **Retiro en Taller y Entregas Coordinadas**:\nPodés retirar tu pedido **sin costo** por nuestro taller de producción local o coordinar la entrega directa por nuestro WhatsApp oficial.";

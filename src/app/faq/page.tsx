@@ -16,7 +16,7 @@ export default function PreguntasFrecuentesPage() {
                     </div>
                     <div>
                         <h3 className="text-title-lg font-bold mb-2">¿Qué métodos de pago aceptan?</h3>
-                        <p className="text-body-md text-on-surface-variant">Aceptamos MercadoPago, tarjetas de crédito, débito y transferencias bancarias (con descuento especial).</p>
+                        <p className="text-body-md text-on-surface-variant">Aceptamos transferencias bancarias directas (CBU/Alias) y efectivo al retirar en taller. Los pedidos se confirman una vez enviado el comprobante de transferencia por WhatsApp.</p>
                     </div>
                     <div>
                         <h3 className="text-title-lg font-bold mb-2">¿Qué tipo de tela utilizan para las remeras?</h3>

@@ -2,32 +2,14 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { requireAdminOrEmployee } from '@/utils/supabase/auth';
 
 export async function getAdminCustomers() {
     try {
         const supabase = await createClient();
         const adminClient = createAdminClient();
         
-        // Ensure user has admin/employee role
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || !user.email) {
-            throw new Error("No autenticado");
-        }
-        
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        const isAuthorized = profile && ['admin', 'employee'].includes(profile.role);
-        if (!isAuthorized) {
-            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-            if (!adminEmails.includes(user.email.toLowerCase())) {
-                throw new Error("No autorizado");
-            }
-        }
+        await requireAdminOrEmployee(supabase);
 
         // Fetch profiles to map roles and full names
         const { data: profilesData } = await adminClient

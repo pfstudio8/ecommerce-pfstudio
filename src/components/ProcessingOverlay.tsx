@@ -1,13 +1,13 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, CreditCard, Landmark, Sparkles, Lock } from "lucide-react";
+import { ShieldCheck, Landmark, Sparkles, Lock } from "lucide-react";
 
 interface ProcessingOverlayProps {
     isOpen: boolean;
     title: string;
     subtitle?: string;
-    type?: 'auth' | 'mercadopago' | 'transfer' | 'general';
+    type?: 'auth' | 'transfer' | 'general';
 }
 
 export default function ProcessingOverlay({
@@ -22,8 +22,6 @@ export default function ProcessingOverlay({
         switch (type) {
             case 'auth':
                 return <Lock className="w-6 h-6 text-primary" />;
-            case 'mercadopago':
-                return <CreditCard className="w-6 h-6 text-primary" />;
             case 'transfer':
                 return <Landmark className="w-6 h-6 text-primary" />;
             default:
@@ -111,4 +109,3 @@ export default function ProcessingOverlay({
         </AnimatePresence>
     );
 }
-

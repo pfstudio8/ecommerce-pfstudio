@@ -101,6 +101,16 @@ export default function TopNavBar() {
         setIsSearching(false);
     }, [searchQuery, fuse]);
 
+    const handleSearchSubmit = (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        const query = searchQuery.trim();
+        if (query) {
+            router.push(`/catalog?search=${encodeURIComponent(query)}`);
+            setSearchQuery("");
+            setIsMobileMenuOpen(false);
+        }
+    };
+
     return (
         <header className="docked full-width top-0 sticky z-50 bg-surface border-b border-outline-variant shadow-sm transition-all duration-300">
             <div className="w-full px-margin-desktop max-w-7xl mx-auto flex items-center justify-between h-16 gap-space-md">
@@ -129,67 +139,85 @@ export default function TopNavBar() {
                 </div>
                 
                 {/* Search Bar on Left of Navigation */}
-                <div className="hidden lg:flex flex-col flex-1 max-w-xs relative mx-space-md">
-                    <div className="relative">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-headline-sm">search</span>
+                <div className="hidden md:flex flex-col flex-1 max-w-xs relative mx-space-md">
+                    <form onSubmit={handleSearchSubmit} className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-headline-sm pointer-events-none">search</span>
                         <input 
                             type="text" 
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    router.push(`/?search=${searchQuery}#productos`);
-                                    setSearchQuery("");
-                                }
-                            }}
-                            className="w-full pl-9 pr-4 py-1.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md font-body-md placeholder-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" 
-                            placeholder="Buscar remeras, llaveros, blanks..." 
+                            className="w-full pl-9 pr-8 py-1.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md font-body-md placeholder-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-on-surface" 
+                            placeholder="Buscar remeras, tazas, gorras..." 
                         />
-                    </div>
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchQuery("")}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-0.5"
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        )}
+                    </form>
                     {/* Search Results Dropdown */}
                     {searchQuery.trim().length >= 2 && (
-                        <div className="absolute top-full mt-2 left-0 right-0 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg overflow-hidden flex flex-col z-100 max-h-75 overflow-y-auto custom-scrollbar">
+                        <div className="absolute top-full mt-2 left-0 right-0 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg overflow-hidden flex flex-col z-100 max-h-80 overflow-y-auto custom-scrollbar">
                             {isSearching ? (
                                 <div className="text-xs text-on-surface-variant p-3 text-center">Buscando...</div>
                             ) : searchResults.length === 0 ? (
-                                <div className="text-xs text-on-surface-variant p-3 text-center">No hay resultados</div>
-                            ) : (
-                                searchResults.map(prod => (
+                                <div className="p-3 text-center">
+                                    <p className="text-xs text-on-surface-variant mb-2">No encontramos resultados exactos</p>
                                     <button
-                                        key={prod.id}
-                                        onClick={() => {
-                                            router.push(`/product/${prod.id}`);
-                                            setSearchQuery("");
-                                        }}
-                                        className="w-full flex items-center gap-3 p-3 hover:bg-surface-container transition-colors text-left outline-none border-b border-outline-variant/30 last:border-0"
+                                        type="button"
+                                        onClick={() => handleSearchSubmit()}
+                                        className="text-xs text-primary font-bold hover:underline"
                                     >
-                                        <div className="relative w-10 h-10 rounded overflow-hidden bg-surface-container shrink-0">
-                                            {prod.images?.[0] && (
-                                                <Image width={40} height={40} src={prod.images[0]} alt={prod.name} className="w-full h-full object-cover" />
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="text-label-md font-bold text-on-surface truncate">{prod.name}</h4>
-                                            <p className="text-label-sm font-bold text-primary">${prod.price.toLocaleString("es-AR")}</p>
-                                        </div>
+                                        Buscar &quot;{searchQuery}&quot; en catálogo &rarr;
                                     </button>
-                                ))
+                                </div>
+                            ) : (
+                                <>
+                                    {searchResults.map(prod => (
+                                        <button
+                                            key={prod.id}
+                                            onClick={() => {
+                                                router.push(`/product/${prod.id}`);
+                                                setSearchQuery("");
+                                            }}
+                                            className="w-full flex items-center gap-3 p-3 hover:bg-surface-container transition-colors text-left outline-none border-b border-outline-variant/30 last:border-0"
+                                        >
+                                            <div className="relative w-10 h-10 rounded overflow-hidden bg-surface-container shrink-0">
+                                                {prod.images?.[0] && (
+                                                    <Image width={40} height={40} src={prod.images[0]} alt={prod.name} className="w-full h-full object-cover" />
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="text-label-md font-bold text-on-surface truncate">{prod.name}</h4>
+                                                <p className="text-label-sm font-bold text-primary">${prod.price.toLocaleString("es-AR")}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSearchSubmit()}
+                                        className="w-full py-2.5 px-3 bg-surface-container hover:bg-surface-container-high text-primary font-bold text-xs flex items-center justify-center gap-1 transition-colors border-t border-outline-variant"
+                                    >
+                                        Ver todos los resultados para &quot;{searchQuery}&quot; &rarr;
+                                    </button>
+                                </>
                             )}
                         </div>
                     )}
                 </div>
 
-                <nav className="hidden md:flex items-center gap-space-sm mx-auto">
-                    <Link href="/#catalogo" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
+                <nav className="hidden md:flex items-center gap-1 mx-auto">
+                    <Link href="/catalog" className="text-on-surface-variant font-medium text-xs hover:text-primary hover:bg-surface-container transition-colors rounded-lg px-3 py-1.5">
                         Catálogo
                     </Link>
-                    <Link href="/#personalizados" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
+                    <Link href="/#personalizados" className="text-on-surface-variant font-medium text-xs hover:text-primary hover:bg-surface-container transition-colors rounded-lg px-3 py-1.5">
                         Personalizados
                     </Link>
-                    <Link href="/#insumos" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
-                        Insumos
-                    </Link>
-                    <Link href="/#comunidad" className="text-on-surface-variant font-medium text-label-md hover:text-primary hover:bg-surface-container transition-colors duration-150 active:scale-95 rounded-lg px-2 py-1">
+                    <Link href="/#comunidad" className="text-on-surface-variant font-medium text-xs hover:text-primary hover:bg-surface-container transition-colors rounded-lg px-3 py-1.5">
                         Comunidad
                     </Link>
                 </nav>
@@ -197,9 +225,9 @@ export default function TopNavBar() {
                 {/* Trailing Action Buttons */}
                 <div className="flex items-center gap-space-sm">
                     {/* Consultá por WhatsApp CTA */}
-                    <Link href="/#personalizados" className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-tertiary-fixed hover:bg-tertiary-container text-on-tertiary-fixed font-headline-sm text-label-md rounded-lg shadow-sm active:scale-95 transition-all">
-                        <span className="material-symbols-outlined text-headline-sm material-symbols-fill">auto_fix_high</span>
-                        Consultá por WhatsApp
+                    <Link href="/#personalizados" className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 font-bold text-xs rounded-xl transition-all">
+                        <span className="material-symbols-outlined text-sm material-symbols-fill">palette</span>
+                        Personalizar
                     </Link>
                     
                     {/* User profile link and Logout */}
@@ -279,26 +307,43 @@ export default function TopNavBar() {
                                 </button>
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto py-6 px-4 space-y-6">
+                            <div className="flex-1 overflow-y-auto py-5 px-4 space-y-5">
+                                {/* Mobile Search */}
+                                <form onSubmit={handleSearchSubmit} className="relative">
+                                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg pointer-events-none">search</span>
+                                    <input 
+                                        type="text" 
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-9 pr-8 py-2 bg-surface-container-lowest border border-outline-variant rounded-xl text-sm placeholder-outline focus:outline-none focus:border-primary text-on-surface" 
+                                        placeholder="Buscar productos..." 
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSearchQuery("")}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-0.5"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </form>
+
                                 <div className="space-y-2">
                                     <div className="px-4 py-2 text-xs font-bold text-secondary uppercase tracking-widest">
                                         Navegación
                                     </div>
-                                    <Link href="/#catalogo" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-4 px-4 py-2.5">
-                                        Catálogo
-                                        <span className="material-symbols-outlined">chevron_right</span>
+                                    <Link href="/catalog" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-3 px-4 py-2">
+                                        Catálogo Completo
+                                        <span className="material-symbols-outlined text-sm">chevron_right</span>
                                     </Link>
-                                    <Link href="/#personalizados" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-4 px-4 py-2.5">
-                                        Personalizados
-                                        <span className="material-symbols-outlined">chevron_right</span>
+                                    <Link href="/#personalizados" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-3 px-4 py-2">
+                                        Pedidos Personalizados
+                                        <span className="material-symbols-outlined text-sm">chevron_right</span>
                                     </Link>
-                                    <Link href="/#insumos" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between border-b border-outline-variant/30 pb-4 px-4 py-2.5">
-                                        Insumos
-                                        <span className="material-symbols-outlined">chevron_right</span>
-                                    </Link>
-                                    <Link href="/#comunidad" onClick={() => setIsMobileMenuOpen(false)} className="text-headline-sm font-headline-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between px-4 py-2.5">
-                                        Comunidad
-                                        <span className="material-symbols-outlined">chevron_right</span>
+                                    <Link href="/#comunidad" onClick={() => setIsMobileMenuOpen(false)} className="text-sm font-bold text-on-surface hover:text-primary transition-colors flex items-center justify-between px-4 py-2">
+                                        Comunidad & Reseñas
+                                        <span className="material-symbols-outlined text-sm">chevron_right</span>
                                     </Link>
                                 </div>
                             </div>

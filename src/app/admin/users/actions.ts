@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { requireAdminOrEmployee, requireAdmin } from '@/utils/supabase/auth';
 
 export interface AdminUserData {
     id: string;
@@ -19,26 +20,7 @@ export async function getAdminUsers() {
         const supabase = await createClient();
         const adminClient = createAdminClient();
         
-        // Ensure user has admin/employee role
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || !user.email) {
-            throw new Error("No autenticado");
-        }
-        
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        const isAuthorized = profile && ['admin', 'employee'].includes(profile.role);
-        if (!isAuthorized) {
-            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-            if (!adminEmails.includes(user.email.toLowerCase())) {
-                throw new Error("No autorizado");
-            }
-        }
+        await requireAdminOrEmployee(supabase);
 
         // Fetch all registered users from auth
         const { data: authUsers, error: authError } = await adminClient.auth.admin.listUsers();
@@ -58,6 +40,7 @@ export async function getAdminUsers() {
         });
 
         const userList: AdminUserData[] = [];
+
         if (authUsers && authUsers.users) {
             authUsers.users.forEach((u) => {
                 const email = u.email || 'Sin Correo';
@@ -92,23 +75,7 @@ export async function updateUserRole(targetUserId: string, newRole: 'admin' | 'e
         const supabase = await createClient();
         const adminClient = createAdminClient();
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("No autenticado");
-
-        // Only full admins can change roles
-        const { data: currentProfile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        if (currentProfile?.role !== 'admin') {
-            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-            if (!user.email || !adminEmails.includes(user.email.toLowerCase())) {
-                throw new Error("Solo un administrador puede modificar roles");
-            }
-        }
+        await requireAdmin(supabase);
 
         const { error } = await adminClient
             .from('profiles')
@@ -134,23 +101,7 @@ export async function createUserOrInvite(params: {
         const supabase = await createClient();
         const adminClient = createAdminClient();
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("No autenticado");
-
-        // Verify current user is admin
-        const { data: currentProfile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        if (currentProfile?.role !== 'admin') {
-            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-            if (!user.email || !adminEmails.includes(user.email.toLowerCase())) {
-                throw new Error("Solo un administrador puede invitar o crear usuarios");
-            }
-        }
+        await requireAdmin(supabase);
 
         const { email, fullName, role, password } = params;
         const normalizedEmail = email.trim().toLowerCase();
@@ -213,26 +164,10 @@ export async function toggleUserActive(targetUserId: string, active: boolean) {
         const supabase = await createClient();
         const adminClient = createAdminClient();
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("No autenticado");
+        const { user } = await requireAdmin(supabase);
 
         if (user.id === targetUserId) {
             throw new Error("No puedes desactivar tu propia cuenta de administrador.");
-        }
-
-        // Check if caller is admin
-        const { data: currentProfile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        if (currentProfile?.role !== 'admin') {
-            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-            if (!user.email || !adminEmails.includes(user.email.toLowerCase())) {
-                throw new Error("Solo un administrador puede activar o desactivar usuarios");
-            }
         }
 
         // 1. Update profiles table

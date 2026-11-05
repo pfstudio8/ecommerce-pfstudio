@@ -12,15 +12,23 @@ export async function POST(request: Request) {
         if (!success) {
             return NextResponse.json({ error: 'Demasiadas consultas de rastreo. Aguardá un instante.' }, { status: 429 });
         }
+
         const body = await request.json().catch(() => ({}));
         const { orderId, email } = body;
 
-        const cleanOrderId = orderId ? String(orderId).trim() : null;
+        const cleanOrderId = orderId ? String(orderId).trim().replace(/[%_]/g, '') : null;
         const cleanEmail = email ? String(email).trim().toLowerCase() : null;
 
         if (!cleanOrderId || !cleanEmail) {
             return NextResponse.json(
                 { error: "Por favor ingresá tu número de pedido Y tu correo electrónico para buscar tu orden." },
+                { status: 400 }
+            );
+        }
+
+        if (cleanOrderId.length < 8) {
+            return NextResponse.json(
+                { error: "El número de pedido ingresado es muy corto. Por seguridad, ingresa al menos los primeros 8 caracteres." },
                 { status: 400 }
             );
         }
@@ -41,15 +49,8 @@ export async function POST(request: Request) {
             `)
             .order('created_at', { ascending: false });
 
-        // Search by both for exact precision to prevent PII leaks
-        if (cleanOrderId.length < 8) {
-            return NextResponse.json(
-                { error: "El número de pedido ingresado es muy corto. Por seguridad, ingresa al menos los primeros 8 caracteres." },
-                { status: 400 }
-            );
-        }
-
-        if (cleanOrderId.length > 20) {
+        const isFullUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanOrderId);
+        if (isFullUuid) {
             query = query.eq('id', cleanOrderId).eq('customer_email', cleanEmail);
         } else {
             query = query.ilike('id', `${cleanOrderId}%`).eq('customer_email', cleanEmail);
@@ -68,16 +69,16 @@ export async function POST(request: Request) {
         if (!orders || orders.length === 0) {
             return NextResponse.json(
                 { orders: [], message: "No se encontraron pedidos con los datos ingresados." },
-                { status: 200 }
+                { status: 404 }
             );
         }
 
-        return NextResponse.json({ orders }, { status: 200 });
+        return NextResponse.json({ orders });
 
     } catch (error: any) {
-        console.error("Order tracking API error:", error);
+        console.error("Server error in tracking endpoint:", error);
         return NextResponse.json(
-            { error: "Error en el servidor al procesar la búsqueda." },
+            { error: "Error en el servidor al procesar la solicitud." },
             { status: 500 }
         );
     }

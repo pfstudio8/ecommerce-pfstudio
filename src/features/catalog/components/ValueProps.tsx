@@ -1,35 +1,45 @@
 "use client";
 
+import { Truck, Droplets, Scissors } from "lucide-react";
+
 export default function ValueProps() {
     return (
-        <section className="border-b border-outline-variant bg-surface-container-lowest py-space-lg">
+        <section className="border-b border-outline-variant bg-surface py-10">
             <div className="w-full px-margin-desktop max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
-                    <div className="flex items-start gap-space-sm p-space-md rounded-lg bg-surface-container-low border border-outline-variant/60">
-                        <div className="p-2 bg-surface-container-lowest text-primary rounded-lg border border-outline-variant shadow-sm">
-                            <span className="material-symbols-outlined text-headline-md">local_shipping</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-surface-container-low border border-outline-variant/60">
+                        <div className="p-2.5 bg-surface-container-highest text-primary rounded-xl shrink-0">
+                            <Truck className="w-5 h-5" />
                         </div>
                         <div>
-                            <h4 className="text-headline-sm font-headline-sm text-on-surface">Producción Express 24-48hs</h4>
-                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Despachamos pedidos minoristas y muestras con máxima celeridad.</p>
+                            <h4 className="text-sm font-bold text-on-surface">Producción Rápida 24-48 hs</h4>
+                            <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                                Confeccionamos y despachamos pedidos minoristas con la mayor agilidad del mercado.
+                            </p>
                         </div>
                     </div>
-                    <div className="flex items-start gap-space-sm p-space-md rounded-lg bg-surface-container-low border border-outline-variant/60">
-                        <div className="p-2 bg-surface-container-lowest text-primary rounded-lg border border-outline-variant shadow-sm">
-                            <span className="material-symbols-outlined text-headline-md">water_drop</span>
+
+                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-surface-container-low border border-outline-variant/60">
+                        <div className="p-2.5 bg-surface-container-highest text-primary rounded-xl shrink-0">
+                            <Droplets className="w-5 h-5" />
                         </div>
                         <div>
-                            <h4 className="text-headline-sm font-headline-sm text-on-surface">Sublimación HD Inalterable</h4>
-                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Tintas pigmentadas térmicas que no se agrietan ni decoloran con lavados.</p>
+                            <h4 className="text-sm font-bold text-on-surface">Sublimación HD Inalterable</h4>
+                            <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                                Tintas térmicas de alta fijación que no se resquebrajan ni decoloran con los lavados.
+                            </p>
                         </div>
                     </div>
-                    <div className="flex items-start gap-space-sm p-space-md rounded-lg bg-surface-container-low border border-outline-variant/60">
-                        <div className="p-2 bg-surface-container-lowest text-primary rounded-lg border border-outline-variant shadow-sm">
-                            <span className="material-symbols-outlined text-headline-md">apparel</span>
+
+                    <div className="flex items-start gap-4 p-5 rounded-2xl bg-surface-container-low border border-outline-variant/60">
+                        <div className="p-2.5 bg-surface-container-highest text-primary rounded-xl shrink-0">
+                            <Scissors className="w-5 h-5" />
                         </div>
                         <div>
-                            <h4 className="text-headline-sm font-headline-sm text-on-surface">Boxy Fit & Oversize</h4>
-                            <p className="text-body-sm font-body-sm text-on-surface-variant mt-0.5">Patronajes urbanos modernos pensados para marcas y colecciones.</p>
+                            <h4 className="text-sm font-bold text-on-surface">Calces Boxy Fit & Oversize</h4>
+                            <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                                Moldería urbana moderna y algodón 24/1 pensado para colecciones streetwear reales.
+                            </p>
                         </div>
                     </div>
                 </div>

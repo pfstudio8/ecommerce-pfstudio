@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { requireAdminOrEmployee } from '@/utils/supabase/auth';
 
 export interface OrderActionResponse {
     success: boolean;
@@ -16,23 +17,7 @@ export async function confirmOrderPayment(orderId: string): Promise<OrderActionR
         const adminClient = createAdminClient();
 
         // 1. Verificar autenticación y rol del administrador
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("No autenticado");
-
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        const isAuthorized = profile && ['admin', 'employee'].includes(profile.role);
-        if (!isAuthorized) {
-            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-            if (!user.email || !adminEmails.includes(user.email.toLowerCase())) {
-                throw new Error("No tienes permisos de administrador para confirmar pagos.");
-            }
-        }
+        const { role } = await requireAdminOrEmployee(supabase);
 
         // 2. Obtener el pedido y sus artículos
         const { data: order, error: orderError } = await adminClient
@@ -87,7 +72,7 @@ export async function confirmOrderPayment(orderId: string): Promise<OrderActionR
         // 5. Registrar en el historial de pedidos
         const historyNotes = stockErrors.length > 0
             ? `Pago confirmado manualmente. Advertencia de stock: ${stockErrors.join('; ')}`
-            : `Pago confirmado manualmente por ${profile?.role || 'admin'}. Stock descontado automáticamente.`;
+            : `Pago confirmado manualmente por ${role || 'admin'}. Stock descontado automáticamente.`;
 
         await adminClient.from('order_history').insert({
             order_id: orderId,
@@ -115,23 +100,7 @@ export async function updateAdminOrderStatus(orderId: string, newStatus: string)
         const supabase = await createClient();
         const adminClient = createAdminClient();
 
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || !user.email) throw new Error("No autenticado");
-
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
-
-        const isAuthorized = profile && ['admin', 'employee'].includes(profile.role);
-        if (!isAuthorized) {
-            const adminEmailsEnv = process.env.ADMIN_EMAILS || "";
-            const adminEmails = adminEmailsEnv.split(',').map(e => e.trim().toLowerCase());
-            if (!adminEmails.includes(user.email.toLowerCase())) {
-                throw new Error("No tienes permisos de administrador para modificar pedidos.");
-            }
-        }
+        await requireAdminOrEmployee(supabase);
 
         const { error } = await adminClient
             .from('orders')

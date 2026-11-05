@@ -48,10 +48,9 @@ export default function Footer() {
                 <div>
                     <h4 className="text-headline-sm font-headline-sm font-bold text-on-surface mb-space-sm">Catálogo</h4>
                     <ul className="space-y-2">
-                        <li><Link href="/?cat=Remeras" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Remeras & Prendas</Link></li>
-                        <li><Link href="/?cat=Gorras" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Gorras Exclusivas</Link></li>
-
-                        <li><Link href="/?cat=Accesorios" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Accesorios & Regalos</Link></li>
+                        <li><Link href="/catalog?cat=Remeras" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Remeras & Prendas</Link></li>
+                        <li><Link href="/catalog?cat=Gorras" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Gorras Exclusivas</Link></li>
+                        <li><Link href="/catalog?cat=Accesorios" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Accesorios & Regalos</Link></li>
                     </ul>
                 </div>
                 
@@ -59,7 +58,7 @@ export default function Footer() {
                 <div>
                     <h4 className="text-headline-sm font-headline-sm font-bold text-on-surface mb-space-sm">Servicios</h4>
                     <ul className="space-y-2">
-                        <li><Link href="#personalizador" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Custom Studio</Link></li>
+                        <li><Link href="/#personalizados" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Pedidos Personalizados</Link></li>
                         <li><Link href="/size-guide" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Guía de Talles</Link></li>
                         <li><Link href="/faq" className="text-body-sm font-body-sm text-on-surface-variant hover:text-primary transition-colors">Preguntas Frecuentes</Link></li>
                     </ul>

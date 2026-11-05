@@ -33,6 +33,19 @@ function CatalogGridContent() {
 
     const PAGE_SIZE = 12;
 
+    // Keep search and category filters in sync with URL searchParams
+    useEffect(() => {
+        if (urlSearch !== null) {
+            setSearchQuery(urlSearch);
+        }
+    }, [urlSearch]);
+
+    useEffect(() => {
+        if (urlCategory !== null) {
+            setFilterCategory(urlCategory);
+        }
+    }, [urlCategory]);
+
     // 1. Load dynamic categories & sizes from DB
     useEffect(() => {
         const loadCategoriesAndSizes = async () => {
