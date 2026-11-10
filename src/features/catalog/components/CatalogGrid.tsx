@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import CatalogProductCard from "./CatalogProductCard";
 import { Product } from "@/types/product";
-import { Search, Filter, ArrowUpDown, RefreshCw, X, Layers } from "lucide-react";
+import { Search, ArrowUpDown, RefreshCw, X, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function CatalogGridContent() {
@@ -20,7 +20,7 @@ function CatalogGridContent() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    
+
     // Filters & Sorting state
     const [filterCategory, setFilterCategory] = useState<string>(urlCategory || "Todas");
     const [filterSize, setFilterSize] = useState<string>("Todos");
@@ -50,13 +50,11 @@ function CatalogGridContent() {
     useEffect(() => {
         const loadCategoriesAndSizes = async () => {
             try {
-                // Fetch categories from categories table
                 const { data: dbCategories } = await supabase
                     .from('categories')
                     .select('name')
                     .order('name');
 
-                // Also fetch distinct categories from active products
                 const { data: dbProductCats } = await supabase
                     .from('products')
                     .select('category')
@@ -69,7 +67,6 @@ function CatalogGridContent() {
                 const loadedCategories = ["Todas", ...Array.from(catSet).sort()];
                 setCategories(loadedCategories);
 
-                // Fetch sizes from product_stock
                 const { data: dbSizes } = await supabase
                     .from('product_stock')
                     .select('size');
@@ -101,17 +98,14 @@ function CatalogGridContent() {
                 .select('*, product_stock(size, stock_quantity)', { count: 'exact' })
                 .eq('active', true);
 
-            // Search filter
             if (searchQuery.trim()) {
                 query = query.or(`name.ilike.%${searchQuery.trim()}%,description.ilike.%${searchQuery.trim()}%`);
             }
 
-            // Category filter
             if (filterCategory !== "Todas") {
                 query = query.ilike('category', `%${filterCategory}%`);
             }
 
-            // Sorting
             if (sortBy === 'price_asc') {
                 query = query.order('price', { ascending: true });
             } else if (sortBy === 'price_desc') {
@@ -132,7 +126,6 @@ function CatalogGridContent() {
             if (data) {
                 let fetched = data as Product[];
 
-                // Filter by size in frontend if selected
                 if (filterSize !== "Todos") {
                     fetched = fetched.filter(p =>
                         p.product_stock?.some(s => s.size === filterSize && s.stock_quantity > 0)
@@ -188,17 +181,19 @@ function CatalogGridContent() {
         router.push('/catalog');
     };
 
+    const hasActiveFilters = filterCategory !== "Todas" || filterSize !== "Todos" || searchQuery.trim() !== "";
+
     return (
-        <section className="py-8 bg-surface">
-            <div className="w-full px-margin-desktop max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
-                
-                {/* Sidebar Filters */}
-                <aside className="w-full md:w-64 shrink-0 flex flex-col gap-6">
-                    {/* Search inside catalog */}
-                    <div className="bg-surface-container-low p-4 rounded-2xl border border-outline-variant space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1.5">
+        <section className="py-8 md:py-12 bg-surface">
+            <div className="w-full px-margin md:px-gutter-desktop max-w-7xl mx-auto flex flex-col md:flex-row gap-10">
+
+                {/* Filtros */}
+                <aside className="w-full md:w-60 shrink-0 flex flex-col gap-8">
+                    {/* Buscador */}
+                    <div className="space-y-3">
+                        <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
                             <Search className="w-3.5 h-3.5 text-primary" />
-                            Buscar en catálogo
+                            Buscar
                         </label>
                         <div className="relative">
                             <input
@@ -206,12 +201,12 @@ function CatalogGridContent() {
                                 placeholder="Remera, gorra, taza..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full px-3.5 py-2 bg-surface border border-outline-variant rounded-xl text-xs text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                                className="w-full px-4 py-2.5 bg-surface-container rounded-full text-sm text-on-surface focus:ring-2 focus:ring-primary/30 outline-none transition-shadow placeholder:text-outline"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery("")}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-1"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface p-1"
                                 >
                                     <X className="w-3.5 h-3.5" />
                                 </button>
@@ -219,50 +214,48 @@ function CatalogGridContent() {
                         </div>
                     </div>
 
-                    {/* Category Filter */}
-                    <div className="bg-surface-container-low p-5 rounded-2xl border border-outline-variant space-y-3">
+                    {/* Categorías */}
+                    <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1.5">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
                                 <Layers className="w-3.5 h-3.5 text-primary" />
                                 Categorías
                             </h3>
-                            <span className="text-[10px] text-outline font-mono">({categories.length - 1})</span>
                         </div>
-                        <div className="flex flex-col gap-1 max-h-72 overflow-y-auto custom-scrollbar pr-1">
+                        <div className="flex flex-wrap md:flex-col gap-2 md:gap-1 md:max-h-72 md:overflow-y-auto pr-1">
                             {categories.map(cat => (
                                 <button
                                     key={cat}
                                     onClick={() => handleCategoryChange(cat)}
                                     className={cn(
-                                        "text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-between",
+                                        "text-left px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors",
                                         filterCategory === cat
-                                            ? "bg-primary text-on-primary font-bold shadow-sm"
-                                            : "text-on-surface hover:bg-surface-container"
+                                            ? "bg-primary text-on-primary"
+                                            : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
                                     )}
                                 >
-                                    <span>{cat}</span>
-                                    {filterCategory === cat && <span className="text-[10px] uppercase font-bold">•</span>}
+                                    {cat}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Size Filter */}
-                    <div className="bg-surface-container-low p-5 rounded-2xl border border-outline-variant space-y-3">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1.5">
-                            <Filter className="w-3.5 h-3.5 text-primary" />
-                            Talles y Medidas
+                    {/* Talles */}
+                    <div className="space-y-3">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5">
+                            <ArrowUpDown className="w-3.5 h-3.5 text-primary" />
+                            Talles
                         </h3>
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                             {availableSizes.map(sizeVal => (
                                 <button
                                     key={sizeVal}
                                     onClick={() => setFilterSize(sizeVal)}
                                     className={cn(
-                                        "px-2.5 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all",
+                                        "min-w-9 h-9 px-2.5 rounded-full text-xs font-bold transition-colors",
                                         filterSize === sizeVal
-                                            ? "bg-primary text-on-primary shadow-sm"
-                                            : "bg-surface border border-outline-variant text-on-surface hover:border-primary/50"
+                                            ? "bg-primary text-on-primary"
+                                            : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
                                     )}
                                 >
                                     {sizeVal}
@@ -271,37 +264,37 @@ function CatalogGridContent() {
                         </div>
                     </div>
 
-                    {(filterCategory !== "Todas" || filterSize !== "Todos" || searchQuery.trim() !== "") && (
+                    {hasActiveFilters && (
                         <button
                             onClick={handleClearFilters}
-                            className="w-full py-2.5 rounded-xl border border-outline-variant text-xs font-bold uppercase tracking-wider text-outline hover:text-on-surface hover:bg-surface-container transition-colors flex items-center justify-center gap-1.5"
+                            className="inline-flex items-center justify-center gap-1.5 py-2.5 rounded-full text-xs font-bold text-outline hover:text-on-surface hover:bg-surface-container transition-colors"
                         >
                             <X className="w-3.5 h-3.5" />
-                            Limpiar Filtros
+                            Limpiar filtros
                         </button>
                     )}
                 </aside>
 
-                {/* Main Product Grid */}
+                {/* Grilla de productos */}
                 <div className="flex-1 flex flex-col gap-6">
-                    {/* Top bar: title + count + sorting */}
-                    <div className="bg-surface-container-low p-4 rounded-2xl border border-outline-variant flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-base font-extrabold text-on-surface">
-                                {filterCategory === "Todas" ? "Todos los Productos" : filterCategory}
+                    {/* Barra superior */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                            <h2 className="text-lg font-extrabold text-on-surface">
+                                {filterCategory === "Todas" ? "Todos los productos" : filterCategory}
                             </h2>
-                            <span className="text-xs font-bold text-outline bg-surface px-2.5 py-0.5 rounded-full border border-outline-variant">
-                                {products.length} {totalCount > products.length ? `de ${totalCount}` : ''}
+                            <span className="text-xs font-bold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full">
+                                {products.length}{totalCount > products.length ? ` de ${totalCount}` : ''}
                             </span>
                         </div>
 
-                        {/* Sort Selector */}
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-outline font-semibold">Ordenar:</span>
+                            <label htmlFor="sort-select" className="text-xs text-on-surface-variant font-semibold">Ordenar</label>
                             <select
+                                id="sort-select"
                                 value={sortBy}
                                 onChange={(e: any) => setSortBy(e.target.value)}
-                                className="px-3 py-1.5 bg-surface border border-outline-variant rounded-xl text-xs font-semibold text-on-surface outline-none cursor-pointer focus:border-primary"
+                                className="px-3.5 py-2 bg-surface-container rounded-full text-xs font-semibold text-on-surface outline-none cursor-pointer focus:ring-2 focus:ring-primary/30"
                             >
                                 <option value="featured">Destacados</option>
                                 <option value="price_asc">Menor precio</option>
@@ -312,40 +305,47 @@ function CatalogGridContent() {
                     </div>
 
                     {isLoading ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                             {Array.from({ length: 6 }).map((_, i) => (
-                                <div key={i} className="bg-surface-container-low border border-outline-variant rounded-2xl overflow-hidden h-96 flex flex-col animate-pulse">
+                                <div key={i} className="bg-surface-container-lowest rounded-2xl overflow-hidden h-96 flex flex-col animate-pulse">
                                     <div className="aspect-4/5 bg-surface-container w-full"></div>
                                     <div className="p-4 flex flex-col gap-3 flex-1">
-                                        <div className="h-4 bg-surface-container rounded w-1/3"></div>
+                                        <div className="h-3 bg-surface-container rounded w-1/3"></div>
                                         <div className="h-5 bg-surface-container rounded w-3/4"></div>
-                                        <div className="mt-auto h-8 bg-surface-container rounded w-full"></div>
+                                        <div className="mt-auto h-9 bg-surface-container rounded-full w-full"></div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : products.length > 0 ? (
                         <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                                 {products.map(product => (
                                     <CatalogProductCard key={product.id} product={product} />
                                 ))}
                             </div>
-                            
+
                             {hasMore && (
-                                <div className="mt-8 flex justify-center">
+                                <div className="mt-6 flex justify-center">
                                     <button 
                                         onClick={loadMore}
                                         disabled={isLoadingMore}
-                                        className="px-8 py-3 bg-surface-container-high hover:bg-primary hover:text-on-primary text-on-surface rounded-full text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                                        className="px-8 py-3 bg-surface-container hover:bg-primary hover:text-on-primary text-on-surface rounded-full text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2"
                                     >
-                                        {isLoadingMore ? "Cargando..." : "Cargar Más Productos"}
+                                        {isLoadingMore ? (
+                                            <>Cargando...</>
+                                        ) : (
+                                            <>
+                                                <RefreshCw className="w-4 h-4" />
+                                                Cargar más productos
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             )}
                         </>
                     ) : (
-                        <div className="py-20 text-center bg-surface-container-low rounded-2xl border border-outline-variant border-dashed flex flex-col items-center justify-center p-8 space-y-3">
+                        <div className="py-20 text-center bg-surface-container-low rounded-2xl flex flex-col items-center justify-center p-8 space-y-3">
                             <span className="material-symbols-outlined text-4xl text-outline opacity-40">inventory_2</span>
                             <h3 className="text-lg font-bold text-on-surface">No se encontraron productos</h3>
                             <p className="text-xs text-outline max-w-sm mx-auto">
@@ -353,9 +353,9 @@ function CatalogGridContent() {
                             </p>
                             <button 
                                 onClick={handleClearFilters}
-                                className="mt-2 px-6 py-2.5 bg-primary text-on-primary rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-primary-dark transition-all"
+                                className="mt-2 px-6 py-2.5 bg-primary text-on-primary rounded-full text-xs font-bold hover:bg-primary-container transition-colors"
                             >
-                                Limpiar Filtros
+                                Limpiar filtros
                             </button>
                         </div>
                     )}

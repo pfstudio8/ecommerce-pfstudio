@@ -1,3 +1,4 @@
+import AnnouncementBar from "@/features/shared/components/AnnouncementBar";
 import TopNavBar from "@/features/shared/components/TopNavBar";
 import Footer from "@/features/shared/components/Footer";
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
@@ -14,20 +15,21 @@ export const metadata: Metadata = {
 export default function CatalogoPage() {
     return (
         <div className="min-h-screen bg-background flex flex-col font-sans relative selection:bg-primary selection:text-on-primary">
+            <AnnouncementBar />
             <TopNavBar />
 
-            <main className="flex-1 w-full pt-24 pb-12">
-                <div className="w-full px-margin-desktop max-w-7xl mx-auto flex flex-col gap-space-sm mb-space-lg">
+            <main className="flex-1 w-full pt-10 pb-16">
+                <div className="w-full px-margin md:px-gutter-desktop max-w-7xl mx-auto flex flex-col gap-2 mb-8">
                     <div>
-                        <Link href="/" className="inline-flex items-center gap-2 text-primary font-bold text-sm mb-4 hover:opacity-80 transition-opacity">
+                        <Link href="/" className="inline-flex items-center gap-2 text-primary font-bold text-sm mb-3 hover:opacity-80 transition-opacity">
                             <ArrowLeft className="w-4 h-4" />
                             Volver a la tienda
                         </Link>
                     </div>
-                    <h1 className="text-display-lg font-display-lg text-on-surface">Catálogo</h1>
-                    <p className="text-body-lg font-body-lg text-on-surface-variant max-w-3xl">
-                        Descubrí todas nuestras opciones de indumentaria y accesorios. 
-                        Stock disponible y envíos a todo el país.
+                    <span className="eyebrow">Catálogo Completo</span>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold text-on-surface tracking-tight">Todas las prendas e insumos</h1>
+                    <p className="text-sm text-on-surface-variant max-w-2xl">
+                        Descubrí todas nuestras opciones de indumentaria y accesorios. Stock disponible y envíos a todo el país.
                     </p>
                 </div>
                 
